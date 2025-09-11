@@ -6,9 +6,8 @@ import {AdManager} from "src/AdManager.sol";
 import {MockVerifier} from "src/mocks/MockVerifier.sol";
 import {IVerifier} from "src/Verifier.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract AdManagerHarness is AdManager {
+contract MockAdManager is AdManager {
     constructor(address admin, IVerifier v) AdManager(admin, v) {}
 
     function hashOrderPublic(OrderParams calldata p) external view returns (bytes32) {
@@ -17,7 +16,7 @@ contract AdManagerHarness is AdManager {
 }
 
 contract AdManagerTest is Test {
-    AdManagerHarness internal mgr;
+    MockAdManager internal mgr;
     MockVerifier internal verifier;
     ERC20Mock internal adToken;
 
@@ -44,7 +43,7 @@ contract AdManagerTest is Test {
 
     function setUp() public {
         verifier = new MockVerifier(true);
-        mgr = new AdManagerHarness(admin, IVerifier(address(verifier)));
+        mgr = new MockAdManager(admin, IVerifier(address(verifier)));
         adChainId = block.chainid;
 
         adToken = new ERC20Mock();
