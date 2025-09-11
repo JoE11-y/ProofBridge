@@ -226,7 +226,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
         }
 
         // Compute order hash including srcChainId and bridger to prevent cross-chain/user replay
-        // orderHash = _hashOrder(params, msg.sender, block.chainid);
+        orderHash = _hashOrder(params, msg.sender, block.chainid);
 
         if (orderExists[orderHash]) {
             revert OrderPortal__OrderExists(orderHash);
@@ -306,21 +306,25 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     }
 
     function _structHash(OrderParams calldata p, address bridger, uint256 srcChainId) internal pure returns (bytes32) {
-        return EfficientHashLib.hash(
-            ORDER_TYPEHASH,
-            bytes32(uint256(uint160(p.token1))),
-            bytes32(uint256(uint160(p.token2))),
-            bytes32(p.dstChainId),
-            bytes32(p.amount),
-            bytes32(uint256(uint160(p.dstAdManager))),
-            bytes32(p.dstAdId),
-            bytes32(uint256(uint160(p.dstAdCreator))),
-            bytes32(uint256(uint160(p.dstRecipient))),
-            bytes32(uint256(uint160(p.srcRecipient))),
-            bytes32(srcChainId),
-            bytes32(uint256(uint160(bridger))),
-            bytes32(p.salt)
-        );
+        bytes32[] memory buffer = EfficientHashLib.malloc(13);
+        EfficientHashLib.set(buffer, 0, ORDER_TYPEHASH);
+        EfficientHashLib.set(buffer, 1, toBytes32(p.token1));
+        EfficientHashLib.set(buffer, 2, toBytes32(p.token2));
+        EfficientHashLib.set(buffer, 3, p.dstChainId);
+        EfficientHashLib.set(buffer, 4, p.amount);
+        EfficientHashLib.set(buffer, 5, toBytes32(p.dstAdManager));
+        EfficientHashLib.set(buffer, 6, p.dstAdId);
+        EfficientHashLib.set(buffer, 7, toBytes32(p.dstAdCreator));
+        EfficientHashLib.set(buffer, 8, toBytes32(p.dstRecipient));
+        EfficientHashLib.set(buffer, 9, toBytes32(p.srcRecipient));
+        EfficientHashLib.set(buffer, 10, srcChainId);
+        EfficientHashLib.set(buffer, 11, toBytes32(bridger));
+        EfficientHashLib.set(buffer, 12, p.salt);
+        return EfficientHashLib.hash(buffer);
+    }
+
+    function toBytes32(address value) internal pure returns (bytes32) {
+        return bytes32(uint256(uint160(value)));
     }
 
     // ─────────────────────────────────────────────────────────────
