@@ -193,6 +193,8 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     error OrderPortal__NullifierUsed(bytes32 nullifierHash);
     /// @notice Thrown when the order is not open.
     error OrderPortal__OrderNotOpen(bytes32 orderHash);
+    /// @notice Thrown when zero address is passed
+    error OrderPortal__ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -204,6 +206,9 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      * @param _verifier External proof verifier contract.
      */
     constructor(address admin, IVerifier _verifier) EIP712(_NAME, _VERSION) {
+        if (admin == address(0) || address(_verifier) == address(0)) {
+            revert OrderPortal__ZeroAddress();
+        }
         _grantRole(ADMIN_ROLE, admin);
         i_verifier = _verifier;
     }
@@ -219,6 +224,9 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      * @param supported Whether the chain is supported.
      */
     function setChain(uint256 adChainId, address adManager, bool supported) external onlyRole(ADMIN_ROLE) {
+        if (supported && adManager == address(0)) {
+            revert OrderPortal__ZeroAddress();
+        }
         chains[adChainId] = ChainInfo({supported: supported, adManager: adManager});
         emit ChainSet(adChainId, adManager, supported);
     }

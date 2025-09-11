@@ -38,7 +38,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     );
 
     /// @notice Admin role identifier.
-    bytes32 public constant ADMIN__ROLE = DEFAULT_ADMIN_ROLE;
+    bytes32 public constant ADMIN_ROLE = DEFAULT_ADMIN_ROLE;
 
     /*//////////////////////////////////////////////////////////////
                                  STATE
@@ -256,7 +256,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     /// @notice No token route exists for (adToken, orderChainId).
     error AdManager__MissingRoute(address orderChainToken, uint256 adChainId);
     /// @notice Source token mismatches the configured route.
-    error Admanager__orderTokenMismatch(address expected, address provided);
+    error AdManager__OrderTokenMismatch(address expected, address provided);
     /// @notice Destination (ad-chain) token mismatches the ad's token.
     error AdManager__AdTokenMismatch(address expected, address provided);
     /// @notice Provided adRecipient mismatches the ad's configured adRecipient.
@@ -270,6 +270,8 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     error AdManager__NullifierUsed(bytes32 nullifierHash);
     /// @notice Verifier rejected the proof.
     error AdManager__InvalidProof();
+    /// @notice Zero Address error
+    error AdManager__ZeroAddress();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -281,7 +283,10 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param _verifier External zk-proof verifier contract.
      */
     constructor(address admin, IVerifier _verifier) EIP712(_NAME, _VERSION) {
-        _grantRole(ADMIN__ROLE, admin);
+        if (admin == address(0) || address(_verifier) == address(0)) {
+            revert AdManager__ZeroAddress();
+        }
+        _grantRole(ADMIN_ROLE, admin);
         i_verifier = _verifier;
     }
 
@@ -295,7 +300,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param orderPortal Counterpart OrderPortal on the source chain.
      * @param supported Whether the chain is supported.
      */
-    function setChain(uint256 orderChainId, address orderPortal, bool supported) external onlyRole(ADMIN__ROLE) {
+    function setChain(uint256 orderChainId, address orderPortal, bool supported) external onlyRole(ADMIN_ROLE) {
         chains[orderChainId] = ChainInfo({supported: supported, orderPortal: orderPortal});
         emit ChainSet(orderChainId, orderPortal, supported);
     }
@@ -304,7 +309,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @notice Remove a source-chain configuration.
      * @param orderChainId Source chain id to remove.
      */
-    function removeChain(uint256 orderChainId) external onlyRole(ADMIN__ROLE) {
+    function removeChain(uint256 orderChainId) external onlyRole(ADMIN_ROLE) {
         delete chains[orderChainId];
         emit ChainSet(orderChainId, address(0), false);
     }
@@ -320,7 +325,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param orderToken Token on the source (order) chain.
      * @param orderChainId Source chain id.
      */
-    function setTokenRoute(address adToken, address orderToken, uint256 orderChainId) external onlyRole(ADMIN__ROLE) {
+    function setTokenRoute(address adToken, address orderToken, uint256 orderChainId) external onlyRole(ADMIN_ROLE) {
         if (orderToken == address(0) || adToken == address(0)) revert AdManager__TokenZeroAddress();
         if (!chains[orderChainId].supported) revert AdManager__ChainNotSupported(orderChainId);
         tokenRoute[adToken][orderChainId] = orderToken;
@@ -332,7 +337,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param adToken Token on this (ad) chain.
      * @param orderChainId Source chain id.
      */
-    function removeTokenRoute(address adToken, uint256 orderChainId) external onlyRole(ADMIN__ROLE) {
+    function removeTokenRoute(address adToken, uint256 orderChainId) external onlyRole(ADMIN_ROLE) {
         delete tokenRoute[adToken][orderChainId];
         emit TokenRouteRemoved(adToken, orderChainId);
     }
@@ -444,7 +449,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         // Token route: adChainToken (this chain) + orderChainId -> orderChainToken (source).
         address routed = tokenRoute[params.adChainToken][params.orderChainId];
         if (routed == address(0)) revert AdManager__MissingRoute(params.orderChainToken, block.chainid);
-        if (routed != params.orderChainToken) revert Admanager__orderTokenMismatch(routed, params.orderChainToken);
+        if (routed != params.orderChainToken) revert AdManager__OrderTokenMismatch(routed, params.orderChainToken);
 
         // Identity and token checks.
         if (params.adCreator != ad.maker) revert AdManager__NotMaker();
