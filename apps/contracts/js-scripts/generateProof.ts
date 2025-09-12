@@ -9,6 +9,7 @@ const circuitPath = path.resolve(
   __dirname,
   "../../proof_circuit/target/proof_circuit.json"
 );
+
 const circuit = JSON.parse(fs.readFileSync(circuitPath, "utf8"));
 
 export default async function generateProof(): Promise<string> {

@@ -195,6 +195,8 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     error OrderPortal__OrderNotOpen(bytes32 orderHash);
     /// @notice Thrown when zero address is passed
     error OrderPortal__ZeroAddress();
+    /// @notice Thrown when `bridger` is not `msg.sender`.
+    error OrderPortal__BridgerMustBeSender();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -284,6 +286,8 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      */
     function createOrder(OrderParams calldata params) external nonReentrant returns (bytes32 orderHash) {
         if (params.amount == 0) revert OrderPortal__ZeroAmount();
+        if (params.bridger != msg.sender) revert OrderPortal__BridgerMustBeSender();
+        if (params.adRecipient == address(0)) revert OrderPortal__ZeroAddress();
 
         ChainInfo memory ci = chains[params.adChainId];
         if (!ci.supported) revert OrderPortal__AdChainNotSupported(params.adChainId);

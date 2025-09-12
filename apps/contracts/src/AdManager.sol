@@ -252,6 +252,8 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     error AdManager__ChainNotSupported(uint256 chainId);
     /// @notice Provided OrderPortal does not match configured source-chain portal.
     error AdManager__OrderPortalMismatch(address expected, address provided);
+    /// @notice Provided orderChainId does not match the ad's configured orderChainId.
+    error AdManager__OrderChainMismatch(uint256 expected, uint256 provided);
 
     /// @notice No token route exists for (adToken, orderChainId).
     error AdManager__MissingRoute(address orderChainToken, uint256 adChainId);
@@ -438,6 +440,11 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         if (params.amount == 0) revert AdManager__ZeroAmount();
         if (params.bridger == address(0)) revert AdManager__BridgerZero();
         if (params.orderRecipient == address(0)) revert AdManager__RecipientZero();
+
+        // Ad must serve the provided source chain.
+        if (params.orderChainId != ad.orderChainId) {
+            revert AdManager__OrderChainMismatch(ad.orderChainId, params.orderChainId);
+        }
 
         // Source chain must be supported and portal must match (if configured).
         ChainInfo memory ci = chains[params.orderChainId];
