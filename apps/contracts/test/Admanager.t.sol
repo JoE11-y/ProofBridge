@@ -308,7 +308,7 @@ contract AdManagerTest is Test {
     // ─────────────────────────────────────────────────────────────
     // lockForOrder: rejects when order chain not supported
     // ─────────────────────────────────────────────────────────────
-    function test_lock_rejects_orderChainMotSupported() public {
+    function test_lock_rejects_orderChainNotSupported() public {
         test_fundAd_makerOnly();
         uint256 adId = _adId();
         AdManager.OrderParams memory p = _defaultParams(adId);
