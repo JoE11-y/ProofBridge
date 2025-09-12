@@ -1,0 +1,657 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+/**
+ * @title AdManager (Proofbridge)
+ * @notice Makers (LPs) post/close liquidity ads, lock funds against EIP-712 orders,
+ *         and bridgers unlock on this chain with a proof checked by an external verifier.
+ */
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {IVerifier} from "./Verifier.sol";
+import {EfficientHashLib} from "solady/utils/EfficientHashLib.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+
+contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
+    using SafeERC20 for IERC20;
+
+    /*//////////////////////////////////////////////////////////////
+                               CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice EIP-712 domain name.
+    string private constant _NAME = "Proofbridge";
+    /// @notice EIP-712 domain version.
+    string private constant _VERSION = "1";
+
+    /// @notice Minimal EIP-712 domain (name, version).
+    bytes32 public constant DOMAIN_TYPEHASH_MIN = keccak256("EIP712Domain(string name,string version)");
+
+    /**
+     * @notice EIP-712 typehash for `Order` structs.
+     */
+    bytes32 public constant ORDER_TYPEHASH = keccak256(
+        "Order(address orderChainToken,address adChainToken,uint256 amount,address bridger,uint256 orderChainId,address orderPortal,address orderRecipient,uint256 adChainId,address adManager,uint256 adId,address adCreator,address adRecipient,uint256 salt)"
+    );
+
+    /// @notice Admin role identifier.
+    bytes32 public constant ADMIN_ROLE = DEFAULT_ADMIN_ROLE;
+
+    /*//////////////////////////////////////////////////////////////
+                                 STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice External verifier used to validate zero-knowledge proofs.
+    IVerifier public immutable i_verifier;
+
+    /**
+     * @notice Source-chain configuration (where orders originate).
+     * @param supported Whether orders from this chain are accepted.
+     * @param orderPortal Address of the counterpart OrderPortal on the source chain.
+     */
+    struct ChainInfo {
+        bool supported;
+        address orderPortal;
+    }
+
+    /**
+     * @notice Liquidity ad created by a maker on the ad chain (this chain).
+     * @param id Sequential ad identifier.
+     * @param orderChainId Source chain id this ad serves.
+     * @param adRecipient Maker-controlled recipient on the order chain.
+     * @param maker Owner of the ad.
+     * @param token ERC20 token escrowed for payouts on this chain.
+     * @param balance Total token balance deposited into the ad.
+     * @param locked Portion of {balance} currently reserved for open orders.
+     * @param open Whether the ad is accepting new locks/funding.
+     */
+    struct Ad {
+        uint256 id;
+        uint256 orderChainId;
+        address adRecipient;
+        address maker;
+        address token;
+        uint256 balance;
+        uint256 locked;
+        bool open;
+    }
+
+    /**
+     * @notice Parameters describing a cross-chain order to be locked/unlocked.
+     * @dev
+     * - `orderChainToken` lives on the source (order) chain.
+     * - `adChainToken` lives on this (ad) chain and MUST equal the ad's {token}.
+     * - `orderChainId` and `srcOrderPortal` bind the order to its source.
+     * - `adId`, `adCreator`, and `adRecipient` bind to the chosen ad on this chain.
+     * @param orderChainToken Source-chain token address.
+     * @param adChainToken Destination (this chain) token address.
+     * @param amount Amount to reserve/release.
+     * @param bridger Source-chain user initiating the bridge.
+     * @param orderChainId Source chain id.
+     * @param srcOrderPortal Source chain OrderPortal.
+     * @param orderRecipient Recipient on the ad chain to receive payout upon unlock.
+     * @param adId Target ad id on this chain.
+     * @param adCreator Expected maker (ad owner).
+     * @param adRecipient Expected maker-defined recipient on the order chain.
+     * @param salt Unique nonce to avoid hash collisions / replay.
+     */
+    struct OrderParams {
+        address orderChainToken;
+        address adChainToken;
+        uint256 amount;
+        address bridger;
+        uint256 orderChainId;
+        address srcOrderPortal;
+        address orderRecipient;
+        uint256 adId;
+        address adCreator;
+        address adRecipient;
+        uint256 salt;
+    }
+
+    /// @notice Order lifecycle status.
+    enum Status {
+        None, // Not present in storage.
+        Open, // Reserved liquidity.
+        Filled // Unlocked and paid.
+
+    }
+
+    /// @notice Next ad id to assign.
+    uint256 public nextAdId = 1;
+
+    /// @notice Source-chain configs.
+    mapping(uint256 => ChainInfo) public chains;
+
+    /// @notice Supported token routes: ad token → (orderChainId → Order token)
+    mapping(address => mapping(uint256 => address)) public tokenRoute;
+
+    /// @notice Ads by id.
+    mapping(uint256 => Ad) public ads;
+
+    /// @notice Order status by EIP-712 hash.
+    mapping(bytes32 => Status) public orders;
+
+    /// @notice Consumed nullifiers to prevent reuse across proofs.
+    mapping(bytes32 => bool) public nullifierUsed;
+
+    /*//////////////////////////////////////////////////////////////
+                                 EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Emitted when a source chain configuration is set/updated.
+     * @param chainId Source chain id.
+     * @param orderPortal Source chain OrderPortal address.
+     * @param supported Whether orders from this chain are accepted.
+     */
+    event ChainSet(uint256 indexed chainId, address indexed orderPortal, bool supported);
+
+    /**
+     * @notice Emitted when a token route is configured.
+     * @param orderChainToken Token on the order (source) chain.
+     * @param adChainId Destination chain id (equals `block.chainid` for this deployment).
+     * @param adChainToken Token on this (ad) chain.
+     */
+    event TokenRouteSet(address indexed orderChainToken, uint256 indexed adChainId, address indexed adChainToken);
+
+    /**
+     * @notice Emitted when a token route is removed.
+     * @param orderChainToken Token on the order (source) chain.
+     * @param adChainId Destination chain id (this chain).
+     */
+    event TokenRouteRemoved(address indexed adToken, address indexed orderChainToken, uint256 indexed adChainId);
+
+    /**
+     * @notice Emitted when an ad is created.
+     * @param adId New ad id.
+     * @param maker Ad owner.
+     * @param token Escrowed token on this chain.
+     * @param orderChainId Source chain this ad serves.
+     */
+    event AdCreated(uint256 indexed adId, address indexed maker, address indexed token, uint256 orderChainId);
+
+    /**
+     * @notice Emitted when an ad is funded.
+     * @param adId Ad identifier.
+     * @param maker Funder (must be the ad owner).
+     * @param amount Amount deposited.
+     * @param newBalance New ad balance.
+     */
+    event AdFunded(uint256 indexed adId, address indexed maker, uint256 amount, uint256 newBalance);
+
+    /**
+     * @notice Emitted when ad funds are withdrawn.
+     * @param adId Ad identifier.
+     * @param maker Withdrawer (must be the ad owner).
+     * @param amount Amount withdrawn.
+     * @param newBalance New ad balance.
+     */
+    event AdWithdrawn(uint256 indexed adId, address indexed maker, uint256 amount, uint256 newBalance);
+
+    /**
+     * @notice Emitted when an ad is closed.
+     * @param adId Ad identifier.
+     * @param maker Ad owner.
+     */
+    event AdClosed(uint256 indexed adId, address indexed maker);
+
+    /**
+     * @notice Emitted when liquidity is locked for an order.
+     * @param adId Ad used for the lock.
+     * @param orderHash EIP-712 order hash.
+     * @param maker Ad owner.
+     * @param token Escrowed token on this chain.
+     * @param amount Amount locked.
+     * @param bridger Bridger address from the order.
+     * @param recipient Recipient to be paid on unlock (this chain).
+     */
+    event OrderLocked(
+        uint256 indexed adId,
+        bytes32 indexed orderHash,
+        address maker,
+        address token,
+        uint256 amount,
+        address bridger,
+        address recipient
+    );
+
+    /**
+     * @notice Emitted when an order is unlocked by a valid proof.
+     * @param orderHash EIP-712 order hash.
+     * @param recipient Recipient paid on this chain.
+     * @param nullifierHash Consumed nullifier to prevent reuse.
+     */
+    event OrderUnlocked(bytes32 indexed orderHash, address indexed recipient, bytes32 nullifierHash);
+
+    /*//////////////////////////////////////////////////////////////
+                                  ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Zero address provided where non-zero is required.
+    error AdManager__TokenZeroAddress();
+    /// @notice Amount is zero where non-zero is required.
+    error AdManager__ZeroAmount();
+    /// @notice Ad does not exist.
+    error AdManager__AdNotFound();
+    /// @notice Caller is not the ad's maker.
+    error AdManager__NotMaker();
+    /// @notice Ad is closed.
+    error AdManager__AdClosed();
+    /// @notice Insufficient available liquidity to perform the action.
+    error AdManager__InsufficientLiquidity();
+    /// @notice Bridger address is zero.
+    error AdManager__BridgerZero();
+    /// @notice Recipient address is zero.
+    error AdManager__RecipientZero();
+
+    /// @notice Source chain not supported.
+    error AdManager__ChainNotSupported(uint256 chainId);
+    /// @notice Provided OrderPortal does not match configured source-chain portal.
+    error AdManager__OrderPortalMismatch(address expected, address provided);
+    /// @notice Provided orderChainId does not match the ad's configured orderChainId.
+    error AdManager__OrderChainMismatch(uint256 expected, uint256 provided);
+
+    /// @notice No token route exists for (adToken, orderChainId).
+    error AdManager__MissingRoute(address orderChainToken, uint256 adChainId);
+    /// @notice Source token mismatches the configured route.
+    error AdManager__OrderTokenMismatch(address expected, address provided);
+    /// @notice Destination (ad-chain) token mismatches the ad's token.
+    error AdManager__AdTokenMismatch(address expected, address provided);
+    /// @notice Provided adRecipient mismatches the ad's configured adRecipient.
+    error AdManager__AdRecipientMismatch(address expected, address provided);
+
+    /// @notice Order already opened for the computed hash.
+    error AdManager__OrderExists(bytes32 orderHash);
+    /// @notice Order not open.
+    error AdManager__OrderNotOpen(bytes32 orderHash);
+    /// @notice Nullifier already used.
+    error AdManager__NullifierUsed(bytes32 nullifierHash);
+    /// @notice Verifier rejected the proof.
+    error AdManager__InvalidProof();
+    /// @notice Zero Address error
+    error AdManager__ZeroAddress();
+
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Deploys the AdManager and assigns the admin and verifier.
+     * @param admin Address granted {ADMIN__ROLE}.
+     * @param _verifier External zk-proof verifier contract.
+     */
+    constructor(address admin, IVerifier _verifier) EIP712(_NAME, _VERSION) {
+        if (admin == address(0) || address(_verifier) == address(0)) {
+            revert AdManager__ZeroAddress();
+        }
+        _grantRole(ADMIN_ROLE, admin);
+        i_verifier = _verifier;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              ADMIN: CHAINS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Add or update a source-chain configuration.
+     * @param orderChainId Source chain id.
+     * @param orderPortal Counterpart OrderPortal on the source chain.
+     * @param supported Whether the chain is supported.
+     */
+    function setChain(uint256 orderChainId, address orderPortal, bool supported) external onlyRole(ADMIN_ROLE) {
+        chains[orderChainId] = ChainInfo({supported: supported, orderPortal: orderPortal});
+        emit ChainSet(orderChainId, orderPortal, supported);
+    }
+
+    /**
+     * @notice Remove a source-chain configuration.
+     * @param orderChainId Source chain id to remove.
+     */
+    function removeChain(uint256 orderChainId) external onlyRole(ADMIN_ROLE) {
+        delete chains[orderChainId];
+        emit ChainSet(orderChainId, address(0), false);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          ADMIN: TOKEN ROUTES
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Configure a token route mapping from a source chain to this chain.
+     * @dev Sets `tokenRoute[adToken][orderChainId] = orderToken`.
+     * @param adToken Token on this (ad) chain.
+     * @param orderToken Token on the source (order) chain.
+     * @param orderChainId Source chain id.
+     */
+    function setTokenRoute(address adToken, address orderToken, uint256 orderChainId) external onlyRole(ADMIN_ROLE) {
+        if (orderToken == address(0) || adToken == address(0)) revert AdManager__TokenZeroAddress();
+        if (!chains[orderChainId].supported) revert AdManager__ChainNotSupported(orderChainId);
+        tokenRoute[adToken][orderChainId] = orderToken;
+        emit TokenRouteSet(orderToken, orderChainId, adToken);
+    }
+
+    /**
+     * @notice Remove a token route mapping.
+     * @param adToken Token on this (ad) chain.
+     * @param orderChainId Source chain id.
+     */
+    function removeTokenRoute(address adToken, uint256 orderChainId) external onlyRole(ADMIN_ROLE) {
+        address orderToken = tokenRoute[adToken][orderChainId];
+        delete tokenRoute[adToken][orderChainId];
+        emit TokenRouteRemoved(adToken, orderToken, orderChainId);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           MAKER ACTIONS — ADS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Create a new liquidity ad to serve orders from `orderChainId`.
+     * @dev Requires an existing token route for `(adToken, orderChainId)`.
+     * @param adToken ERC20 token to escrow for payouts on this chain.
+     * @param orderChainId Source chain id this ad intends to serve.
+     * @param adRecipient Maker-defined recipient on the order chain (checked in {lockForOrder}).
+     * @return adId Newly created ad id.
+     */
+    function createAd(address adToken, uint256 orderChainId, address adRecipient) external returns (uint256 adId) {
+        if (adToken == address(0)) revert AdManager__TokenZeroAddress();
+        if (adRecipient == address(0)) revert AdManager__RecipientZero();
+
+        if (tokenRoute[adToken][orderChainId] == address(0)) {
+            revert AdManager__ChainNotSupported(orderChainId);
+        }
+
+        adId = nextAdId++;
+        ads[adId] = Ad({
+            id: adId,
+            orderChainId: orderChainId,
+            adRecipient: adRecipient,
+            maker: msg.sender,
+            token: adToken,
+            balance: 0,
+            locked: 0,
+            open: true
+        });
+        emit AdCreated(adId, msg.sender, adToken, orderChainId);
+    }
+
+    /**
+     * @notice Fund an existing ad with `amount` of its ERC20 token.
+     * @param adId Ad id to fund.
+     * @param amount Amount to deposit.
+     */
+    function fundAd(uint256 adId, uint256 amount) external nonReentrant {
+        Ad storage ad = __getAdOwned(adId, msg.sender);
+        if (!ad.open) revert AdManager__AdClosed();
+        if (amount == 0) revert AdManager__ZeroAmount();
+        IERC20(ad.token).safeTransferFrom(msg.sender, address(this), amount);
+        ad.balance += amount;
+        emit AdFunded(adId, msg.sender, amount, ad.balance);
+    }
+
+    /**
+     * @notice Withdraw unfrozen liquidity from an ad.
+     * @param adId Ad id to withdraw from.
+     * @param amount Amount to withdraw.
+     * @param to Recipient address for the withdrawn tokens.
+     */
+    function withdrawAd(uint256 adId, uint256 amount, address to) external nonReentrant {
+        Ad storage ad = __getAdOwned(adId, msg.sender);
+        if (amount == 0) revert AdManager__ZeroAmount();
+        uint256 available = ad.balance - ad.locked;
+        if (amount > available) revert AdManager__InsufficientLiquidity();
+        ad.balance -= amount;
+        IERC20(ad.token).safeTransfer(to, amount);
+        emit AdWithdrawn(adId, msg.sender, amount, ad.balance);
+    }
+
+    /**
+     * @notice Close an ad and withdraw any remaining funds.
+     * @dev Fails if the ad has any locked liquidity.
+     * @param adId Ad id to close.
+     * @param to Recipient of the remaining tokens.
+     */
+    function closeAd(uint256 adId, address to) external nonReentrant {
+        Ad storage ad = __getAdOwned(adId, msg.sender);
+        if (ad.locked != 0) revert AdManager__InsufficientLiquidity(); // has active locks
+        uint256 remaining = ad.balance;
+        ad.balance = 0;
+        ad.open = false;
+        if (remaining > 0) IERC20(ad.token).safeTransfer(to, remaining);
+        emit AdClosed(adId, msg.sender);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                     MAKER ACTION — LOCK FOR AN ORDER
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Reserve `params.amount` from `params.adId` to fulfill an order.
+     * @dev Validates chain config, portal, route, ad identity, recipients, and liquidity.
+     *      Opens the order by setting its status to {Status.Open}.
+     * @param params Order parameters (see {OrderParams}).
+     * @return orderHash The EIP-712 order hash that identifies this reservation.
+     */
+    function lockForOrder(OrderParams calldata params) external nonReentrant returns (bytes32 orderHash) {
+        Ad storage ad = __getAdOwned(params.adId, msg.sender);
+        if (!ad.open) revert AdManager__AdClosed();
+        if (params.amount == 0) revert AdManager__ZeroAmount();
+        if (params.bridger == address(0)) revert AdManager__BridgerZero();
+        if (params.orderRecipient == address(0)) revert AdManager__RecipientZero();
+
+        // Source chain must be supported and portal must match (if configured).
+        ChainInfo memory ci = chains[params.orderChainId];
+        if (!ci.supported) revert AdManager__ChainNotSupported(params.orderChainId);
+        if (ci.orderPortal != address(0) && ci.orderPortal != params.srcOrderPortal) {
+            revert AdManager__OrderPortalMismatch(ci.orderPortal, params.srcOrderPortal);
+        }
+
+        // Ad must serve the provided source chain.
+        if (params.orderChainId != ad.orderChainId) {
+            revert AdManager__OrderChainMismatch(ad.orderChainId, params.orderChainId);
+        }
+
+        // Token route: adChainToken (this chain) + orderChainId -> orderChainToken (source).
+        address routed = tokenRoute[params.adChainToken][params.orderChainId];
+        if (routed == address(0)) revert AdManager__MissingRoute(params.orderChainToken, block.chainid);
+        if (routed != params.orderChainToken) revert AdManager__OrderTokenMismatch(routed, params.orderChainToken);
+
+        // Identity and token checks.
+        if (params.adCreator != ad.maker) revert AdManager__NotMaker();
+        if (params.adChainToken != ad.token) revert AdManager__AdTokenMismatch(ad.token, params.adChainToken);
+        if (params.adRecipient != ad.adRecipient) {
+            revert AdManager__AdRecipientMismatch(ad.adRecipient, params.adRecipient);
+        }
+
+        // Liquidity check.
+        uint256 available = ad.balance - ad.locked;
+        if (params.amount > available) revert AdManager__InsufficientLiquidity();
+
+        // Open order.
+        orderHash = _hashOrder(params, block.chainid, address(this));
+        if (orders[orderHash] != Status.None) revert AdManager__OrderExists(orderHash);
+
+        ad.locked += params.amount;
+        orders[orderHash] = Status.Open;
+
+        emit OrderLocked(ad.id, orderHash, ad.maker, ad.token, params.amount, params.bridger, params.orderRecipient);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                     BRIDGER ACTION — UNLOCK WITH PROOF
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Unlock previously reserved funds after presenting a valid zk-proof.
+     * @dev Consumes `nullifierHash` and moves order status to {Status.Filled}.
+     * @param params Original order parameters that hash to the open `orderHash`.
+     * @param nullifierHash One-time nullifier preventing reuse of this proof.
+     * @param proof Opaque zk-proof bytes for the external verifier.
+     */
+    function unlock(OrderParams calldata params, bytes32 nullifierHash, bytes calldata proof) external nonReentrant {
+        bytes32 orderHash = _hashOrder(params, block.chainid, address(this));
+
+        if (orders[orderHash] != Status.Open) revert AdManager__OrderNotOpen(orderHash);
+        if (nullifierUsed[nullifierHash]) revert AdManager__NullifierUsed(nullifierHash);
+
+        // Build public inputs for the verifier
+        bytes32[] memory publicInputs = buildPublicInputs(nullifierHash, params.adCreator, params.bridger, orderHash);
+
+        if (!i_verifier.verify(proof, publicInputs)) revert AdManager__InvalidProof();
+
+        nullifierUsed[nullifierHash] = true;
+        orders[orderHash] = Status.Filled;
+
+        // Pay recipient on this chain from the ad's escrowed token.
+        Ad storage ad = ads[params.adId];
+        ad.locked -= params.amount;
+        IERC20(ad.token).safeTransfer(params.orderRecipient, params.amount);
+
+        emit OrderUnlocked(orderHash, params.orderRecipient, nullifierHash);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           VIEWS / SMALL HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Return the currently available (unlocked) liquidity for an ad.
+     * @param adId Ad identifier.
+     * @return amount Available token amount.
+     */
+    function availableLiquidity(uint256 adId) public view returns (uint256 amount) {
+        Ad storage ad = ads[adId];
+        if (ad.maker == address(0)) return 0;
+        return ad.balance - ad.locked;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                               HASHING
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Compute the final EIP-712 typed-data digest for an order.
+     * @param p Order parameters.
+     * @param adChainId Destination/current chain id (typically `block.chainid`).
+     * @param dstAdManager Destination/current chain contract (typically `address(this)`).
+     * @return digest The EIP-712 order digest.
+     */
+    function _hashOrder(OrderParams calldata p, uint256 adChainId, address dstAdManager)
+        internal
+        view
+        returns (bytes32 digest)
+    {
+        return _hashTypedDataV4(_structHash(p, adChainId, dstAdManager));
+    }
+
+    /**
+     * @notice Compute the struct hash for `Order`.
+     * @dev Field order must match {ORDER_TYPEHASH}.
+     * @param p Order parameters.
+     * @param adChainId Destination/current chain id.
+     * @param dstAdManager Destination/current chain contract address.
+     * @return structHash Keccak-256 struct hash.
+     */
+    function _structHash(OrderParams calldata p, uint256 adChainId, address dstAdManager)
+        internal
+        pure
+        returns (bytes32 structHash)
+    {
+        bytes32[] memory buf = EfficientHashLib.malloc(14);
+        EfficientHashLib.set(buf, 0, ORDER_TYPEHASH);
+        EfficientHashLib.set(buf, 1, toBytes32(p.orderChainToken));
+        EfficientHashLib.set(buf, 2, toBytes32(p.adChainToken));
+        EfficientHashLib.set(buf, 3, p.amount);
+        EfficientHashLib.set(buf, 4, toBytes32(p.bridger));
+        EfficientHashLib.set(buf, 5, p.orderChainId);
+        EfficientHashLib.set(buf, 6, toBytes32(p.srcOrderPortal));
+        EfficientHashLib.set(buf, 7, toBytes32(p.orderRecipient));
+        EfficientHashLib.set(buf, 8, adChainId);
+        EfficientHashLib.set(buf, 9, toBytes32(dstAdManager));
+        EfficientHashLib.set(buf, 10, p.adId);
+        EfficientHashLib.set(buf, 11, toBytes32(p.adCreator));
+        EfficientHashLib.set(buf, 12, toBytes32(p.adRecipient));
+        EfficientHashLib.set(buf, 13, p.salt);
+        return EfficientHashLib.hash(buf);
+    }
+
+    /**
+     * @notice Cast an address to bytes32 (left-padded).
+     * @param value Address to cast.
+     * @return out 32-byte left-padded representation.
+     */
+    function toBytes32(address value) internal pure returns (bytes32 out) {
+        return bytes32(uint256(uint160(value)));
+    }
+
+    /**
+     * @notice Builds an array of public inputs for zk-proof verification.
+     * @dev Encodes the provided orderHash and combines it with other parameters into a bytes32 array.
+     * @param nullifierHash The hash used to prevent double-spending in zk-proofs.
+     * @param adCreator The address of the ad creator.
+     * @param bridger The address of the entity bridging the proof.
+     * @param orderHash The hash representing the order details.
+     * @return inputs The constructed array of public inputs for zk-proof verification.
+     */
+    function buildPublicInputs(bytes32 nullifierHash, address adCreator, address bridger, bytes32 orderHash)
+        internal
+        pure
+        returns (bytes32[] memory inputs)
+    {
+        bytes memory oHash = abi.encodePacked(orderHash);
+        uint256 offset = 4;
+        inputs = new bytes32[](offset + oHash.length);
+
+        inputs[0] = nullifierHash;
+        inputs[1] = bytes32(uint256(uint160(adCreator)));
+        inputs[2] = bytes32(uint256(uint160(bridger)));
+        inputs[3] = bytes32(uint256(1));
+
+        for (uint256 i = 0; i < oHash.length; ++i) {
+            inputs[offset + i] = bytes32(uint256(uint8(oHash[i])));
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    EIP-712 — MINIMAL DOMAIN (NAME, VERSION)
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Compute the minimal domain separator (name, version).
+     * @dev Intentionally omits chainId and verifyingContract.
+     * @return sep Domain separator used by {_hashTypedDataV4}.
+     */
+    function _domainSeparatorProofbridge() internal pure returns (bytes32 sep) {
+        return keccak256(abi.encode(DOMAIN_TYPEHASH_MIN, keccak256(bytes(_NAME)), keccak256(bytes(_VERSION))));
+    }
+
+    /**
+     * @inheritdoc EIP712
+     * @dev Uses the minimal domain from {_domainSeparatorProofbridge}.
+     * @param structHash Struct hash (per EIP-712) to bind with the domain.
+     * @return digest Final typed-data digest.
+     */
+    function _hashTypedDataV4(bytes32 structHash) internal view virtual override returns (bytes32 digest) {
+        return MessageHashUtils.toTypedDataHash(_domainSeparatorProofbridge(), structHash);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              INTERNAL GUARDS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Load an ad and assert `maker` is the owner.
+     * @param adId Ad identifier.
+     * @param maker Expected owner (usually `msg.sender`).
+     * @return ad Storage pointer to the ad.
+     */
+    function __getAdOwned(uint256 adId, address maker) internal view returns (Ad storage ad) {
+        ad = ads[adId];
+        if (ad.maker == address(0)) revert AdManager__AdNotFound();
+        if (ad.maker != maker) revert AdManager__NotMaker();
+    }
+}

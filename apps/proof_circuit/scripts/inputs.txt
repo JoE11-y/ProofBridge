@@ -6,4 +6,4 @@ bridger_pub_key = "0x042941c1a9886df79c0815dde74982e90b360b31c9c9b5e0b5496fe3990
 bridger_sig = "0xe4d027ea0c65115856a1214e4424dc23d98c4d30fd6479b23be12b4bbe3e7b6c4fde35c6eceded70b07c983544b00bf8c46c76bc10d2190c81a62be53e9bfd171c"
 ad_contract = "false"
 msg_hash = "0x1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8"
-nullfier_hash = ""
+nullifier_hash = ""
