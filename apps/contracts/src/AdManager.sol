@@ -441,16 +441,16 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         if (params.bridger == address(0)) revert AdManager__BridgerZero();
         if (params.orderRecipient == address(0)) revert AdManager__RecipientZero();
 
-        // Ad must serve the provided source chain.
-        if (params.orderChainId != ad.orderChainId) {
-            revert AdManager__OrderChainMismatch(ad.orderChainId, params.orderChainId);
-        }
-
         // Source chain must be supported and portal must match (if configured).
         ChainInfo memory ci = chains[params.orderChainId];
         if (!ci.supported) revert AdManager__ChainNotSupported(params.orderChainId);
         if (ci.orderPortal != address(0) && ci.orderPortal != params.srcOrderPortal) {
             revert AdManager__OrderPortalMismatch(ci.orderPortal, params.srcOrderPortal);
+        }
+
+        // Ad must serve the provided source chain.
+        if (params.orderChainId != ad.orderChainId) {
+            revert AdManager__OrderChainMismatch(ad.orderChainId, params.orderChainId);
         }
 
         // Token route: adChainToken (this chain) + orderChainId -> orderChainToken (source).

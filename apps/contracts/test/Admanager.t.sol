@@ -306,16 +306,40 @@ contract AdManagerTest is Test {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // lockForOrder: rejects when chain unsupported
+    // lockForOrder: rejects when order chain not supported
     // ─────────────────────────────────────────────────────────────
-    function test_lock_rejects_chainUnsupported() public {
+    function test_lock_rejects_orderChainMotSupported() public {
         test_fundAd_makerOnly();
         uint256 adId = _adId();
         AdManager.OrderParams memory p = _defaultParams(adId);
         p.orderChainId = unsupportedChainId;
 
         vm.prank(maker);
-        vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__ChainNotSupported.selector, unsupportedChainId));
+        vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__ChainNotSupported.selector, p.orderChainId));
+        adManager.lockForOrder(p);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // lockForOrder: rejects when param chain mismatch
+    // ─────────────────────────────────────────────────────────────
+    function test_lock_rejects_orderChainMismatch() public {
+        uint256 anotherSupportedChainId = 5;
+        address anotherOrderPortal = makeAddr("anotherOrderPortal");
+        vm.startPrank(admin);
+        adManager.setChain(anotherSupportedChainId, anotherOrderPortal, true);
+        adManager.setTokenRoute(makeAddr("randomAdToken"), makeAddr("randomOrderToken"), anotherSupportedChainId);
+        vm.stopPrank();
+
+        test_fundAd_makerOnly();
+        uint256 adId = _adId();
+        AdManager.OrderParams memory p = _defaultParams(adId);
+        p.orderChainId = anotherSupportedChainId;
+        p.srcOrderPortal = anotherOrderPortal;
+
+        vm.prank(maker);
+        vm.expectRevert(
+            abi.encodeWithSelector(AdManager.AdManager__OrderChainMismatch.selector, orderChainId, p.orderChainId)
+        );
         adManager.lockForOrder(p);
     }
 
