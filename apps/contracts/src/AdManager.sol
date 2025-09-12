@@ -163,7 +163,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param orderChainToken Token on the order (source) chain.
      * @param adChainId Destination chain id (this chain).
      */
-    event TokenRouteRemoved(address indexed orderChainToken, uint256 indexed adChainId);
+    event TokenRouteRemoved(address indexed adToken, address indexed orderChainToken, uint256 indexed adChainId);
 
     /**
      * @notice Emitted when an ad is created.
@@ -340,8 +340,9 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param orderChainId Source chain id.
      */
     function removeTokenRoute(address adToken, uint256 orderChainId) external onlyRole(ADMIN_ROLE) {
+        address orderToken = tokenRoute[adToken][orderChainId];
         delete tokenRoute[adToken][orderChainId];
-        emit TokenRouteRemoved(adToken, orderChainId);
+        emit TokenRouteRemoved(adToken, orderToken, orderChainId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -358,6 +359,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      */
     function createAd(address adToken, uint256 orderChainId, address adRecipient) external returns (uint256 adId) {
         if (adToken == address(0)) revert AdManager__TokenZeroAddress();
+        if (adRecipient == address(0)) revert AdManager__RecipientZero();
 
         if (tokenRoute[adToken][orderChainId] == address(0)) {
             revert AdManager__ChainNotSupported(orderChainId);

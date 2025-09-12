@@ -198,7 +198,7 @@ contract AdManagerTest is Test {
         adManager.setTokenRoute(address(adToken), orderToken, orderChainId);
 
         vm.expectEmit(true, true, true, true);
-        emit AdManager.TokenRouteRemoved(address(adToken), orderChainId);
+        emit AdManager.TokenRouteRemoved(address(adToken), orderToken, orderChainId);
         adManager.removeTokenRoute(address(adToken), orderChainId);
         vm.stopPrank();
 

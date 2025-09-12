@@ -21,6 +21,7 @@ contract Proofbridge is Script {
     function run() external {
         // --- Load deployer ---
         uint256 pk = vm.envUint("PRIVATE_KEY");
+        require(pk != 0, "PRIVATE_KEY not set");
         address deployer = vm.addr(pk);
 
         // --- Choose admin (defaults to deployer, can override via ADMIN env var) ---
