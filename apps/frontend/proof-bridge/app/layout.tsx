@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import localFont from "next/font/local"
 import "./globals.css"
+import { AntConfigProvider } from "@/components/shared/AntConfigProvider"
+import { SmoothScroll } from "@/components/shared/SmoothScroller"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +38,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${perfectlyNineties.variable} antialiased`}
       >
-        {children}
+        <AntConfigProvider>
+          <SmoothScroll>{children}</SmoothScroll>
+        </AntConfigProvider>
       </body>
     </html>
   )

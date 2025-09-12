@@ -2,10 +2,39 @@
 import { Button } from "antd"
 import { ArrowRight } from "lucide-react"
 import React from "react"
+import { SpecialButton } from "../ui/SpecialButton"
+import ScrollTrigger from "gsap/dist/ScrollTrigger"
+import gsap from "gsap"
+import { useGSAP } from "@gsap/react"
+
+gsap.registerPlugin(ScrollTrigger)
 
 export const Hero = () => {
+  useGSAP(() => {
+    gsap.to(".hero-bl-text", {
+      scrollTrigger: {
+        trigger: ".landing-about",
+        scrub: true,
+        start: "top 100%",
+      },
+      opacity: 0,
+      y: -200,
+      duration: 0.5,
+    })
+
+    gsap.to(".hero-overlay", {
+      scrollTrigger: {
+        trigger: ".landing-about",
+        scrub: true,
+        start: "top 100%",
+      },
+      backgroundColor: "#000",
+      opacity: 1,
+    })
+  })
+
   return (
-    <div className="relative overflow-x-hidden md:h-screen">
+    <div className="relative overflow-x-hidden md:h-screen landing-hero">
       <div className="absolute top-0 left-0 w-screen h-screen ">
         <video
           src="/bridge-2.mp4"
@@ -21,9 +50,9 @@ export const Hero = () => {
           }}
         />
       </div>
-      <div className="absolute top-0 left-0 w-screen h-screen bg-black/45 z-[2]"></div>
+      <div className="absolute top-0 left-0 w-screen h-screen bg-black/45 z-[2] hero-overlay"></div>
 
-      <div className="flex flex-col justify-between h-full relative z-[10] p-4 md:px-10 py-3 md:pb-10">
+      <div className="flex flex-col justify-between h-full relative z-[10] p-4 md:px-10 py-3 md:pb-10 hero-bl-text">
         <div></div>
         <div className="max-w-[1200px] font-perfectly-nineties">
           <h2 className="text-5xl">Game changing </h2>
@@ -45,12 +74,7 @@ export const Hero = () => {
             >
               Launch app
             </Button>
-            <Button
-              className="!bg-[#AEF78E] !text-black !h-[45px] md:w-[150px] !rounded-xl !border-0 !text-[16px] !items-center !leading-0"
-              iconPosition="end"
-            >
-              Read docs
-            </Button>
+            <SpecialButton>Read Docs</SpecialButton>
           </div>
         </div>
       </div>
