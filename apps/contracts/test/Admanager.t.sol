@@ -16,7 +16,7 @@ contract MockAdManager is AdManager {
 }
 
 contract AdManagerTest is Test {
-    MockAdManager internal mgr;
+    MockAdManager internal adManager;
     MockVerifier internal verifier;
     ERC20Mock internal adToken;
 
@@ -43,7 +43,7 @@ contract AdManagerTest is Test {
 
     function setUp() public {
         verifier = new MockVerifier(true);
-        mgr = new MockAdManager(admin, IVerifier(address(verifier)));
+        adManager = new MockAdManager(admin, IVerifier(address(verifier)));
         adChainId = block.chainid;
 
         adToken = new ERC20Mock();
@@ -54,7 +54,7 @@ contract AdManagerTest is Test {
            HELPER
     //////////////////////////////////////////////////////////////*/
     function _adId() internal view returns (uint256) {
-        return mgr.nextAdId() - 1;
+        return adManager.nextAdId() - 1;
     }
 
     function _defaultParams(uint256 adId) internal view returns (AdManager.OrderParams memory p) {
@@ -80,11 +80,11 @@ contract AdManagerTest is Test {
         // nonAdmin should revert when calling onlyRole function
         vm.prank(nonAdmin);
         vm.expectRevert();
-        mgr.setChain(orderChainId, orderPortal, true);
+        adManager.setChain(orderChainId, orderPortal, true);
 
         // admin should succeed
         vm.prank(admin);
-        mgr.setChain(orderChainId, orderPortal, true); // should succeed
+        adManager.setChain(orderChainId, orderPortal, true); // should succeed
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -95,7 +95,7 @@ contract AdManagerTest is Test {
     function test_setChain_onlyAdmin() public {
         vm.prank(nonAdmin);
         vm.expectRevert();
-        mgr.setChain(orderChainId, orderPortal, true);
+        adManager.setChain(orderChainId, orderPortal, true);
     }
 
     // Test that setChain updates state and emits the correct event
@@ -103,9 +103,9 @@ contract AdManagerTest is Test {
         vm.prank(admin);
         vm.expectEmit(true, true, true, true);
         emit AdManager.ChainSet(orderChainId, orderPortal, true);
-        mgr.setChain(orderChainId, orderPortal, true);
+        adManager.setChain(orderChainId, orderPortal, true);
 
-        (bool supported, address portal) = mgr.chains(orderChainId);
+        (bool supported, address portal) = adManager.chains(orderChainId);
         assertTrue(supported, "chain not supported");
         assertEq(portal, orderPortal, "portal mismatch");
     }
@@ -113,25 +113,25 @@ contract AdManagerTest is Test {
     // Test that only admin can call removeChain
     function test_removeChain_onlyAdmin() public {
         vm.startPrank(admin);
-        mgr.setChain(orderChainId, orderPortal, true);
+        adManager.setChain(orderChainId, orderPortal, true);
         vm.stopPrank();
 
         vm.prank(nonAdmin);
         vm.expectRevert();
-        mgr.removeChain(orderChainId);
+        adManager.removeChain(orderChainId);
     }
 
     // Test that removeChain clears state and emits the correct event
     function test_removeChain_clearsStateAndEmits() public {
         vm.startPrank(admin);
-        mgr.setChain(orderChainId, orderPortal, true);
+        adManager.setChain(orderChainId, orderPortal, true);
 
         vm.expectEmit(true, true, true, true);
         emit AdManager.ChainSet(orderChainId, address(0), false);
-        mgr.removeChain(orderChainId);
+        adManager.removeChain(orderChainId);
         vm.stopPrank();
 
-        (bool supported, address portal) = mgr.chains(orderChainId);
+        (bool supported, address portal) = adManager.chains(orderChainId);
         assertTrue(!supported, "chain still supported");
         assertEq(portal, address(0), "portal not cleared");
     }
@@ -144,65 +144,65 @@ contract AdManagerTest is Test {
     function test_setTokenRoute_onlyAdmin() public {
         vm.prank(nonAdmin);
         vm.expectRevert();
-        mgr.setTokenRoute(address(adToken), orderToken, orderChainId);
+        adManager.setTokenRoute(address(adToken), orderToken, orderChainId);
     }
 
     // Test that setTokenRoute rejects zero addresses
     function test_setTokenRoute_rejectsZeroAddresses() public {
         vm.prank(admin);
         vm.expectRevert(AdManager.AdManager__TokenZeroAddress.selector);
-        mgr.setTokenRoute(address(0), orderToken, orderChainId);
+        adManager.setTokenRoute(address(0), orderToken, orderChainId);
 
         vm.prank(admin);
         vm.expectRevert(AdManager.AdManager__TokenZeroAddress.selector);
-        mgr.setTokenRoute(address(adToken), address(0), orderChainId);
+        adManager.setTokenRoute(address(adToken), address(0), orderChainId);
     }
 
     // Test that setTokenRoute rejects unsupported chain
     function test_setTokenRoute_rejectsUnsupportedChain() public {
         vm.prank(admin);
         vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__ChainNotSupported.selector, orderChainId));
-        mgr.setTokenRoute(address(adToken), orderToken, orderChainId);
+        adManager.setTokenRoute(address(adToken), orderToken, orderChainId);
     }
 
     // Test that setTokenRoute sets the route and emits the correct event
     function test_setTokenRoute_setsAndEmits() public {
         vm.startPrank(admin);
-        mgr.setChain(orderChainId, orderPortal, true);
+        adManager.setChain(orderChainId, orderPortal, true);
 
         vm.expectEmit(true, true, true, true);
         emit AdManager.TokenRouteSet(orderToken, orderChainId, address(adToken));
-        mgr.setTokenRoute(address(adToken), orderToken, orderChainId);
+        adManager.setTokenRoute(address(adToken), orderToken, orderChainId);
         vm.stopPrank();
 
-        address routed = mgr.tokenRoute(address(adToken), orderChainId);
+        address routed = adManager.tokenRoute(address(adToken), orderChainId);
         assertEq(routed, orderToken, "route not set");
     }
 
     // Test that only admin can call removeTokenRoute
     function test_removeTokenRoute_onlyAdmin() public {
         vm.startPrank(admin);
-        mgr.setChain(orderChainId, orderPortal, true);
-        mgr.setTokenRoute(address(adToken), orderToken, orderChainId);
+        adManager.setChain(orderChainId, orderPortal, true);
+        adManager.setTokenRoute(address(adToken), orderToken, orderChainId);
         vm.stopPrank();
 
         vm.prank(nonAdmin);
         vm.expectRevert();
-        mgr.removeTokenRoute(address(adToken), orderChainId);
+        adManager.removeTokenRoute(address(adToken), orderChainId);
     }
 
     // Test that removeTokenRoute clears the route and emits the correct event
     function test_removeTokenRoute_clearsAndEmits() public {
         vm.startPrank(admin);
-        mgr.setChain(orderChainId, orderPortal, true);
-        mgr.setTokenRoute(address(adToken), orderToken, orderChainId);
+        adManager.setChain(orderChainId, orderPortal, true);
+        adManager.setTokenRoute(address(adToken), orderToken, orderChainId);
 
         vm.expectEmit(true, true, true, true);
         emit AdManager.TokenRouteRemoved(address(adToken), orderChainId);
-        mgr.removeTokenRoute(address(adToken), orderChainId);
+        adManager.removeTokenRoute(address(adToken), orderChainId);
         vm.stopPrank();
 
-        address routed = mgr.tokenRoute(address(adToken), orderChainId);
+        address routed = adManager.tokenRoute(address(adToken), orderChainId);
         assertEq(routed, address(0), "route not removed");
     }
 
@@ -214,27 +214,27 @@ contract AdManagerTest is Test {
     function test_createAd_rejectsZeroAdToken() public {
         vm.prank(maker);
         vm.expectRevert(AdManager.AdManager__TokenZeroAddress.selector);
-        mgr.createAd(address(0), orderChainId, address(0xDEAD));
+        adManager.createAd(address(0), orderChainId, address(0xDEAD));
     }
 
     // Test that createAd rejects when no route exists for the chain
     function test_createAd_rejectsWhenNoRoute() public {
         vm.prank(maker);
         vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__ChainNotSupported.selector, orderChainId));
-        mgr.createAd(address(adToken), orderChainId, address(0xDEAD));
+        adManager.createAd(address(adToken), orderChainId, address(0xDEAD));
     }
 
     // Test that createAd succeeds when route exists, emits event, and stores ad data
     function test_createAd_succeedsWhenRouteExists_emitsAndStores() public {
         vm.startPrank(admin);
-        mgr.setChain(orderChainId, orderPortal, true);
-        mgr.setTokenRoute(address(adToken), orderToken, orderChainId);
+        adManager.setChain(orderChainId, orderPortal, true);
+        adManager.setTokenRoute(address(adToken), orderToken, orderChainId);
         vm.stopPrank();
 
         vm.prank(maker);
         vm.expectEmit(true, true, true, true);
         emit AdManager.AdCreated(1, maker, address(adToken), orderChainId);
-        uint256 adId = mgr.createAd(address(adToken), orderChainId, adRecipient);
+        uint256 adId = adManager.createAd(address(adToken), orderChainId, adRecipient);
         assertEq(adId, 1, "first ad id should be 1");
 
         (
@@ -246,7 +246,7 @@ contract AdManagerTest is Test {
             uint256 balance,
             uint256 locked,
             bool open
-        ) = mgr.ads(adId);
+        ) = adManager.ads(adId);
 
         assertEq(id, 1);
         assertEq(linkedOrderChainId, orderChainId);
@@ -266,13 +266,13 @@ contract AdManagerTest is Test {
         uint256 adId = _adId();
         vm.prank(nonMaker);
         vm.expectRevert(AdManager.AdManager__NotMaker.selector);
-        mgr.fundAd(adId, 1 ether);
+        adManager.fundAd(adId, 1 ether);
 
         vm.prank(maker);
-        adToken.approve(address(mgr), fundAmt);
+        adToken.approve(address(adManager), fundAmt);
 
         vm.prank(maker);
-        mgr.fundAd(adId, fundAmt);
+        adManager.fundAd(adId, fundAmt);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -285,11 +285,11 @@ contract AdManagerTest is Test {
 
         // Close first (no locked funds, balance 0)
         vm.prank(maker);
-        mgr.closeAd(adId, maker);
+        adManager.closeAd(adId, maker);
 
         vm.prank(maker);
         vm.expectRevert(AdManager.AdManager__AdClosed.selector);
-        mgr.fundAd(adId, 1 ether);
+        adManager.fundAd(adId, 1 ether);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -302,7 +302,7 @@ contract AdManagerTest is Test {
 
         vm.prank(maker);
         vm.expectRevert(AdManager.AdManager__ZeroAmount.selector);
-        mgr.fundAd(adId, 0);
+        adManager.fundAd(adId, 0);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -316,7 +316,7 @@ contract AdManagerTest is Test {
 
         vm.prank(maker);
         vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__ChainNotSupported.selector, unsupportedChainId));
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -332,7 +332,7 @@ contract AdManagerTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(AdManager.AdManager__OrderPortalMismatch.selector, orderPortal, p.srcOrderPortal)
         );
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -342,7 +342,7 @@ contract AdManagerTest is Test {
         test_fundAd_makerOnly();
 
         vm.prank(admin);
-        mgr.removeTokenRoute(address(adToken), orderChainId);
+        adManager.removeTokenRoute(address(adToken), orderChainId);
 
         uint256 adId = _adId();
         AdManager.OrderParams memory p = _defaultParams(adId);
@@ -351,7 +351,7 @@ contract AdManagerTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(AdManager.AdManager__MissingRoute.selector, p.orderChainToken, block.chainid)
         );
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -364,7 +364,7 @@ contract AdManagerTest is Test {
 
         address otherOrderToken = other;
         vm.prank(admin);
-        mgr.setTokenRoute(address(adToken), otherOrderToken, orderChainId);
+        adManager.setTokenRoute(address(adToken), otherOrderToken, orderChainId);
 
         vm.prank(maker);
         vm.expectRevert(
@@ -374,7 +374,7 @@ contract AdManagerTest is Test {
                 p.orderChainToken // provided in params
             )
         );
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -388,7 +388,7 @@ contract AdManagerTest is Test {
 
         vm.prank(maker);
         vm.expectRevert(AdManager.AdManager__NotMaker.selector);
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -402,7 +402,7 @@ contract AdManagerTest is Test {
         // Create another ad-chain token and route so route check passes first
         ERC20Mock otherAdToken = new ERC20Mock();
         vm.prank(admin);
-        mgr.setTokenRoute(address(otherAdToken), orderToken, orderChainId);
+        adManager.setTokenRoute(address(otherAdToken), orderToken, orderChainId);
 
         p.adChainToken = address(otherAdToken);
 
@@ -412,7 +412,7 @@ contract AdManagerTest is Test {
                 AdManager.AdManager__AdTokenMismatch.selector, address(adToken), address(otherAdToken)
             )
         );
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -425,13 +425,13 @@ contract AdManagerTest is Test {
 
         p.adRecipient = recipient;
 
-        (,, address expected,,,,,) = mgr.ads(p.adId);
+        (,, address expected,,,,,) = adManager.ads(p.adId);
 
         vm.prank(maker);
         vm.expectRevert(
             abi.encodeWithSelector(AdManager.AdManager__AdRecipientMismatch.selector, expected, p.adRecipient)
         );
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -445,7 +445,7 @@ contract AdManagerTest is Test {
 
         vm.prank(maker);
         vm.expectRevert(AdManager.AdManager__BridgerZero.selector);
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -459,7 +459,7 @@ contract AdManagerTest is Test {
 
         vm.prank(maker);
         vm.expectRevert(AdManager.AdManager__RecipientZero.selector);
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -473,7 +473,7 @@ contract AdManagerTest is Test {
 
         vm.prank(maker);
         vm.expectRevert(AdManager.AdManager__ZeroAmount.selector);
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -487,7 +487,7 @@ contract AdManagerTest is Test {
 
         vm.prank(maker);
         vm.expectRevert(AdManager.AdManager__InsufficientLiquidity.selector);
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -498,23 +498,23 @@ contract AdManagerTest is Test {
         uint256 adId = _adId();
         AdManager.OrderParams memory p = _defaultParams(adId);
 
-        (,,, address adMaker, address token,, uint256 lockedBefore, bool open) = mgr.ads(adId);
+        (,,, address adMaker, address token,, uint256 lockedBefore, bool open) = adManager.ads(adId);
         assertTrue(open);
         assertEq(lockedBefore, 0);
 
-        bytes32 expectedHash = mgr.hashOrderPublic(p);
+        bytes32 expectedHash = adManager.hashOrderPublic(p);
 
         vm.expectEmit(true, true, true, true);
         emit AdManager.OrderLocked(adId, expectedHash, adMaker, token, p.amount, p.bridger, p.orderRecipient);
 
         vm.prank(maker);
-        bytes32 orderHash = mgr.lockForOrder(p);
+        bytes32 orderHash = adManager.lockForOrder(p);
         assertEq(orderHash, expectedHash, "order hash mismatch");
 
-        (,,,,,, uint256 lockedAfter,) = mgr.ads(adId);
+        (,,,,,, uint256 lockedAfter,) = adManager.ads(adId);
         assertEq(lockedAfter, lockedBefore + p.amount, "locked not incremented");
 
-        (AdManager.Status status) = mgr.orders(orderHash);
+        (AdManager.Status status) = adManager.orders(orderHash);
         assertEq(uint256(status), uint256(AdManager.Status.Open), "order not open");
     }
 
@@ -528,11 +528,11 @@ contract AdManagerTest is Test {
         AdManager.OrderParams memory p = _defaultParams(adId);
 
         vm.prank(maker);
-        bytes32 h1 = mgr.lockForOrder(p);
+        bytes32 h1 = adManager.lockForOrder(p);
 
         vm.prank(maker);
         vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__OrderExists.selector, h1));
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -544,10 +544,10 @@ contract AdManagerTest is Test {
 
         vm.prank(nonMaker);
         vm.expectRevert(AdManager.AdManager__NotMaker.selector);
-        mgr.withdrawAd(adId, 1 ether, recipient);
+        adManager.withdrawAd(adId, 1 ether, recipient);
 
         vm.prank(maker);
-        mgr.withdrawAd(adId, 3 ether, recipient);
+        adManager.withdrawAd(adId, 3 ether, recipient);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -560,7 +560,7 @@ contract AdManagerTest is Test {
 
         vm.startPrank(maker);
         vm.expectRevert(AdManager.AdManager__ZeroAmount.selector);
-        mgr.withdrawAd(adId, 0, recipient);
+        adManager.withdrawAd(adId, 0, recipient);
         vm.stopPrank();
     }
 
@@ -575,7 +575,7 @@ contract AdManagerTest is Test {
         vm.startPrank(maker);
         // available = fundAmt, ask for fundAmt + 1
         vm.expectRevert(AdManager.AdManager__InsufficientLiquidity.selector);
-        mgr.withdrawAd(adId, fundAmt + 1, recipient);
+        adManager.withdrawAd(adId, fundAmt + 1, recipient);
         vm.stopPrank();
     }
 
@@ -589,7 +589,7 @@ contract AdManagerTest is Test {
 
         vm.prank(nonMaker);
         vm.expectRevert(AdManager.AdManager__NotMaker.selector);
-        mgr.closeAd(adId, recipient);
+        adManager.closeAd(adId, recipient);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -606,10 +606,10 @@ contract AdManagerTest is Test {
         AdManager.OrderParams memory p = _defaultParams(adId);
 
         // Lock succeeds -> increases ad.locked
-        mgr.lockForOrder(p);
+        adManager.lockForOrder(p);
 
         vm.expectRevert(AdManager.AdManager__InsufficientLiquidity.selector);
-        mgr.closeAd(adId, recipient);
+        adManager.closeAd(adId, recipient);
         vm.stopPrank();
     }
 
@@ -625,14 +625,14 @@ contract AdManagerTest is Test {
 
         // Close (no locks)
         vm.prank(maker);
-        mgr.closeAd(adId, recipient);
+        adManager.closeAd(adId, recipient);
 
         // Remaining transferred to recipient
         uint256 balAfter = adToken.balanceOf(recipient);
         assertEq(balAfter - balBefore, fundAmt, "remaining not transferred");
 
         // Ad is closed, balance set to 0
-        (,,,,, uint256 balance, uint256 locked, bool open) = mgr.ads(adId);
+        (,,,,, uint256 balance, uint256 locked, bool open) = adManager.ads(adId);
         assertEq(balance, 0, "balance not zeroed");
         assertEq(locked, 0, "locked should be zero (no open locks)");
         assertFalse(open, "ad not closed");
@@ -647,11 +647,11 @@ contract AdManagerTest is Test {
         uint256 adId = _adId();
 
         AdManager.OrderParams memory p = _defaultParams(adId);
-        bytes32 expected = mgr.hashOrderPublic(p);
+        bytes32 expected = adManager.hashOrderPublic(p);
 
         vm.prank(bridger);
         vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__OrderNotOpen.selector, expected));
-        mgr.unlock(p, bytes32(uint256(1)), hex"");
+        adManager.unlock(p, bytes32(uint256(1)), hex"");
     }
 
     function _openOrder(uint256 adId, uint256 amount, uint256 salt, address _bridger, address _recipient)
@@ -665,7 +665,7 @@ contract AdManagerTest is Test {
         p.orderRecipient = _recipient;
 
         vm.prank(maker);
-        orderHash = mgr.lockForOrder(p);
+        orderHash = adManager.lockForOrder(p);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -685,12 +685,12 @@ contract AdManagerTest is Test {
 
         // First unlock succeeds
         vm.prank(bridger);
-        mgr.unlock(p1, nullifier, hex"");
+        adManager.unlock(p1, nullifier, hex"");
 
         // Second unlock with the same nullifier on a different (still open) order
         vm.prank(bridger);
         vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__NullifierUsed.selector, nullifier));
-        mgr.unlock(p2, nullifier, hex"");
+        adManager.unlock(p2, nullifier, hex"");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -703,8 +703,8 @@ contract AdManagerTest is Test {
         (AdManager.OrderParams memory p, bytes32 orderHash) = _openOrder(adId, 70 ether, 999, bridger, recipient);
 
         // Snapshot state
-        (,,,,,, uint256 lockedBefore,) = mgr.ads(p.adId);
-        (AdManager.Status statusBefore) = mgr.orders(orderHash);
+        (,,,,,, uint256 lockedBefore,) = adManager.ads(p.adId);
+        (AdManager.Status statusBefore) = adManager.orders(orderHash);
         assertEq(uint256(statusBefore), uint256(AdManager.Status.Open));
 
         // Flip verifier to fail
@@ -712,12 +712,12 @@ contract AdManagerTest is Test {
 
         vm.prank(bridger);
         vm.expectRevert(AdManager.AdManager__InvalidProof.selector);
-        mgr.unlock(p, keccak256("X"), hex"");
+        adManager.unlock(p, keccak256("X"), hex"");
 
         // State unchanged
-        (AdManager.Status statusAfter) = mgr.orders(orderHash);
+        (AdManager.Status statusAfter) = adManager.orders(orderHash);
         assertEq(uint256(statusAfter), uint256(AdManager.Status.Open), "status changed");
-        (,,,,,, uint256 lockedAfter,) = mgr.ads(p.adId);
+        (,,,,,, uint256 lockedAfter,) = adManager.ads(p.adId);
         assertEq(lockedAfter, lockedBefore, "locked changed");
     }
 
@@ -734,7 +734,7 @@ contract AdManagerTest is Test {
 
         // Balances and locked snapshot
         uint256 balBefore = adToken.balanceOf(p.orderRecipient);
-        (,,,,,, uint256 lockedBefore,) = mgr.ads(p.adId);
+        (,,,,,, uint256 lockedBefore,) = adManager.ads(p.adId);
 
         // Expect event
         vm.expectEmit(true, true, true, true);
@@ -742,14 +742,14 @@ contract AdManagerTest is Test {
 
         // Verify success
         vm.prank(bridger);
-        mgr.unlock(p, bytes32("N1"), hex"");
+        adManager.unlock(p, bytes32("N1"), hex"");
 
         // Status -> Filled
-        (AdManager.Status status) = mgr.orders(orderHash);
+        (AdManager.Status status) = adManager.orders(orderHash);
         assertEq(uint256(status), uint256(AdManager.Status.Filled), "status not filled");
 
         // Locked reduced
-        (,,,,,, uint256 lockedAfter,) = mgr.ads(p.adId);
+        (,,,,,, uint256 lockedAfter,) = adManager.ads(p.adId);
         assertEq(lockedAfter, lockedBefore - p.amount, "locked not reduced");
 
         // Tokens transferred to orderRecipient
@@ -759,6 +759,6 @@ contract AdManagerTest is Test {
         // Second call (same order) should fail (order not open anymore)
         vm.prank(bridger);
         vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__OrderNotOpen.selector, orderHash));
-        mgr.unlock(p, bytes32("N1"), hex"");
+        adManager.unlock(p, bytes32("N1"), hex"");
     }
 }

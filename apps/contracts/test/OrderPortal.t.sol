@@ -16,7 +16,7 @@ contract MockOrderPortal is OrderPortal {
     }
 }
 
-contract OrderPortal_Access_Config_Test is Test {
+contract OrderPortalTest is Test {
     MockOrderPortal internal portal;
     MockVerifier internal verifier;
     ERC20Mock internal orderToken;
@@ -43,9 +43,6 @@ contract OrderPortal_Access_Config_Test is Test {
     uint256 internal fundAmt = 300 ether;
 
     function setUp() public {
-        vm.label(admin, "ADMIN");
-        vm.label(nonAdmin, "NON_ADMIN");
-
         verifier = new MockVerifier(true);
         portal = new MockOrderPortal(admin, IVerifier(address(verifier)));
 
@@ -401,7 +398,7 @@ contract OrderPortal_Access_Config_Test is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-     * unlock: verifier true -> status Filled; transfers token1 to dstRecipient
+     * unlock: verifier true -> status Filled; transfers token1 to adRecipient
      * unlock: emits OrderUnlocked
      //////////////////////////////////////////////////////////////*/
     function test_unlock_success_setsFilled_transfers_emits() public {

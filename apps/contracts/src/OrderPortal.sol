@@ -330,12 +330,8 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
         if (nullifierUsed[nullifierHash]) revert OrderPortal__NullifierUsed(nullifierHash);
         if (orders[orderHash] != Status.Open) revert OrderPortal__OrderNotOpen(orderHash);
 
-        bytes32[] memory publicInputs = new bytes32[](5);
-        publicInputs[0] = nullifierHash;
-        publicInputs[1] = bytes32(uint256(uint160(params.adCreator)));
-        publicInputs[2] = bytes32(uint256(uint160(params.bridger)));
-        publicInputs[3] = orderHash;
-        publicInputs[4] = bytes32(uint256(0));
+        // Build public inputs for the verifier
+        bytes32[] memory publicInputs = buildPublicInputs(nullifierHash, params.adCreator, params.bridger, orderHash);
 
         if (!i_verifier.verify(proof, publicInputs)) revert OrderPortal__InvalidProof();
 
@@ -402,6 +398,34 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      */
     function toBytes32(address value) internal pure returns (bytes32 out) {
         return bytes32(uint256(uint160(value)));
+    }
+
+    /**
+     * @notice Builds an array of public inputs for zk-proof verification.
+     * @dev Encodes the provided orderHash and combines it with other parameters into a bytes32 array.
+     * @param nullifierHash The hash used to prevent double-spending in zk-proofs.
+     * @param adCreator The address of the ad creator.
+     * @param bridger The address of the entity bridging the proof.
+     * @param orderHash The hash representing the order details.
+     * @return inputs The constructed array of public inputs for zk-proof verification.
+     */
+    function buildPublicInputs(bytes32 nullifierHash, address adCreator, address bridger, bytes32 orderHash)
+        internal
+        pure
+        returns (bytes32[] memory inputs)
+    {
+        bytes memory oHash = abi.encodePacked(orderHash);
+        uint256 offset = 4;
+        inputs = new bytes32[](offset + oHash.length);
+
+        inputs[0] = nullifierHash;
+        inputs[1] = bytes32(uint256(uint160(adCreator)));
+        inputs[2] = bytes32(uint256(uint160(bridger)));
+        inputs[3] = bytes32(0);
+
+        for (uint256 i = 0; i < oHash.length; ++i) {
+            inputs[offset + i] = bytes32(uint256(uint8(oHash[i])));
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
