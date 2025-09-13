@@ -25,7 +25,7 @@ export const Header = () => {
   return (
     <div className="fixed top-0 left-0 w-full bg-transparent text-white p-4 md:px-10 py-3 z-[50] main-header">
       <div className="w-full flex items-center justify-between text-sm">
-        <ul className="flex gap-4">
+        <ul className="md:flex hidden gap-4">
           <li>
             <Link href={""}>Docs</Link>
           </li>

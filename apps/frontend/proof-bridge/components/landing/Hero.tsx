@@ -11,15 +11,19 @@ gsap.registerPlugin(ScrollTrigger)
 
 export const Hero = () => {
   useGSAP(() => {
-    gsap.to(".hero-bl-text", {
-      scrollTrigger: {
-        trigger: ".landing-about",
-        scrub: true,
-        start: "top 100%",
-      },
-      opacity: 0,
-      y: -200,
-      duration: 0.5,
+    const mm = gsap.matchMedia()
+
+    mm.add("(min-width: 768px)", () => {
+      gsap.to(".hero-bl-text", {
+        scrollTrigger: {
+          trigger: ".landing-about",
+          scrub: true,
+          start: "top 100%",
+        },
+        opacity: 0,
+        y: -200,
+        duration: 0.5,
+      })
     })
 
     gsap.to(".hero-overlay", {
@@ -34,8 +38,8 @@ export const Hero = () => {
   })
 
   return (
-    <div className="relative overflow-x-hidden md:h-screen landing-hero">
-      <div className="absolute top-0 left-0 w-screen h-screen ">
+    <div className="relative overflow-x-hidden md:h-screen h-[50vh] landing-hero">
+      <div className="absolute top-0 left-0 w-screen md:h-screen h-[50vh] ">
         <video
           src="/bridge-2.mp4"
           autoPlay
@@ -50,15 +54,15 @@ export const Hero = () => {
           }}
         />
       </div>
-      <div className="absolute top-0 left-0 w-screen h-screen bg-black/45 z-[2] hero-overlay"></div>
+      <div className="absolute top-0 left-0 w-screen md:h-screen h-[50vh] bg-black/45 z-[2] hero-overlay"></div>
 
       <div className="flex flex-col justify-between h-full relative z-[10] p-4 md:px-10 py-3 md:pb-10 hero-bl-text">
         <div></div>
         <div className="max-w-[1200px] font-perfectly-nineties">
-          <h2 className="text-5xl">Game changing </h2>
-          <h2 className="text-8xl">
+          <h2 className="md:text-5xl text-lg">Game changing </h2>
+          <h2 className="md:text-8xl text-xl">
             P2P{" "}
-            <span className="text- bg-clip-text bg-gradient-to-r from-[#AEF78E] to-[#C0D461] inline-block">
+            <span className="bg-clip-text bg-gradient-to-r from-[#AEF78E] to-[#C0D461] inline-block">
               Cross-chain
             </span>{" "}
             Bridge
