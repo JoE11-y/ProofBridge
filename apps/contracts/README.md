@@ -129,15 +129,15 @@ The circuit accepts the following **public inputs**:
 
 * **OrderPortal.unlock**:
 
-  1. `nullifierHash`
-  2. `bytes32(uint160(dstAdCreator))`
+  1. `adCreator's nullifierHash`
+  2. `bytes32(uint160(adCreator))`
   3. `bytes32(uint160(bridger))`
   4. `orderHash`
   5. `bytes32(0)`
 
 * **AdManager.unlock**:
 
-  1. `nullifierHash`
+  1. `bridger's nullifierHash`
   2. `bytes32(uint160(adCreator))`
   3. `bytes32(uint160(bridger))`
   4. `orderHash`
@@ -147,10 +147,7 @@ The circuit accepts the following **public inputs**:
 
 ```bash
 # clone & enter
-git clone <your-repo> && cd <your-repo>
-
-# submodules (if any)
-git submodule update --init --recursive
+git clone https://github.com/Explore-Beyond-Innovations/ProofBridge.git && cd ProofBridge/apps/contracts
 
 # foundry
 curl -L https://foundry.paradigm.xyz | bash
@@ -161,7 +158,6 @@ forge install
 
 # build
 forge build
-
 
 ## Testing
 
