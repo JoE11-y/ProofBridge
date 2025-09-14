@@ -7,11 +7,11 @@ dotenv.config({
 
 export const env = {
   db: {
-    url: process.env.DATABASE_URL,
+    url: process.env.DATABASE_URL || '',
   },
   jwt: {
-    secret: process.env.JWT_SECRET,
-    expiry: process.env.JWT_EXPIRY,
+    secret: process.env.JWT_SECRET || '',
+    expiry: process.env.JWT_EXPIRY || '',
   },
   isProd: process.env.NODE_ENV === 'production',
   port: process.env.PORT || 9090,
