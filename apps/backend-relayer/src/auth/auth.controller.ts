@@ -8,7 +8,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { VerifyDto } from '../dto/auth.dto';
+import { RefreshDto, VerifyDto } from '../dto/auth.dto';
 
 @Controller('auth/siwe')
 export class AuthController {
@@ -24,5 +24,11 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   async verify(@Body() dto: VerifyDto) {
     return this.auth.verify(dto.message, dto.signature);
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Body() dto: RefreshDto) {
+    return this.auth.refresh(dto.refresh);
   }
 }

@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsString, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class PrepareDto {
@@ -15,4 +15,10 @@ export class VerifyDto {
   @IsString()
   @Transform(({ value }) => value.trim())
   signature!: string;
+}
+
+export class RefreshDto {
+  @IsString()
+  @MinLength(10)
+  refresh!: string;
 }

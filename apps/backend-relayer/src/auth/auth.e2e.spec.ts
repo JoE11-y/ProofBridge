@@ -160,7 +160,7 @@ describe('SIWE E2E', () => {
     await request(app.getHttpServer())
       .post('/auth/siwe/verify')
       .send({ message, signature: invalidSignature })
-      .expect(400);
+      .expect(401);
   });
 
   it('rejects missing nonce', async () => {
@@ -182,6 +182,54 @@ describe('SIWE E2E', () => {
     await request(app.getHttpServer())
       .post('/auth/siwe/verify')
       .send({ message, signature })
+      .expect(400);
+  });
+
+  it('POST /auth/refresh returns a fresh access token', async () => {
+    const prep = await request(app.getHttpServer())
+      .get('/auth/siwe/prepare')
+      .query({ address: wallet.address })
+      .expect(200);
+
+    const body = prep.body as PrepareResponse;
+    const nowIso = new Date().toISOString();
+
+    // build SIWE message
+    const msg = new SiweMessage({
+      domain: body.domain,
+      address: wallet.address,
+      statement: 'Sign in to ProofBridge',
+      uri: body.uri,
+      version: '1',
+      chainId: 1,
+      nonce: body.nonce,
+      issuedAt: nowIso,
+      expirationTime: body.expiresAt,
+    });
+    const message = msg.prepareMessage();
+    const signature = await wallet.signMessage(message);
+
+    const verifyResponse = await request(app.getHttpServer())
+      .post('/auth/siwe/verify')
+      .send({ message, signature })
+      .expect(201);
+
+    const { tokens } = verifyResponse.body;
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/siwe/refresh')
+      .send({ refresh: tokens.refresh })
+      .expect(200);
+
+    expect(res.body).toMatchObject({ access: expect.any(String) });
+    const newAccess = res.body.access;
+    expect(newAccess).not.toEqual(tokens.access);
+  });
+
+  it('rejects invalid refresh token', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/siwe/refresh')
+      .send({ refresh: 'not-a-jwt' })
       .expect(400);
   });
 });

@@ -12,9 +12,10 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { env } from '@libs/configs';
 import { PrismaService } from '@prisma/prisma.service';
-import { SiweMessage, SiweResponse } from 'siwe';
+import { SiweMessage } from 'siwe';
+import { randomUUID } from 'crypto';
 
-const CLOCK_SKEWMS = 60_000;
+const CLOCK_SKEW_MS = 60_000; // 1 minute
 
 @Injectable()
 export class AuthService {
@@ -43,77 +44,111 @@ export class AuthService {
   }
 
   async verify(messageRaw: string, signature: string) {
-    // Parse SIWE message
-    let msg: SiweMessage;
+    const msg = this.parseSiwe(messageRaw);
+
+    this.assertDomainAndUri(msg);
+    this.assertTimeWindows(msg, Date.now());
+
+    await this.verifySignature(msg, signature);
+
+    const user = await this.consumeNonceAndUpsertUser(msg.address, msg.nonce);
+
+    const [access, refresh] = await Promise.all([
+      this.jwt.signAsync(
+        { sub: user.id, addr: user.walletAddress, typ: 'access' },
+        { secret: env.jwt.secret, expiresIn: '15m', jwtid: randomUUID() },
+      ),
+      this.jwt.signAsync(
+        { sub: user.id, addr: user.walletAddress, typ: 'refresh' },
+        { secret: env.jwt.secret, expiresIn: '30d', jwtid: randomUUID() },
+      ),
+    ]);
+
+    return {
+      user: { id: user.id, username: user.username },
+      tokens: { access, refresh },
+    };
+  }
+
+  /* --------------------------- private helpers --------------------------- */
+
+  private parseSiwe(messageRaw: string): SiweMessage {
     try {
-      msg = new SiweMessage(messageRaw);
+      return new SiweMessage(messageRaw);
     } catch {
       throw new BadRequestException('Invalid SIWE message');
     }
+  }
 
-    // Validate domain/uri/exp windows (preflight, cheap)
+  private assertDomainAndUri(msg: SiweMessage): void {
     if (msg.domain !== env.appDomain)
       throw new BadRequestException('Wrong domain');
     if (msg.uri !== env.appUri) throw new BadRequestException('Wrong URI');
+  }
 
-    const now = Date.now();
-
+  private assertTimeWindows(msg: SiweMessage, nowMs: number): void {
     if (msg.expirationTime) {
       const exp = new Date(msg.expirationTime).getTime();
-      if (Number.isNaN(exp) || exp < now - CLOCK_SKEWMS)
+      if (Number.isNaN(exp) || exp < nowMs - CLOCK_SKEW_MS) {
         throw new BadRequestException('Expired message');
+      }
     }
     if (msg.notBefore) {
       const nbf = new Date(msg.notBefore).getTime();
-      if (Number.isNaN(nbf) || nbf > now + CLOCK_SKEWMS)
+      if (Number.isNaN(nbf) || nbf > nowMs + CLOCK_SKEW_MS) {
         throw new BadRequestException('Not yet valid');
+      }
     }
+  }
 
-    // Verify signature
-    let result: SiweResponse;
+  private async verifySignature(
+    msg: SiweMessage,
+    signature: string,
+  ): Promise<void> {
     try {
-      result = await msg.verify({
+      const res = await msg.verify({
         signature,
         domain: env.appDomain,
         nonce: msg.nonce,
       });
-    } catch {
-      throw new BadRequestException('Bad signature');
+      if (!res.success) throw new UnauthorizedException('Verification failed');
+    } catch (e) {
+      if (!(e instanceof UnauthorizedException)) {
+        throw new UnauthorizedException('Bad signature');
+      }
+      throw e;
     }
+  }
 
-    if (!result.success) throw new UnauthorizedException('Verification failed');
+  private async consumeNonceAndUpsertUser(address: string, nonce: string) {
+    const now = Date.now();
 
     const { user } = await this.prisma.$transaction(async (tx) => {
-      // Fetch nonce row (bound to wallet), ensure not used/expired
+      // requires @@unique([value, walletAddress]) on AuthNonce
       const nonceRow = await tx.authNonce.findUnique({
         where: {
-          value: msg.nonce,
-          walletAddress: msg.address,
+          value: nonce,
+          walletAddress: address,
         },
       });
 
       if (!nonceRow) throw new BadRequestException('Unknown nonce');
       if (nonceRow.usedAt) throw new BadRequestException('Nonce already used');
-      if (nonceRow.expiresAt.getTime() < now - CLOCK_SKEWMS)
+      if (nonceRow.expiresAt.getTime() < now - CLOCK_SKEW_MS) {
         throw new BadRequestException('Nonce expired');
+      }
 
-      // Mark nonce used (you could also delete it instead of marking)
       await tx.authNonce.update({
         where: {
-          value: msg.nonce,
-          walletAddress: msg.address,
+          value: nonce,
+          walletAddress: address,
         },
         data: { usedAt: new Date() },
       });
 
-      // Upsert user by wallet address
-      const addr = msg.address;
       const user = await tx.user.upsert({
-        where: { walletAddress: addr },
-        create: {
-          walletAddress: addr,
-          username: this.generateUniqueName(),
-        },
+        where: { walletAddress: address },
+        create: { walletAddress: address, username: this.generateUniqueName() },
         update: {},
         select: { id: true, username: true, walletAddress: true },
       });
@@ -121,19 +156,43 @@ export class AuthService {
       return { user };
     });
 
-    const access = await this.jwt.signAsync(
-      { sub: user.id, addr: user.walletAddress, typ: 'access' },
-      { secret: env.jwt.secret, expiresIn: '15m' },
-    );
-    const refresh = await this.jwt.signAsync(
-      { sub: user.id, addr: user.walletAddress, typ: 'refresh' },
-      { secret: env.jwt.secret, expiresIn: '30d' },
-    );
+    return user;
+  }
 
-    return {
-      user: { id: user.id, username: user.username },
-      tokens: { access, refresh },
-    };
+  async refresh(refreshToken: string) {
+    // Verify refresh JWT
+    let payload: { sub: string; addr: string; typ?: string };
+    try {
+      payload = await this.jwt.verifyAsync(refreshToken, {
+        secret: env.jwt.secret,
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    if (payload.typ !== 'refresh') {
+      throw new UnauthorizedException('Wrong token type');
+    }
+
+    // Ensure user still exists / allowed
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, walletAddress: true },
+    });
+    if (!user || user.walletAddress !== payload.addr) {
+      throw new UnauthorizedException('User not found or mismatched address');
+    }
+
+    const [access, newRefresh] = await Promise.all([
+      this.jwt.signAsync(
+        { sub: user.id, addr: user.walletAddress, typ: 'access' },
+        { secret: env.jwt.secret, expiresIn: '15m', jwtid: randomUUID() },
+      ),
+      this.jwt.signAsync(
+        { sub: user.id, addr: user.walletAddress, typ: 'refresh' },
+        { secret: env.jwt.secret, expiresIn: '30d', jwtid: randomUUID() },
+      ),
+    ]);
+    return { access, refresh: newRefresh };
   }
 
   private generateUniqueName(): string {
