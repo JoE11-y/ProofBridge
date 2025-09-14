@@ -5,7 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaService } from '@prisma/prisma.service';
 import { AdminModule } from './admin/admin.module';
 import { ChainModule } from './chains/chain.module';
-import { TokenModule } from './tokens/token.module';
+import { TokenModule } from './token/token.module';
 
 @Module({
   imports: [AuthModule, AdminModule, ChainModule, TokenModule],

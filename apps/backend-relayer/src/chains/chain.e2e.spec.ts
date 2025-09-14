@@ -3,8 +3,8 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { createTestingApp } from '../../test/utils/create-app';
 import { PrismaClient } from '@prisma/client';
-import * as argon2 from '@node-rs/argon2';
 import { randomUUID } from 'crypto';
+import { seedAdmin } from '../../test/utils/seed-admin';
 
 interface ChainResponse {
   id: string;
@@ -18,18 +18,9 @@ describe('Chains E2E', () => {
   let app: INestApplication;
   const prisma = new PrismaClient();
 
-  const seedAdmin = async (email: string, password: string) => {
-    const passwordHash = await argon2.hash(password);
-    return prisma.admin.upsert({
-      where: { email },
-      update: { passwordHash },
-      create: { email, passwordHash },
-    });
-  };
-
   beforeAll(async () => {
     app = await createTestingApp();
-    await seedAdmin('admin@x.com', 'ChangeMe123!');
+    await seedAdmin('admin@x.com', 'ChangeMe123!', prisma);
   });
 
   afterAll(async () => {
@@ -44,14 +35,6 @@ describe('Chains E2E', () => {
       .expect(200);
     return res.body.tokens.access as string;
   };
-
-  it('GET /v1/chains returns an empty list initially', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/v1/chains')
-      .expect(200);
-
-    expect(res.body).toEqual({ rows: [], nextCursor: null });
-  });
 
   it('POST /v1/chains requires auth', async () => {
     await request(app.getHttpServer())

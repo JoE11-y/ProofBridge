@@ -3,25 +3,15 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { createTestingApp } from '../../test/utils/create-app';
 import { PrismaClient } from '@prisma/client';
-import * as argon2 from '@node-rs/argon2';
+import { seedAdmin } from '../../test/utils/seed-admin';
 
 describe('Admin E2E', () => {
   let app: INestApplication;
   const prisma = new PrismaClient();
 
-  const seedAdmin = async (email: string, password: string) => {
-    const passwordHash = await argon2.hash(password);
-    return prisma.admin.upsert({
-      where: { email },
-      update: { passwordHash },
-      create: { email, passwordHash },
-    });
-  };
-
   beforeAll(async () => {
     app = await createTestingApp();
-    // Seed an initial admin for login
-    await seedAdmin('admin@x.com', 'ChangeMe123!');
+    await seedAdmin('admin@x.com', 'ChangeMe123!', prisma);
   });
 
   afterAll(async () => {

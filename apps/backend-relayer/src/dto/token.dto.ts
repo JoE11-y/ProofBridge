@@ -12,6 +12,11 @@ import { Transform, Type } from 'class-transformer';
 import { TokenKind } from '@prisma/client';
 
 export class QueryTokensDto {
+  // Filter by chain uuid
+  @IsOptional()
+  @IsUUID()
+  chainUid?: string;
+
   // Filter by chain id
   @IsOptional()
   @IsUUID()
@@ -39,7 +44,7 @@ export class QueryTokensDto {
 
 export class CreateTokenDto {
   @IsUUID()
-  chainId!: string; // internal chain UUID
+  chainUid!: string; // internal chain UUID
 
   @IsString()
   @IsNotEmpty()
@@ -72,7 +77,7 @@ export class CreateTokenDto {
 export class UpdateTokenDto {
   @IsOptional()
   @IsUUID()
-  chainId?: string;
+  chainUid?: string;
 
   @IsOptional()
   @IsString()

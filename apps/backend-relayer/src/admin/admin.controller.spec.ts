@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdminController } from '../../src/admin/admin.controller';
 import { AdminService } from '../../src/admin/admin.service';
@@ -23,6 +24,9 @@ describe('AdminController (unit)', () => {
             createChain: jest.fn(),
             updateChain: jest.fn(),
             removeChain: jest.fn(),
+            createToken: jest.fn(),
+            updateToken: jest.fn(),
+            removeToken: jest.fn(),
           },
         },
         PrismaService,
@@ -74,7 +78,7 @@ describe('AdminController (unit)', () => {
     });
   });
 
-  it('create -> delegates to service', async () => {
+  it('createChain -> delegates to service', async () => {
     const dto = {
       name: 'Base',
       chainId: '8453',
@@ -97,7 +101,7 @@ describe('AdminController (unit)', () => {
     expect(res).toEqual(mockRes);
   });
 
-  it('update -> delegates to service', async () => {
+  it('updateChain -> delegates to service', async () => {
     const dto = { name: 'New' };
     const mockRes = {
       id: 'uuid',
@@ -116,11 +120,59 @@ describe('AdminController (unit)', () => {
     expect(res).toEqual(mockRes);
   });
 
-  it('remove -> delegates to service', async () => {
+  it('removeChain -> delegates to service', async () => {
     const spy = jest
       .spyOn(service, 'removeChain')
       .mockResolvedValueOnce(undefined);
     await controller.removeChain('uuid');
     expect(spy).toHaveBeenCalledWith('uuid');
+  });
+
+  it('createToken() -> delegates to service', async () => {
+    const dto = {
+      chainId: 'chain-uuid',
+      symbol: 'ETH',
+      name: 'Ether',
+      address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      decimals: 18,
+      kind: 'NATIVE',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      chain: {} as any,
+    };
+
+    const created = { id: 'tok-1', ...dto };
+
+    const spy = jest
+      .spyOn(service, 'createToken')
+      .mockResolvedValueOnce(created);
+
+    const res = await controller.create(dto as any);
+
+    expect(spy).toHaveBeenCalledWith(dto);
+    expect(res).toEqual(created);
+  });
+
+  it('updateToken() -> delegates to service', async () => {
+    const dto = { name: 'Ether (Updated)' };
+    const updated = { id: 'tok-1', name: 'Ether (Updated)' } as any;
+
+    const spy = jest
+      .spyOn(service, 'updateToken')
+      .mockResolvedValueOnce(updated);
+
+    const res = await controller.update('tok-1', dto as any);
+    expect(spy).toHaveBeenCalledWith('tok-1', dto);
+    expect(res).toEqual(updated);
+  });
+
+  it('removeToken() -> delegates to service', async () => {
+    const spy = jest
+      .spyOn(service, 'removeToken')
+      .mockResolvedValueOnce(undefined);
+
+    await controller.remove('tok-1');
+
+    expect(spy).toHaveBeenCalledWith('tok-1');
   });
 });

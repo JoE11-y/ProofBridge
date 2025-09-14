@@ -71,8 +71,8 @@ model Token {
   kind     TokenKind @default(ERC20)
   decimals Int
 
-  chainId BigInt
-  chain   Chain  @relation(fields: [chainId], references: [chainId], onDelete: Cascade)
+  chainUid String
+  chain    Chain  @relation(fields: [chainUid], references: [id], onDelete: Cascade)
 
   routesFrom Route[] @relation("RouteFrom")
   routesTo   Route[] @relation("RouteTo")
@@ -80,7 +80,7 @@ model Token {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([chainId, address])
+  @@unique([chainUid, address])
   @@index([symbol])
   @@index([address])
 }

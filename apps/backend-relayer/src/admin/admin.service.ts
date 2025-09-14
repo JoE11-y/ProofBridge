@@ -8,7 +8,7 @@ import { AdminAuthDTO } from '../dto/admin.dto';
 import { Request } from 'express';
 import { ChainService } from '../chains/chain.service';
 import { CreateChainDto, QueryChainsDto } from '../dto/chain.dto';
-import { TokenService } from '../tokens/token.service';
+import { TokenService } from '../token/token.service';
 import { CreateTokenDto } from '../dto/token.dto';
 
 @Injectable()

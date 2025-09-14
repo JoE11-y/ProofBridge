@@ -5,7 +5,7 @@ import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
 import { EncryptionService } from '@libs/encryption.service';
 import { ChainService } from '../chains/chain.service';
-import { TokenService } from '../tokens/token.service';
+import { TokenService } from '../token/token.service';
 
 @Module({
   imports: [JwtModule.register({})],

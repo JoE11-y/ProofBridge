@@ -20,13 +20,23 @@ export class TokenService {
     const cursor = query.cursor ? { id: query.cursor } : undefined;
     const where: {
       name?: { contains: string; mode: 'insensitive' };
-      chainId?: bigint;
+      chainUid?: string;
       symbol?: { contains: string; mode: 'insensitive' };
       address?: { contains: string; mode: 'insensitive' } | { equals: string };
     } = {};
 
+    if (query.chainUid) {
+      where.chainUid = query.chainUid;
+    }
+
     if (query.chainId) {
-      where.chainId = BigInt(query.chainId);
+      const chain = await this.prisma.chain.findFirst({
+        where: { chainId: BigInt(query.chainId) },
+        select: { id: true },
+      });
+      if (chain) {
+        where.chainUid = chain.id;
+      }
     }
 
     if (query.symbol) {
@@ -86,7 +96,7 @@ export class TokenService {
     try {
       const created = await this.prisma.token.create({
         data: {
-          chainId: BigInt(dto.chainId),
+          chainUid: dto.chainUid,
           symbol: dto.symbol,
           name: dto.name,
           address: dto.address.toLowerCase(),
@@ -128,7 +138,7 @@ export class TokenService {
       const updated = await this.prisma.token.update({
         where: { id },
         data: {
-          ...(dto.chainId ? { chainId: BigInt(dto.chainId) } : {}),
+          ...(dto.chainUid ? { chainUid: dto.chainUid } : {}),
           ...(dto.symbol ? { symbol: dto.symbol } : {}),
           ...(dto.name ? { name: dto.name } : {}),
           ...(dto.address ? { address: dto.address.toLowerCase() } : {}),
