@@ -57,6 +57,7 @@ model Chain {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([chainId, id])
   @@index([name])
   @@index([adManagerAddress])
   @@index([orderPortalAddress])
@@ -64,16 +65,15 @@ model Chain {
 
 model Token {
   id       String    @id @default(uuid())
-  symbol   String // "ETH"
-  name     String // "Ether"
+  symbol   String
+  name     String
   address  String
-  kind     TokenKind @default(NATIVE)
-  decimals Int // 18 for ETH
+  kind     TokenKind @default(ERC20)
+  decimals Int
 
-  chainId String
-  chain   Chain  @relation(fields: [chainId], references: [id], onDelete: Cascade)
+  chainId BigInt
+  chain   Chain  @relation(fields: [chainId], references: [chainId], onDelete: Cascade)
 
-  // Directional routes
   routesFrom Route[] @relation("RouteFrom")
   routesTo   Route[] @relation("RouteTo")
 

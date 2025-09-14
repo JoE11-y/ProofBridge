@@ -13,7 +13,7 @@ import { PublicChain } from '../types';
 import { Chain } from '@prisma/client';
 
 @Injectable()
-export class ChainsService {
+export class ChainService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listChainsPublic(query: QueryChainsDto) {

@@ -4,7 +4,7 @@ import { AdminService } from '../../src/admin/admin.service';
 import type { Request } from 'express';
 import { PrismaService } from '@prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { ChainsService } from '../chains/chains.service';
+import { ChainService } from '../chains/chain.service';
 
 describe('AdminController (unit)', () => {
   let controller: AdminController;
@@ -26,7 +26,7 @@ describe('AdminController (unit)', () => {
           },
         },
         PrismaService,
-        ChainsService,
+        ChainService,
       ],
     }).compile();
 

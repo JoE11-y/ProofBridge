@@ -4,11 +4,18 @@ import { PrismaService } from '@prisma/prisma.service';
 import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
 import { EncryptionService } from '@libs/encryption.service';
-import { ChainsService } from '../chains/chains.service';
+import { ChainService } from '../chains/chain.service';
+import { TokenService } from '../tokens/token.service';
 
 @Module({
   imports: [JwtModule.register({})],
   controllers: [AdminController],
-  providers: [AdminService, PrismaService, ChainsService, EncryptionService],
+  providers: [
+    AdminService,
+    PrismaService,
+    ChainService,
+    TokenService,
+    EncryptionService,
+  ],
 })
 export class AdminModule {}

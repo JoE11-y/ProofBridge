@@ -4,10 +4,11 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { PrismaService } from '@prisma/prisma.service';
 import { AdminModule } from './admin/admin.module';
-import { ChainsModule } from './chains/chains.module';
+import { ChainModule } from './chains/chain.module';
+import { TokenModule } from './tokens/token.module';
 
 @Module({
-  imports: [AuthModule, AdminModule, ChainsModule],
+  imports: [AuthModule, AdminModule, ChainModule, TokenModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })

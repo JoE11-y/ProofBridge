@@ -6,8 +6,10 @@ import { PrismaService } from '@prisma/prisma.service';
 import { EncryptionService } from '@libs/encryption.service';
 import { AdminAuthDTO } from '../dto/admin.dto';
 import { Request } from 'express';
-import { ChainsService } from '../chains/chains.service';
+import { ChainService } from '../chains/chain.service';
 import { CreateChainDto, QueryChainsDto } from '../dto/chain.dto';
+import { TokenService } from '../tokens/token.service';
+import { CreateTokenDto } from '../dto/token.dto';
 
 @Injectable()
 export class AdminService {
@@ -15,7 +17,8 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly encryption: EncryptionService,
-    private readonly chainsService: ChainsService,
+    private readonly ChainService: ChainService,
+    private readonly tokenService: TokenService,
   ) {}
 
   async addAdmin(req: Request, { email, password }: AdminAuthDTO) {
@@ -83,19 +86,19 @@ export class AdminService {
   }
 
   async createChain(dto: CreateChainDto) {
-    return this.chainsService.create(dto);
+    return this.ChainService.create(dto);
   }
 
   async removeChain(id: string) {
-    return this.chainsService.remove(id);
+    return this.ChainService.remove(id);
   }
 
   async updateChain(id: string, dto: Partial<CreateChainDto>) {
-    return this.chainsService.update(id, dto);
+    return this.ChainService.update(id, dto);
   }
 
   async listChains(query: QueryChainsDto) {
-    const data = await this.chainsService.listChains(query);
+    const data = await this.ChainService.listChains(query);
 
     const rows = data.rows.map((c) => ({
       ...c,
@@ -103,5 +106,17 @@ export class AdminService {
     }));
 
     return { ...data, rows };
+  }
+
+  async createToken(dto: CreateTokenDto) {
+    return this.tokenService.create(dto);
+  }
+
+  async updateToken(id: string, dto: Partial<CreateTokenDto>) {
+    return this.tokenService.update(id, dto);
+  }
+
+  async removeToken(id: string) {
+    return this.tokenService.remove(id);
   }
 }

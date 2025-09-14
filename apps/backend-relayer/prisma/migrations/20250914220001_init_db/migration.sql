@@ -56,7 +56,7 @@ CREATE TABLE "public"."Token" (
     "address" TEXT NOT NULL,
     "kind" "public"."TokenKind" NOT NULL DEFAULT 'NATIVE',
     "decimals" INTEGER NOT NULL,
-    "chainId" TEXT NOT NULL,
+    "chainId" BIGINT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -144,7 +144,7 @@ CREATE INDEX "Trade_adCreatorAddress_idx" ON "public"."Trade"("adCreatorAddress"
 CREATE INDEX "Trade_bridgerAddress_idx" ON "public"."Trade"("bridgerAddress");
 
 -- AddForeignKey
-ALTER TABLE "public"."Token" ADD CONSTRAINT "Token_chainId_fkey" FOREIGN KEY ("chainId") REFERENCES "public"."Chain"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Token" ADD CONSTRAINT "Token_chainId_fkey" FOREIGN KEY ("chainId") REFERENCES "public"."Chain"("chainId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Route" ADD CONSTRAINT "Route_fromTokenId_fkey" FOREIGN KEY ("fromTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

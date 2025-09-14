@@ -6,13 +6,13 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { ChainsService } from './chains.service';
+import { ChainService } from './chain.service';
 import { QueryChainsDto } from '../dto/chain.dto';
 import { ParseChainIdPipe } from '../common/pipes/parse-chain-id.pipe';
 
 @Controller('v1/chains')
-export class ChainsController {
-  constructor(private readonly chains: ChainsService) {}
+export class ChainController {
+  constructor(private readonly chains: ChainService) {}
 
   // GET /v1/chains?name=&chainId=&limit=&cursor=
   @Get()

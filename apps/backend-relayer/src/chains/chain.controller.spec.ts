@@ -1,20 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ChainsController } from './chains.controller';
-import { ChainsService } from './chains.service';
+import { ChainController } from './chain.controller';
+import { ChainService } from './chain.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@prisma/prisma.service';
 
-describe('ChainsController (unit)', () => {
-  let controller: ChainsController;
-  let service: jest.Mocked<ChainsService>;
+describe('ChainController (unit)', () => {
+  let controller: ChainController;
+  let service: jest.Mocked<ChainService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [ChainsController],
+      controllers: [ChainController],
       providers: [
         JwtService,
         {
-          provide: ChainsService,
+          provide: ChainService,
           useValue: {
             listChainsPublic: jest.fn(),
             getByChainId: jest.fn(),
@@ -23,8 +23,8 @@ describe('ChainsController (unit)', () => {
         PrismaService,
       ],
     }).compile();
-    controller = module.get(ChainsController);
-    service = module.get(ChainsService);
+    controller = module.get(ChainController);
+    service = module.get(ChainService);
   });
 
   afterEach(() => jest.resetAllMocks());

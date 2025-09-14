@@ -22,6 +22,7 @@ import {
   QueryChainsDto,
   UpdateChainDto,
 } from '../dto/chain.dto';
+import { CreateTokenDto, UpdateTokenDto } from '../dto/token.dto';
 
 @Controller('/v1/admin')
 export class AdminController {
@@ -69,5 +70,29 @@ export class AdminController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeChain(@Param('id', ParseUUIDPipe) chainId: string) {
     await this.service.removeChain(chainId);
+  }
+
+  @Post('tokens/create')
+  @UseGuards(AdminJwtGuard)
+  @HttpCode(HttpStatus.CREATED)
+  create(@Body() dto: CreateTokenDto) {
+    return this.service.createToken(dto);
+  }
+
+  @Patch('tokens/:id')
+  @UseGuards(AdminJwtGuard)
+  @HttpCode(HttpStatus.OK)
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateTokenDto,
+  ) {
+    return this.service.updateToken(id, dto);
+  }
+
+  @Delete('tokens/:id')
+  @UseGuards(AdminJwtGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id', new ParseUUIDPipe()) id: string) {
+    await this.service.removeToken(id);
   }
 }
