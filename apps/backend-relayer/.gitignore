@@ -1,0 +1,14 @@
+# Various IDEs and Editors
+.vscode/
+
+# Mac OSX temporary files
+.DS_Store
+**/.DS_Store
+
+node_modules/
+dist/
+build/
+
+# environment variables
+.env
+

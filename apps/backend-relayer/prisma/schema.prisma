@@ -6,10 +6,127 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id            String @id @default(uuid())
+  username      String @unique
+  walletAddress String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuthNonce {
+  id            String    @id @default(uuid())
+  value         String    @unique
+  walletAddress String
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+enum TokenKind {
+  NATIVE
+  ERC20
+}
+
+model Chain {
+  id                 String @id @default(uuid())
+  name               String
+  chainId            BigInt @unique
+  adManagerAddress   String
+  orderPortalAddress String
+
+  tokens Token[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([adManagerAddress])
+  @@index([orderPortalAddress])
+}
+
+model Token {
+  id       String    @id @default(uuid())
+  symbol   String // "ETH"
+  name     String // "Ether"
+  address  String
+  kind     TokenKind @default(NATIVE)
+  decimals Int // 18 for ETH
+
+  chainId String
+  chain   Chain  @relation(fields: [chainId], references: [id], onDelete: Cascade)
+
+  // Directional routes
+  routesFrom Route[] @relation("RouteFrom")
+  routesTo   Route[] @relation("RouteTo")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([chainId, address])
+  @@index([symbol])
+  @@index([address])
+}
+
+/// Uni-directional: fromToken -> toToken
+/// Cross-chain same-token routes are just two rows (BaseETH->EthETH, EthETH->BaseETH)
+model Route {
+  id String @id @default(uuid())
+
+  fromTokenId String
+  fromToken   Token  @relation("RouteFrom", fields: [fromTokenId], references: [id], onDelete: Restrict)
+
+  toTokenId String
+  toToken   Token  @relation("RouteTo", fields: [toTokenId], references: [id], onDelete: Restrict)
+
+  trades Trade[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fromTokenId, toTokenId])
+  @@index([fromTokenId])
+  @@index([toTokenId])
+}
+
+model Trade {
+  id      String @id @default(uuid())
+  adId    String // external ad ref
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id], onDelete: Restrict)
+
+  // Participants
+  adCreatorAddress String
+  bridgerAddress   String
+
+  // Amount in smallest unit (e.g., wei for ETH)
+  amount Decimal @db.Decimal(78, 0)
+
+  // Encoded signatures map (address -> sig)
+  participantSignatures Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([adId])
+  @@index([routeId])
+  @@index([adCreatorAddress])
+  @@index([bridgerAddress])
 }

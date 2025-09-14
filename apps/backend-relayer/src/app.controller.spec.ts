@@ -1,22 +1,51 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { HealthResponse } from '@libs/types';
 
-describe('AppController', () => {
+describe('AppController (health)', () => {
   let appController: AppController;
+  let appService: jest.Mocked<AppService>;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        {
+          provide: AppService,
+          useValue: {
+            health: jest.fn(),
+            version: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
-    appController = app.get<AppController>(AppController);
+    appController = module.get<AppController>(AppController);
+    appService = module.get(AppService);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('GET /health', () => {
+    it('should return health status from AppService', async () => {
+      const mockHealth: HealthResponse = {
+        status: 'ok',
+        uptimeSec: 42,
+        timestamp: new Date().toISOString(),
+        checks: {
+          liveness: 'ok',
+          db: 'ok',
+        },
+      };
+
+      const spy = jest
+        .spyOn(appService, 'health')
+        .mockResolvedValueOnce(mockHealth);
+
+      const result = await appController.getHealth();
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockHealth);
     });
   });
 });
