@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
-import { HealthResponse, HealthStatus } from '@libs/types';
+import { HealthResponse, HealthStatus } from './types';
 import { PrismaService } from '@prisma/prisma.service';
 
 @Injectable()

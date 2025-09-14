@@ -8,11 +8,3 @@ export interface HealthResponse {
     db: 'ok' | 'error';
   };
 }
-
-export interface VersionResponse {
-  name: string;
-  version: string;
-  env: string;
-  commit?: string; // optional: set via env (GIT_COMMIT)
-  buildTime?: string; // optional: set via env (BUILD_TIME)
-}

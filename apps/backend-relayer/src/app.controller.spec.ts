@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { HealthResponse } from '@libs/types';
+import { HealthResponse } from './types';
 
 describe('AppController (health)', () => {
   let appController: AppController;
