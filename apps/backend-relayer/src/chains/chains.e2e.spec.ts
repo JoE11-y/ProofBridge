@@ -50,7 +50,7 @@ describe('Chains E2E', () => {
       .get('/v1/chains')
       .expect(200);
 
-    expect(res.body).toEqual({ data: [], nextCursor: null });
+    expect(res.body).toEqual({ rows: [], nextCursor: null });
   });
 
   it('POST /v1/chains requires auth', async () => {
@@ -110,7 +110,7 @@ describe('Chains E2E', () => {
         .get('/v1/chains')
         .query({ chainId: '8453' })
         .expect(200);
-      expect(res.body.data).toEqual(
+      expect(res.body.rows).toEqual(
         expect.arrayContaining([expect.objectContaining({ chainId: chainId })]),
       );
     });

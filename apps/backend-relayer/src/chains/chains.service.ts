@@ -16,6 +16,12 @@ import { Chain } from '@prisma/client';
 export class ChainsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async listChainsPublic(query: QueryChainsDto) {
+    const data = await this.listChains(query);
+    const rows = data.rows.map((c) => this.toPublic(c));
+    return { rows, nextCursor: data.nextCursor };
+  }
+
   async listChains(query: QueryChainsDto) {
     const take = query.limit ?? 25;
     const cursor = query.cursor ? { id: query.cursor } : undefined;
@@ -54,9 +60,7 @@ export class ChainsService {
       nextCursor = next.id;
     }
 
-    const data = rows.map((c) => this.toPublic(c));
-
-    return { data, nextCursor };
+    return { rows, nextCursor };
   }
 
   async getByChainId(chainId: string) {

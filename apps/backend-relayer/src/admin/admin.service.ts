@@ -7,7 +7,7 @@ import { EncryptionService } from '@libs/encryption.service';
 import { AdminAuthDTO } from '../dto/admin.dto';
 import { Request } from 'express';
 import { ChainsService } from '../chains/chains.service';
-import { CreateChainDto } from '../dto/chain.dto';
+import { CreateChainDto, QueryChainsDto } from '../dto/chain.dto';
 
 @Injectable()
 export class AdminService {
@@ -92,5 +92,16 @@ export class AdminService {
 
   async updateChain(id: string, dto: Partial<CreateChainDto>) {
     return this.chainsService.update(id, dto);
+  }
+
+  async listChains(query: QueryChainsDto) {
+    const data = await this.chainsService.listChains(query);
+
+    const rows = data.rows.map((c) => ({
+      ...c,
+      chainId: c.chainId.toString(),
+    }));
+
+    return { ...data, rows };
   }
 }

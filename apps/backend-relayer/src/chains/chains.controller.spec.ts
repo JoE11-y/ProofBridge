@@ -16,7 +16,7 @@ describe('ChainsController (unit)', () => {
         {
           provide: ChainsService,
           useValue: {
-            listChains: jest.fn(),
+            listChainsPublic: jest.fn(),
             getByChainId: jest.fn(),
           },
         },
@@ -30,8 +30,10 @@ describe('ChainsController (unit)', () => {
   afterEach(() => jest.resetAllMocks());
 
   it('list -> delegates to service', async () => {
-    const mock = { data: [], nextCursor: null };
-    const spy = jest.spyOn(service, 'listChains').mockResolvedValueOnce(mock);
+    const mock = { rows: [], nextCursor: null };
+    const spy = jest
+      .spyOn(service, 'listChainsPublic')
+      .mockResolvedValueOnce(mock);
     const res = await controller.listChains({ limit: 10 } as any);
     expect(spy).toHaveBeenCalledWith({ limit: 10 });
     expect(res).toBe(mock);

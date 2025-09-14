@@ -2,12 +2,14 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -15,7 +17,11 @@ import { AdminService } from './admin.service';
 import { AdminAuthDTO } from '../dto/admin.dto';
 import type { Request } from 'express';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
-import { CreateChainDto, UpdateChainDto } from '../dto/chain.dto';
+import {
+  CreateChainDto,
+  QueryChainsDto,
+  UpdateChainDto,
+} from '../dto/chain.dto';
 
 @Controller('/v1/admin')
 export class AdminController {
@@ -32,6 +38,13 @@ export class AdminController {
   @HttpCode(HttpStatus.CREATED)
   addAdmin(@Req() req: Request, @Body() dto: AdminAuthDTO) {
     return this.service.addAdmin(req, dto);
+  }
+
+  @Get('chains')
+  @UseGuards(AdminJwtGuard)
+  @HttpCode(HttpStatus.OK)
+  listChains(@Query() query: QueryChainsDto) {
+    return this.service.listChains(query);
   }
 
   @Post('chains/create')

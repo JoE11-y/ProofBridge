@@ -18,7 +18,7 @@ export class ChainsController {
   @Get()
   @HttpCode(HttpStatus.OK)
   listChains(@Query() query: QueryChainsDto) {
-    return this.chains.listChains(query);
+    return this.chains.listChainsPublic(query);
   }
 
   // GET /v1/chains/:chainId
