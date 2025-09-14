@@ -8,3 +8,12 @@ export interface HealthResponse {
     db: 'ok' | 'error';
   };
 }
+
+type PublicChain = {
+  name: string;
+  chainId: string;
+  adManagerAddress: string;
+  orderPortalAddress: string;
+  createdAt: string;
+  updatedAt: string;
+};

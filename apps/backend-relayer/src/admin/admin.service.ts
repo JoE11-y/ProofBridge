@@ -4,8 +4,10 @@ import { env } from '@libs/configs';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '@prisma/prisma.service';
 import { EncryptionService } from '@libs/encryption.service';
-import { AdminAuthDTO } from 'src/dto/admin.dto';
+import { AdminAuthDTO } from '../dto/admin.dto';
 import { Request } from 'express';
+import { ChainsService } from '../chains/chains.service';
+import { CreateChainDto } from '../dto/chain.dto';
 
 @Injectable()
 export class AdminService {
@@ -13,6 +15,7 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly encryption: EncryptionService,
+    private readonly chainsService: ChainsService,
   ) {}
 
   async addAdmin(req: Request, { email, password }: AdminAuthDTO) {
@@ -77,5 +80,17 @@ export class AdminService {
       console.error('Error during admin login:', err);
       throw err;
     }
+  }
+
+  async createChain(dto: CreateChainDto) {
+    return this.chainsService.create(dto);
+  }
+
+  async removeChain(id: string) {
+    return this.chainsService.remove(id);
+  }
+
+  async updateChain(id: string, dto: Partial<CreateChainDto>) {
+    return this.chainsService.update(id, dto);
   }
 }
