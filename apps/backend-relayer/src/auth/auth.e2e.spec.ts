@@ -26,6 +26,24 @@ describe('SIWE E2E', () => {
     await app.close();
   });
 
+  it('GET /auth/siwe/prepare requires address parameter', async () => {
+    await request(app.getHttpServer()).get('/auth/siwe/prepare').expect(400);
+  });
+
+  it('GET /auth/siwe/prepare rejects invalid address format', async () => {
+    await request(app.getHttpServer())
+      .get('/auth/siwe/prepare')
+      .query({ address: 'not-an-address' })
+      .expect(400);
+  });
+
+  it('GET /auth/siwe/prepare rejects empty address', async () => {
+    await request(app.getHttpServer())
+      .get('/auth/siwe/prepare')
+      .query({ address: '' })
+      .expect(400);
+  });
+
   it('should sign in with SIWE (prepare -> verify)', async () => {
     // get nonce bound to address
     const prep = await request(app.getHttpServer())
@@ -221,8 +239,8 @@ describe('SIWE E2E', () => {
       .send({ refresh: tokens.refresh })
       .expect(200);
 
-    expect(res.body).toMatchObject({ access: expect.any(String) });
-    const newAccess = res.body.access;
+    expect(res.body.tokens).toMatchObject({ access: expect.any(String) });
+    const newAccess = res.body.tokens.access;
     expect(newAccess).not.toEqual(tokens.access);
   });
 

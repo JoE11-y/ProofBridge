@@ -14,6 +14,7 @@ import { env } from '@libs/configs';
 import { PrismaService } from '@prisma/prisma.service';
 import { SiweMessage } from 'siwe';
 import { randomUUID } from 'crypto';
+import { ethers } from 'ethers';
 
 const CLOCK_SKEW_MS = 60_000; // 1 minute
 
@@ -25,6 +26,10 @@ export class AuthService {
   ) {}
 
   async prepare(address: string) {
+    if (!ethers.isAddress(address)) {
+      throw new BadRequestException('Invalid Ethereum address format');
+    }
+
     try {
       const value = crypto.randomUUID().replace(/-/g, ''); // 32 hex-like chars
       const expiresAt = new Date(Date.now() + 5 * 60_000); // 5 min
@@ -39,7 +44,8 @@ export class AuthService {
         uri: env.appUri,
       };
     } catch (error) {
-      console.log(error);
+      console.error('Failed to create auth nonce', error);
+      throw new BadRequestException('Failed to create authentication nonce');
     }
   }
 
@@ -67,6 +73,44 @@ export class AuthService {
     return {
       user: { id: user.id, username: user.username },
       tokens: { access, refresh },
+    };
+  }
+
+  async refresh(refreshToken: string) {
+    // Verify refresh JWT
+    let payload: { sub: string; addr: string; typ?: string };
+    try {
+      payload = await this.jwt.verifyAsync(refreshToken, {
+        secret: env.jwt.secret,
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    if (payload.typ !== 'refresh') {
+      throw new UnauthorizedException('Wrong token type');
+    }
+
+    // Ensure user still exists / allowed
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, walletAddress: true },
+    });
+    if (!user || user.walletAddress !== payload.addr) {
+      throw new UnauthorizedException('User not found or mismatched address');
+    }
+
+    const [access, newRefresh] = await Promise.all([
+      this.jwt.signAsync(
+        { sub: user.id, addr: user.walletAddress, typ: 'access' },
+        { secret: env.jwt.secret, expiresIn: '15m', jwtid: randomUUID() },
+      ),
+      this.jwt.signAsync(
+        { sub: user.id, addr: user.walletAddress, typ: 'refresh' },
+        { secret: env.jwt.secret, expiresIn: '30d', jwtid: randomUUID() },
+      ),
+    ]);
+    return {
+      tokens: { access, refresh: newRefresh },
     };
   }
 
@@ -157,42 +201,6 @@ export class AuthService {
     });
 
     return user;
-  }
-
-  async refresh(refreshToken: string) {
-    // Verify refresh JWT
-    let payload: { sub: string; addr: string; typ?: string };
-    try {
-      payload = await this.jwt.verifyAsync(refreshToken, {
-        secret: env.jwt.secret,
-      });
-    } catch {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-    if (payload.typ !== 'refresh') {
-      throw new UnauthorizedException('Wrong token type');
-    }
-
-    // Ensure user still exists / allowed
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-      select: { id: true, walletAddress: true },
-    });
-    if (!user || user.walletAddress !== payload.addr) {
-      throw new UnauthorizedException('User not found or mismatched address');
-    }
-
-    const [access, newRefresh] = await Promise.all([
-      this.jwt.signAsync(
-        { sub: user.id, addr: user.walletAddress, typ: 'access' },
-        { secret: env.jwt.secret, expiresIn: '15m', jwtid: randomUUID() },
-      ),
-      this.jwt.signAsync(
-        { sub: user.id, addr: user.walletAddress, typ: 'refresh' },
-        { secret: env.jwt.secret, expiresIn: '30d', jwtid: randomUUID() },
-      ),
-    ]);
-    return { access, refresh: newRefresh };
   }
 
   private generateUniqueName(): string {

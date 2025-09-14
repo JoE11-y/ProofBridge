@@ -15,6 +15,7 @@ describe('AuthController', () => {
           useValue: {
             prepare: jest.fn(),
             verify: jest.fn(),
+            refresh: jest.fn(),
           },
         },
       ],
@@ -60,6 +61,38 @@ describe('AuthController', () => {
 
       await expect(controller.prepare(address)).rejects.toThrow('boom');
       expect(spy).toHaveBeenCalledWith(address);
+    });
+  });
+
+  describe('POST /auth/siwe/refresh', () => {
+    it('should call AuthService.refresh and return new tokens', async () => {
+      const dto = { refresh: 'valid-refresh-token' };
+      const mockResult = {
+        tokens: { access: 'new-jwt-access', refresh: 'new-jwt-refresh' },
+      };
+
+      const spy = jest
+        .spyOn(service, 'refresh')
+        .mockResolvedValueOnce(mockResult);
+
+      const res = await controller.refresh(dto);
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(dto.refresh);
+      expect(res).toEqual(mockResult);
+    });
+
+    it('should handle invalid refresh token', async () => {
+      const dto = { refresh: 'invalid-token' };
+
+      const spy = jest
+        .spyOn(service, 'refresh')
+        .mockRejectedValueOnce(new Error('Invalid refresh token'));
+
+      await expect(controller.refresh(dto)).rejects.toThrow(
+        'Invalid refresh token',
+      );
+      expect(spy).toHaveBeenCalledWith(dto.refresh);
     });
   });
 
