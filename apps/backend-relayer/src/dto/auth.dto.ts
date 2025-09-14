@@ -1,13 +1,13 @@
 import { IsString, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export class PrepareDto {
+export class ChallengeDTO {
   @IsString()
   @Transform(({ value }) => value.trim())
   address: string;
 }
 
-export class VerifyDto {
+export class LoginDTO {
   @IsString()
   @Transform(({ value }) => value.trim())
   message!: string;

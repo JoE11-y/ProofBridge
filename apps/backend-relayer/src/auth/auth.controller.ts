@@ -8,22 +8,22 @@ import {
   Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RefreshDto, VerifyDto } from '../dto/auth.dto';
+import { RefreshDto, LoginDTO } from '../dto/auth.dto';
 
-@Controller('auth/siwe')
+@Controller('/v1/auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  @Get('prepare')
+  @Get('challenge')
   @HttpCode(HttpStatus.OK)
-  async prepare(@Query('address') address: string) {
-    return this.auth.prepare(address);
+  async challenge(@Query('address') address: string) {
+    return this.auth.challenge(address);
   }
 
-  @Post('verify')
+  @Post('login')
   @HttpCode(HttpStatus.CREATED)
-  async verify(@Body() dto: VerifyDto) {
-    return this.auth.verify(dto.message, dto.signature);
+  async login(@Body() dto: LoginDTO) {
+    return this.auth.login(dto.message, dto.signature);
   }
 
   @Post('refresh')

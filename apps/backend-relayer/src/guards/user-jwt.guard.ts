@@ -24,7 +24,7 @@ export class JwtAuthGuard implements CanActivate {
         secret: env.jwt.secret,
       });
 
-      this.prisma.admin
+      this.prisma.user
         .findUnique({
           where: { id: decoded.sub },
         })

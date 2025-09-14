@@ -6,7 +6,7 @@ import { Wallet } from 'ethers';
 import { SiweMessage } from 'siwe';
 import { env } from '@libs/configs';
 
-interface PrepareResponse {
+interface ChallengeResponse {
   nonce: string;
   address: string;
   expiresAt: string;
@@ -26,32 +26,32 @@ describe('SIWE E2E', () => {
     await app.close();
   });
 
-  it('GET /auth/siwe/prepare requires address parameter', async () => {
-    await request(app.getHttpServer()).get('/auth/siwe/prepare').expect(400);
+  it('GET /v1/auth/challenge requires address parameter', async () => {
+    await request(app.getHttpServer()).get('/v1/auth/challenge').expect(400);
   });
 
-  it('GET /auth/siwe/prepare rejects invalid address format', async () => {
+  it('GET /v1/auth/challenge rejects invalid address format', async () => {
     await request(app.getHttpServer())
-      .get('/auth/siwe/prepare')
+      .get('/v1/auth/challenge')
       .query({ address: 'not-an-address' })
       .expect(400);
   });
 
-  it('GET /auth/siwe/prepare rejects empty address', async () => {
+  it('GET /v1/auth/challenge rejects empty address', async () => {
     await request(app.getHttpServer())
-      .get('/auth/siwe/prepare')
+      .get('/v1/auth/challenge')
       .query({ address: '' })
       .expect(400);
   });
 
-  it('should sign in with SIWE (prepare -> verify)', async () => {
+  it('should sign in with SIWE (challenge -> login)', async () => {
     // get nonce bound to address
     const prep = await request(app.getHttpServer())
-      .get('/auth/siwe/prepare')
+      .get('/v1/auth/challenge')
       .query({ address: wallet.address })
       .expect(200);
 
-    const body = prep.body as PrepareResponse;
+    const body = prep.body as ChallengeResponse;
 
     const nowIso = new Date().toISOString();
     const expIso = new Date(Date.now() + 5 * 60_000).toISOString();
@@ -75,7 +75,7 @@ describe('SIWE E2E', () => {
     const signature = await wallet.signMessage(message);
 
     const verify = await request(app.getHttpServer())
-      .post('/auth/siwe/verify')
+      .post('/v1/auth/login')
       .send({ message, signature })
       .expect(201);
 
@@ -91,11 +91,11 @@ describe('SIWE E2E', () => {
 
   it('rejects wrong domain', async () => {
     const prep = await request(app.getHttpServer())
-      .get('/auth/siwe/prepare')
+      .get('/v1/auth/challenge')
       .query({ address: wallet.address })
       .expect(200);
 
-    const body = prep.body as PrepareResponse;
+    const body = prep.body as ChallengeResponse;
 
     const bad = new SiweMessage({
       domain: 'evil.xyz', // wrong
@@ -113,18 +113,18 @@ describe('SIWE E2E', () => {
     const sig = await wallet.signMessage(message);
 
     await request(app.getHttpServer())
-      .post('/auth/siwe/verify')
+      .post('/v1/auth/login')
       .send({ message, signature: sig })
       .expect(400);
   });
 
   it('rejects expired message', async () => {
     const prep = await request(app.getHttpServer())
-      .get('/auth/siwe/prepare')
+      .get('/v1/auth/challenge')
       .query({ address: wallet.address })
       .expect(200);
 
-    const body = prep.body as PrepareResponse;
+    const body = prep.body as ChallengeResponse;
 
     const now = new Date();
 
@@ -147,18 +147,18 @@ describe('SIWE E2E', () => {
     const signature = await wallet.signMessage(message);
 
     await request(app.getHttpServer())
-      .post('/auth/siwe/verify')
+      .post('/v1/auth/login')
       .send({ message, signature })
       .expect(400);
   });
 
   it('rejects invalid signature', async () => {
     const prep = await request(app.getHttpServer())
-      .get('/auth/siwe/prepare')
+      .get('/v1/auth/challenge')
       .query({ address: wallet.address })
       .expect(200);
 
-    const body = prep.body as PrepareResponse;
+    const body = prep.body as ChallengeResponse;
 
     const msg = new SiweMessage({
       domain: body.domain,
@@ -176,7 +176,7 @@ describe('SIWE E2E', () => {
     const invalidSignature = '0x1234'; // Invalid signature
 
     await request(app.getHttpServer())
-      .post('/auth/siwe/verify')
+      .post('/v1/auth/login')
       .send({ message, signature: invalidSignature })
       .expect(401);
   });
@@ -198,18 +198,18 @@ describe('SIWE E2E', () => {
     const signature = await wallet.signMessage(message);
 
     await request(app.getHttpServer())
-      .post('/auth/siwe/verify')
+      .post('/v1/auth/login')
       .send({ message, signature })
       .expect(400);
   });
 
   it('POST /auth/refresh returns a fresh access token', async () => {
     const prep = await request(app.getHttpServer())
-      .get('/auth/siwe/prepare')
+      .get('/v1/auth/challenge')
       .query({ address: wallet.address })
       .expect(200);
 
-    const body = prep.body as PrepareResponse;
+    const body = prep.body as ChallengeResponse;
     const nowIso = new Date().toISOString();
 
     // build SIWE message
@@ -228,14 +228,14 @@ describe('SIWE E2E', () => {
     const signature = await wallet.signMessage(message);
 
     const verifyResponse = await request(app.getHttpServer())
-      .post('/auth/siwe/verify')
+      .post('/v1/auth/login')
       .send({ message, signature })
       .expect(201);
 
     const { tokens } = verifyResponse.body;
 
     const res = await request(app.getHttpServer())
-      .post('/auth/siwe/refresh')
+      .post('/v1/auth/refresh')
       .send({ refresh: tokens.refresh })
       .expect(200);
 
@@ -246,7 +246,7 @@ describe('SIWE E2E', () => {
 
   it('rejects invalid refresh token', async () => {
     await request(app.getHttpServer())
-      .post('/auth/siwe/refresh')
+      .post('/v1/auth/refresh')
       .send({ refresh: 'not-a-jwt' })
       .expect(400);
   });

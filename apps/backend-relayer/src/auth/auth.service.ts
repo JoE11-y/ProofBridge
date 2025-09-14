@@ -24,7 +24,7 @@ export class AuthService {
     private readonly jwt: JwtService,
   ) {}
 
-  async prepare(address: string) {
+  async challenge(address: string) {
     if (!ethers.isAddress(address)) {
       throw new BadRequestException('Invalid Ethereum address format');
     }
@@ -48,7 +48,7 @@ export class AuthService {
     }
   }
 
-  async verify(messageRaw: string, signature: string) {
+  async login(messageRaw: string, signature: string) {
     const msg = this.parseSiwe(messageRaw);
 
     this.assertDomainAndUri(msg);

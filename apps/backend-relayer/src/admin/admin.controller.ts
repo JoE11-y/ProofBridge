@@ -10,7 +10,7 @@ import {
 import { AdminService } from './admin.service';
 import { AdminAuthDTO } from '../dto/admin.dto';
 import type { Request } from 'express';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 
 @Controller('admin')
 export class AdminController {
@@ -23,7 +23,7 @@ export class AdminController {
   }
 
   @Post('addAdmin')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.CREATED)
   addAdmin(@Req() req: Request, @Body() dto: AdminAuthDTO) {
     return this.adminAuth.addAdmin(req, dto);

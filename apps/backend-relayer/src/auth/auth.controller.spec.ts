@@ -13,8 +13,8 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: {
-            prepare: jest.fn(),
-            verify: jest.fn(),
+            challenge: jest.fn(),
+            login: jest.fn(),
             refresh: jest.fn(),
           },
         },
@@ -29,8 +29,8 @@ describe('AuthController', () => {
     jest.resetAllMocks();
   });
 
-  describe('GET /auth/siwe/prepare', () => {
-    it('should call AuthService.prepare with the address and return payload', async () => {
+  describe('GET /v1/auth/challenge', () => {
+    it('should call AuthService.challenge with the address and return payload', async () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678';
       const mockPayload = {
         nonce: 'abc123',
@@ -41,10 +41,10 @@ describe('AuthController', () => {
       };
 
       const spy = jest
-        .spyOn(service, 'prepare')
+        .spyOn(service, 'challenge')
         .mockResolvedValueOnce(mockPayload);
 
-      const res = await controller.prepare(address);
+      const res = await controller.challenge(address);
 
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy).toHaveBeenCalledWith(address);
@@ -56,15 +56,15 @@ describe('AuthController', () => {
       const address = '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef';
 
       const spy = jest
-        .spyOn(service, 'prepare')
+        .spyOn(service, 'challenge')
         .mockRejectedValueOnce(new Error('boom'));
 
-      await expect(controller.prepare(address)).rejects.toThrow('boom');
+      await expect(controller.challenge(address)).rejects.toThrow('boom');
       expect(spy).toHaveBeenCalledWith(address);
     });
   });
 
-  describe('POST /auth/siwe/refresh', () => {
+  describe('POST /v1/auth/refresh', () => {
     it('should call AuthService.refresh and return new tokens', async () => {
       const dto = { refresh: 'valid-refresh-token' };
       const mockResult = {
@@ -96,7 +96,7 @@ describe('AuthController', () => {
     });
   });
 
-  describe('POST /auth/siwe/verify', () => {
+  describe('POST /v1/auth/login', () => {
     it('should call AuthService.verify and return payload', async () => {
       const dto = {
         message:
@@ -109,10 +109,10 @@ describe('AuthController', () => {
       };
 
       const spy = jest
-        .spyOn(service, 'verify')
+        .spyOn(service, 'login')
         .mockResolvedValueOnce(mockResult);
 
-      const res = await controller.verify(dto);
+      const res = await controller.login(dto);
 
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy).toHaveBeenCalledWith(dto.message, dto.signature);
@@ -123,10 +123,10 @@ describe('AuthController', () => {
       const dto = { message: 'bad', signature: '0x00' };
 
       const spy = jest
-        .spyOn(service, 'verify')
+        .spyOn(service, 'login')
         .mockRejectedValueOnce(new Error('Unauthorized'));
 
-      await expect(controller.verify(dto)).rejects.toThrow('Unauthorized');
+      await expect(controller.login(dto)).rejects.toThrow('Unauthorized');
       expect(spy).toHaveBeenCalledWith(dto.message, dto.signature);
     });
   });
