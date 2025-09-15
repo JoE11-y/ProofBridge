@@ -86,7 +86,6 @@ model Token {
 }
 
 /// Uni-directional: fromToken -> toToken
-/// Cross-chain same-token routes are just two rows (BaseETH->EthETH, EthETH->BaseETH)
 model Route {
   id String @id @default(uuid())
 
@@ -95,6 +94,8 @@ model Route {
 
   toTokenId String
   toToken   Token  @relation("RouteTo", fields: [toTokenId], references: [id], onDelete: Restrict)
+
+  metadata Json?
 
   trades Trade[]
 

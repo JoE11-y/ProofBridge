@@ -23,6 +23,7 @@ import {
   UpdateChainDto,
 } from '../dto/chain.dto';
 import { CreateTokenDto, UpdateTokenDto } from '../dto/token.dto';
+import { CreateRouteDto } from '../dto/route.dto';
 
 @Controller('/v1/admin')
 export class AdminController {
@@ -75,14 +76,14 @@ export class AdminController {
   @Post('tokens/create')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateTokenDto) {
+  createToken(@Body() dto: CreateTokenDto) {
     return this.service.createToken(dto);
   }
 
   @Patch('tokens/:id')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.OK)
-  update(
+  updateToken(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateTokenDto,
   ) {
@@ -92,7 +93,23 @@ export class AdminController {
   @Delete('tokens/:id')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id', new ParseUUIDPipe()) id: string) {
+  async removeToken(@Param('id', new ParseUUIDPipe()) id: string) {
     await this.service.removeToken(id);
+  }
+
+  // POST /v1/routes (admin)
+  @Post('routes/create')
+  @UseGuards(AdminJwtGuard)
+  @HttpCode(HttpStatus.CREATED)
+  createRoute(@Body() dto: CreateRouteDto) {
+    return this.service.createRoute(dto);
+  }
+
+  // DELETE /v1/routes/:id (admin)
+  @Delete('routes/:id')
+  @UseGuards(AdminJwtGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeRoute(@Param('id', new ParseUUIDPipe()) id: string) {
+    await this.service.removeRoute(id);
   }
 }

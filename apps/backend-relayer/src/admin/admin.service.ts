@@ -10,6 +10,8 @@ import { ChainService } from '../chains/chain.service';
 import { CreateChainDto, QueryChainsDto } from '../dto/chain.dto';
 import { TokenService } from '../token/token.service';
 import { CreateTokenDto } from '../dto/token.dto';
+import { RoutesService } from '../routes/route.service';
+import { CreateRouteDto } from '../dto/route.dto';
 
 @Injectable()
 export class AdminService {
@@ -19,6 +21,7 @@ export class AdminService {
     private readonly encryption: EncryptionService,
     private readonly ChainService: ChainService,
     private readonly tokenService: TokenService,
+    private readonly routes: RoutesService,
   ) {}
 
   async addAdmin(req: Request, { email, password }: AdminAuthDTO) {
@@ -118,5 +121,13 @@ export class AdminService {
 
   async removeToken(id: string) {
     return this.tokenService.remove(id);
+  }
+
+  async createRoute(dto: CreateRouteDto) {
+    return this.routes.create(dto);
+  }
+
+  async removeRoute(id: string) {
+    return this.routes.remove(id);
   }
 }

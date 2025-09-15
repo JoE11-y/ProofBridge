@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+
 export type HealthStatus = 'ok' | 'degraded' | 'error';
 export interface HealthResponse {
   status: HealthStatus;
@@ -28,4 +30,29 @@ type TokenRow = {
   createdAt: Date;
   updatedAt: Date;
   chain: { id: string; name: string; chainId: bigint };
+};
+
+type RouteRow = {
+  id: string;
+  metadata: Prisma.JsonValue | null;
+  createdAt: Date;
+  updatedAt: Date;
+  fromToken: {
+    id: string;
+    symbol: string;
+    name: string;
+    address: string;
+    decimals: number;
+    kind: string;
+    chain: { id: string; name: string; chainId: bigint };
+  };
+  toToken: {
+    id: string;
+    symbol: string;
+    name: string;
+    address: string;
+    decimals: number;
+    kind: string;
+    chain: { id: string; name: string; chainId: bigint };
+  };
 };

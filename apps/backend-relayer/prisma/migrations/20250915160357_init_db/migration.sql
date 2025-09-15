@@ -68,6 +68,7 @@ CREATE TABLE "public"."Route" (
     "id" TEXT NOT NULL,
     "fromTokenId" TEXT NOT NULL,
     "toTokenId" TEXT NOT NULL,
+    "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

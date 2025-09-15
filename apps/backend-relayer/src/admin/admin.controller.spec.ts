@@ -6,6 +6,7 @@ import type { Request } from 'express';
 import { PrismaService } from '@prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ChainService } from '../chains/chain.service';
+import { randomUUID } from 'crypto';
 
 describe('AdminController (unit)', () => {
   let controller: AdminController;
@@ -27,6 +28,8 @@ describe('AdminController (unit)', () => {
             createToken: jest.fn(),
             updateToken: jest.fn(),
             removeToken: jest.fn(),
+            createRoute: jest.fn(),
+            removeRoute: jest.fn(),
           },
         },
         PrismaService,
@@ -147,7 +150,7 @@ describe('AdminController (unit)', () => {
       .spyOn(service, 'createToken')
       .mockResolvedValueOnce(created);
 
-    const res = await controller.create(dto as any);
+    const res = await controller.createToken(dto as any);
 
     expect(spy).toHaveBeenCalledWith(dto);
     expect(res).toEqual(created);
@@ -161,7 +164,7 @@ describe('AdminController (unit)', () => {
       .spyOn(service, 'updateToken')
       .mockResolvedValueOnce(updated);
 
-    const res = await controller.update('tok-1', dto as any);
+    const res = await controller.updateToken('tok-1', dto as any);
     expect(spy).toHaveBeenCalledWith('tok-1', dto);
     expect(res).toEqual(updated);
   });
@@ -171,8 +174,51 @@ describe('AdminController (unit)', () => {
       .spyOn(service, 'removeToken')
       .mockResolvedValueOnce(undefined);
 
-    await controller.remove('tok-1');
+    await controller.removeToken('tok-1');
 
     expect(spy).toHaveBeenCalledWith('tok-1');
+  });
+
+  it('createRoute() -> delegates to service', async () => {
+    const dto = {
+      fromTokenId: randomUUID(),
+      toTokenId: randomUUID(),
+      metadata: {
+        totalTrades: 1000,
+        totalVolume: '5000000',
+        averageTradeSize: '5000',
+        successRate: 99.5,
+      },
+    };
+
+    const created = {
+      id: randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      fromToken: {} as any,
+      toToken: {} as any,
+      ...dto,
+    };
+
+    const spy = jest
+      .spyOn(service, 'createRoute')
+      .mockResolvedValueOnce(created);
+
+    const res = await controller.createRoute(dto as any);
+
+    expect(spy).toHaveBeenCalledWith(dto);
+    expect(res).toEqual(created);
+  });
+
+  it('removeRoute() -> delegates to service', async () => {
+    const spy = jest
+      .spyOn(service, 'removeRoute')
+      .mockResolvedValueOnce(undefined);
+
+    const routeId = randomUUID();
+
+    await controller.removeRoute(routeId);
+
+    expect(spy).toHaveBeenCalledWith(routeId);
   });
 });

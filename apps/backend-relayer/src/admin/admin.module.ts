@@ -6,6 +6,7 @@ import { AdminController } from './admin.controller';
 import { EncryptionService } from '@libs/encryption.service';
 import { ChainService } from '../chains/chain.service';
 import { TokenService } from '../token/token.service';
+import { RoutesService } from '../routes/route.service';
 
 @Module({
   imports: [JwtModule.register({})],
@@ -15,6 +16,7 @@ import { TokenService } from '../token/token.service';
     PrismaService,
     ChainService,
     TokenService,
+    RoutesService,
     EncryptionService,
   ],
 })
