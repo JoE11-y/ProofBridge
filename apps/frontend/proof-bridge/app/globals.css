@@ -5,6 +5,8 @@
   --background: #ffffff;
   --foreground: #171717;
   --primary-color: #c3ff49;
+  --pale-grey-color: #fdfdff;
+  --night-color: #0b090a;
 }
 
 @theme inline {
@@ -13,7 +15,24 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-perfectly-nineties: var(--font-perfectly-nineties);
-  --color-primary: #ffbe0b;
+  --font-pixter: var(--font-pixter-display);
+  --font-sequel: var(--font-sequel-sans);
+  /* --color-primary: #ffbe0b; */
+  --color-primary: #c3ff49;
+  --color-pale-grey: var(--pale-grey-color);
+  --color-night: #0b090a;
+  --color-grey-1000: #0a0a0a;
+  --color-grey-900: #121112;
+  --color-grey-800: #1b1819;
+  --color-grey-700: #262424;
+  --color-grey-600: #3c3839;
+  --color-grey-500: #534d4e;
+  --color-grey-400: #797072;
+  --color-grey-300: #b8b2b3;
+  --color-grey-200: #d6d2d3;
+  --color-grey-100: #e3e1e1;
+  --color-grey-50: #edebec;
+  --color-grey-0: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {

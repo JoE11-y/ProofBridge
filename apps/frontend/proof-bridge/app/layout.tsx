@@ -5,22 +5,25 @@ import "./globals.css"
 import { AntConfigProvider } from "@/components/shared/AntConfigProvider"
 import { SmoothScroll } from "@/components/shared/SmoothScroller"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-})
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-})
-
 const perfectlyNineties = localFont({
   src: [
     { path: "./fonts/perfectly-nineties-black.otf" },
     { path: "./fonts/perfectly-nineties-regular.otf", weight: "400" },
   ],
   variable: "--font-perfectly-nineties",
+})
+
+const pixter = localFont({
+  src: [
+    { path: "./fonts/Pixter-Display-Bold.ttf", weight: "600" },
+    { path: "./fonts/Pixter-Display.ttf" },
+  ],
+  variable: "--font-pixter-display",
+})
+
+const sequel = localFont({
+  src: [{ path: "./fonts/Sequel-Sans-Book-Disp.ttf" }],
+  variable: "--font-sequel-sans",
 })
 
 export const metadata: Metadata = {
@@ -36,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${perfectlyNineties.variable} antialiased`}
+        className={`${pixter.variable} ${sequel.variable} ${sequel.className} ${perfectlyNineties.variable} antialiased`}
       >
         <AntConfigProvider>
           <SmoothScroll>{children}</SmoothScroll>
