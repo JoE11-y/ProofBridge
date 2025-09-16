@@ -7,9 +7,17 @@ import { AdminModule } from './admin/admin.module';
 import { ChainModule } from './chains/chain.module';
 import { TokenModule } from './token/token.module';
 import { RoutesModule } from './routes/route.module';
+import { AdsModule } from './ads/ad.module';
 
 @Module({
-  imports: [AuthModule, AdminModule, ChainModule, TokenModule, RoutesModule],
+  imports: [
+    AuthModule,
+    AdminModule,
+    ChainModule,
+    TokenModule,
+    RoutesModule,
+    AdsModule,
+  ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })

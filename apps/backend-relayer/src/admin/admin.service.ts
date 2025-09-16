@@ -26,7 +26,7 @@ export class AdminService {
 
   async addAdmin(req: Request, { email, password }: AdminAuthDTO) {
     try {
-      const user = req.user;
+      const user = req.admin;
 
       if (!user) throw new UnauthorizedException('Invalid credentials');
 

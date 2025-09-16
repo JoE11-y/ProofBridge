@@ -80,6 +80,9 @@ model Token {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  adToToken  Ad[] @relation("AdToToken")
+  AFromToken Ad[] @relation("AdFromToken")
+
   @@unique([chainUid, address])
   @@index([symbol])
   @@index([address])
@@ -101,10 +104,57 @@ model Route {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Ad        Ad[]
 
   @@unique([fromTokenId, toTokenId])
   @@index([fromTokenId])
   @@index([toTokenId])
+}
+
+model Ad {
+  id             String @id @default(uuid())
+  creatorAddress String
+  routeId        String
+  route          Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  fromTokenId String
+  toTokenId   String
+  fromToken   Token  @relation("AdFromToken", fields: [fromTokenId], references: [id])
+  toToken     Token  @relation("AdToToken", fields: [toTokenId], references: [id])
+
+  // liquidity
+  poolAmount BigInt
+  minAmount  BigInt?
+  maxAmount  BigInt?
+
+  status   AdStatus @default(ACTIVE)
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Trade     Trade[]
+  AdLock    AdLock[]
+
+  @@index([creatorAddress, status])
+  @@index([routeId, status])
+}
+
+enum AdStatus {
+  ACTIVE
+  PAUSED
+  EXHAUSTED
+  CLOSED
+}
+
+model AdLock {
+  id         String    @id @default(uuid())
+  adId       String
+  ad         Ad        @relation(fields: [adId], references: [id], onDelete: Cascade)
+  trade      Trade     @relation(fields: [tradeId], references: [id])
+  tradeId    String    @unique
+  amount     BigInt
+  releasedAt DateTime?
+  createdAt  DateTime  @default(now())
 }
 
 model Trade {
@@ -125,6 +175,8 @@ model Trade {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Ad        Ad       @relation(fields: [adId], references: [id])
+  AdLock    AdLock?
 
   @@index([adId])
   @@index([routeId])

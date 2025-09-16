@@ -37,7 +37,7 @@ export class AdminJwtGuard implements CanActivate {
           return false;
         });
 
-      req.user = decoded;
+      req.admin = decoded;
       return true;
     } catch (err) {
       console.error(err);

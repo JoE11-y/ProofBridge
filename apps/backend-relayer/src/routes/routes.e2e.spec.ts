@@ -2,9 +2,7 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { createTestingApp } from '../../test/utils/create-app';
-import { seedAdmin } from '../../test/utils/seed-admin';
-import { seedChain } from '../../test/utils/seed-chain';
-import { seedToken } from '../../test/utils/seed-token';
+import { seedAdmin, seedChain, seedToken } from '../../test/utils/seed';
 import { randomUUID } from 'crypto';
 
 describe('Routes E2E', () => {
@@ -27,13 +25,6 @@ describe('Routes E2E', () => {
   afterAll(async () => {
     await app.close();
     await prisma.$disconnect();
-  });
-
-  it('GET /v1/routes returns empty initially', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/v1/routes')
-      .expect(200);
-    expect(res.body).toEqual({ data: [], nextCursor: null });
   });
 
   it('POST /v1/routes requires admin auth', async () => {

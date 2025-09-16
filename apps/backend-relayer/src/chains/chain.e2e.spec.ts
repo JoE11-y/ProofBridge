@@ -4,7 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { createTestingApp } from '../../test/utils/create-app';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { seedAdmin } from '../../test/utils/seed-admin';
+import { seedAdmin } from '../../test/utils/seed';
 
 interface ChainResponse {
   id: string;

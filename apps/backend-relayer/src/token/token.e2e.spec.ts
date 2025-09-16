@@ -3,8 +3,7 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { createTestingApp } from '../../test/utils/create-app';
-import { seedAdmin } from '../../test/utils/seed-admin';
-import { seedChain } from '../../test/utils/seed-chain';
+import { seedAdmin, seedChain } from '../../test/utils/seed';
 import { ethers } from 'ethers';
 
 describe('Tokens E2E', () => {

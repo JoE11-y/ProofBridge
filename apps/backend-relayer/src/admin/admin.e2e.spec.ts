@@ -3,7 +3,7 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { createTestingApp } from '../../test/utils/create-app';
 import { PrismaClient } from '@prisma/client';
-import { seedAdmin } from '../../test/utils/seed-admin';
+import { seedAdmin } from '../../test/utils/seed';
 
 describe('Admin E2E', () => {
   let app: INestApplication;

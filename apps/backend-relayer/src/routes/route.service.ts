@@ -163,6 +163,7 @@ export class RoutesService {
         select: { id: true },
       }),
     ]);
+
     if (!fromExists || !toExists) {
       throw new NotFoundException('Token not found');
     }

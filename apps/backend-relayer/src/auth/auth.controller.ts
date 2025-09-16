@@ -1,23 +1,15 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RefreshDto, LoginDTO } from '../dto/auth.dto';
+import { RefreshDto, LoginDTO, ChallengeDTO } from '../dto/auth.dto';
 
 @Controller('/v1/auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  @Get('challenge')
+  @Post('challenge')
   @HttpCode(HttpStatus.OK)
-  async challenge(@Query('address') address: string) {
-    return this.auth.challenge(address);
+  async challenge(@Body() dto: ChallengeDTO) {
+    return this.auth.challenge(dto.address);
   }
 
   @Post('login')

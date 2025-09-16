@@ -44,7 +44,7 @@ describe('AuthController', () => {
         .spyOn(service, 'challenge')
         .mockResolvedValueOnce(mockPayload);
 
-      const res = await controller.challenge(address);
+      const res = await controller.challenge({ address });
 
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy).toHaveBeenCalledWith(address);
@@ -59,7 +59,7 @@ describe('AuthController', () => {
         .spyOn(service, 'challenge')
         .mockRejectedValueOnce(new Error('boom'));
 
-      await expect(controller.challenge(address)).rejects.toThrow('boom');
+      await expect(controller.challenge({ address })).rejects.toThrow('boom');
       expect(spy).toHaveBeenCalledWith(address);
     });
   });

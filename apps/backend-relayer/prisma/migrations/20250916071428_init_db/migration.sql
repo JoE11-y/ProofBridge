@@ -1,6 +1,9 @@
 -- CreateEnum
 CREATE TYPE "public"."TokenKind" AS ENUM ('NATIVE', 'ERC20');
 
+-- CreateEnum
+CREATE TYPE "public"."AdStatus" AS ENUM ('ACTIVE', 'PAUSED', 'EXHAUSTED', 'CLOSED');
+
 -- CreateTable
 CREATE TABLE "public"."Admin" (
     "id" TEXT NOT NULL,
@@ -76,6 +79,36 @@ CREATE TABLE "public"."Route" (
 );
 
 -- CreateTable
+CREATE TABLE "public"."Ad" (
+    "id" TEXT NOT NULL,
+    "creatorAddress" TEXT NOT NULL,
+    "routeId" TEXT NOT NULL,
+    "fromTokenId" TEXT NOT NULL,
+    "toTokenId" TEXT NOT NULL,
+    "poolAmount" BIGINT NOT NULL,
+    "minAmount" BIGINT,
+    "maxAmount" BIGINT,
+    "status" "public"."AdStatus" NOT NULL DEFAULT 'ACTIVE',
+    "metadata" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Ad_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."AdLock" (
+    "id" TEXT NOT NULL,
+    "adId" TEXT NOT NULL,
+    "tradeId" TEXT NOT NULL,
+    "amount" BIGINT NOT NULL,
+    "releasedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AdLock_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "public"."Trade" (
     "id" TEXT NOT NULL,
     "adId" TEXT NOT NULL,
@@ -136,6 +169,15 @@ CREATE INDEX "Route_toTokenId_idx" ON "public"."Route"("toTokenId");
 CREATE UNIQUE INDEX "Route_fromTokenId_toTokenId_key" ON "public"."Route"("fromTokenId", "toTokenId");
 
 -- CreateIndex
+CREATE INDEX "Ad_creatorAddress_status_idx" ON "public"."Ad"("creatorAddress", "status");
+
+-- CreateIndex
+CREATE INDEX "Ad_routeId_status_idx" ON "public"."Ad"("routeId", "status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AdLock_tradeId_key" ON "public"."AdLock"("tradeId");
+
+-- CreateIndex
 CREATE INDEX "Trade_adId_idx" ON "public"."Trade"("adId");
 
 -- CreateIndex
@@ -157,4 +199,22 @@ ALTER TABLE "public"."Route" ADD CONSTRAINT "Route_fromTokenId_fkey" FOREIGN KEY
 ALTER TABLE "public"."Route" ADD CONSTRAINT "Route_toTokenId_fkey" FOREIGN KEY ("toTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."Ad" ADD CONSTRAINT "Ad_routeId_fkey" FOREIGN KEY ("routeId") REFERENCES "public"."Route"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Ad" ADD CONSTRAINT "Ad_fromTokenId_fkey" FOREIGN KEY ("fromTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Ad" ADD CONSTRAINT "Ad_toTokenId_fkey" FOREIGN KEY ("toTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."AdLock" ADD CONSTRAINT "AdLock_adId_fkey" FOREIGN KEY ("adId") REFERENCES "public"."Ad"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."AdLock" ADD CONSTRAINT "AdLock_tradeId_fkey" FOREIGN KEY ("tradeId") REFERENCES "public"."Trade"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Trade" ADD CONSTRAINT "Trade_routeId_fkey" FOREIGN KEY ("routeId") REFERENCES "public"."Route"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Trade" ADD CONSTRAINT "Trade_adId_fkey" FOREIGN KEY ("adId") REFERENCES "public"."Ad"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

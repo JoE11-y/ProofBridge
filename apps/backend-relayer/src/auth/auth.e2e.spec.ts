@@ -26,29 +26,29 @@ describe('SIWE E2E', () => {
     await app.close();
   });
 
-  it('GET /v1/auth/challenge requires address parameter', async () => {
-    await request(app.getHttpServer()).get('/v1/auth/challenge').expect(400);
+  it('POST /v1/auth/challenge requires address parameter', async () => {
+    await request(app.getHttpServer()).post('/v1/auth/challenge').expect(400);
   });
 
-  it('GET /v1/auth/challenge rejects invalid address format', async () => {
+  it('POST /v1/auth/challenge rejects invalid address format', async () => {
     await request(app.getHttpServer())
-      .get('/v1/auth/challenge')
-      .query({ address: 'not-an-address' })
+      .post('/v1/auth/challenge')
+      .send({ address: 'not-an-address' })
       .expect(400);
   });
 
-  it('GET /v1/auth/challenge rejects empty address', async () => {
+  it('POST /v1/auth/challenge rejects empty address', async () => {
     await request(app.getHttpServer())
-      .get('/v1/auth/challenge')
-      .query({ address: '' })
+      .post('/v1/auth/challenge')
+      .send({ address: '' })
       .expect(400);
   });
 
   it('should sign in with SIWE (challenge -> login)', async () => {
     // get nonce bound to address
     const prep = await request(app.getHttpServer())
-      .get('/v1/auth/challenge')
-      .query({ address: wallet.address })
+      .post('/v1/auth/challenge')
+      .send({ address: wallet.address })
       .expect(200);
 
     const body = prep.body as ChallengeResponse;
@@ -91,8 +91,8 @@ describe('SIWE E2E', () => {
 
   it('rejects wrong domain', async () => {
     const prep = await request(app.getHttpServer())
-      .get('/v1/auth/challenge')
-      .query({ address: wallet.address })
+      .post('/v1/auth/challenge')
+      .send({ address: wallet.address })
       .expect(200);
 
     const body = prep.body as ChallengeResponse;
@@ -120,8 +120,8 @@ describe('SIWE E2E', () => {
 
   it('rejects expired message', async () => {
     const prep = await request(app.getHttpServer())
-      .get('/v1/auth/challenge')
-      .query({ address: wallet.address })
+      .post('/v1/auth/challenge')
+      .send({ address: wallet.address })
       .expect(200);
 
     const body = prep.body as ChallengeResponse;
@@ -154,8 +154,8 @@ describe('SIWE E2E', () => {
 
   it('rejects invalid signature', async () => {
     const prep = await request(app.getHttpServer())
-      .get('/v1/auth/challenge')
-      .query({ address: wallet.address })
+      .post('/v1/auth/challenge')
+      .send({ address: wallet.address })
       .expect(200);
 
     const body = prep.body as ChallengeResponse;
@@ -205,8 +205,8 @@ describe('SIWE E2E', () => {
 
   it('POST /auth/refresh returns a fresh access token', async () => {
     const prep = await request(app.getHttpServer())
-      .get('/v1/auth/challenge')
-      .query({ address: wallet.address })
+      .post('/v1/auth/challenge')
+      .send({ address: wallet.address })
       .expect(200);
 
     const body = prep.body as ChallengeResponse;

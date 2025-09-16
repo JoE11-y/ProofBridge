@@ -6,7 +6,7 @@ import { env } from '@libs/configs';
 import { Request } from 'express';
 
 @Injectable()
-export class JwtAuthGuard implements CanActivate {
+export class UserJwtGuard implements CanActivate {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
