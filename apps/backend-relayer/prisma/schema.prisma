@@ -6,10 +6,199 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id            String @id @default(uuid())
+  username      String @unique
+  walletAddress String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuthNonce {
+  id            String    @id @default(uuid())
+  value         String    @unique
+  walletAddress String
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+enum TokenKind {
+  NATIVE
+  ERC20
+}
+
+model Chain {
+  id                 String @id @default(uuid())
+  name               String
+  chainId            BigInt @unique
+  adManagerAddress   String
+  orderPortalAddress String
+
+  tokens Token[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([chainId, id])
+  @@index([name])
+  @@index([adManagerAddress])
+  @@index([orderPortalAddress])
+}
+
+model Token {
+  id       String    @id @default(uuid())
+  symbol   String
+  name     String
+  address  String
+  kind     TokenKind @default(ERC20)
+  decimals Int
+
+  chainUid String
+  chain    Chain  @relation(fields: [chainUid], references: [id], onDelete: Cascade)
+
+  routesFrom Route[] @relation("RouteFrom")
+  routesTo   Route[] @relation("RouteTo")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  adToToken  Ad[] @relation("AdToToken")
+  AFromToken Ad[] @relation("AdFromToken")
+
+  @@unique([chainUid, address])
+  @@index([symbol])
+  @@index([address])
+}
+
+/// Uni-directional: fromToken -> toToken
+model Route {
+  id String @id @default(uuid())
+
+  fromTokenId String
+  fromToken   Token  @relation("RouteFrom", fields: [fromTokenId], references: [id], onDelete: Restrict)
+
+  toTokenId String
+  toToken   Token  @relation("RouteTo", fields: [toTokenId], references: [id], onDelete: Restrict)
+
+  metadata Json?
+
+  trades Trade[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Ad        Ad[]
+
+  @@unique([fromTokenId, toTokenId])
+  @@index([fromTokenId])
+  @@index([toTokenId])
+}
+
+model Ad {
+  id             String @id @default(uuid())
+  creatorAddress String
+  routeId        String
+  route          Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  fromTokenId String
+  toTokenId   String
+  fromToken   Token  @relation("AdFromToken", fields: [fromTokenId], references: [id])
+  toToken     Token  @relation("AdToToken", fields: [toTokenId], references: [id])
+
+  // liquidity
+  poolAmount BigInt
+  minAmount  BigInt?
+  maxAmount  BigInt?
+
+  status   AdStatus @default(ACTIVE)
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Trade     Trade[]
+  AdLock    AdLock[]
+
+  @@index([creatorAddress, status])
+  @@index([routeId, status])
+}
+
+enum AdStatus {
+  ACTIVE
+  PAUSED
+  EXHAUSTED
+  CLOSED
+}
+
+model AdLock {
+  id         String    @id @default(uuid())
+  adId       String
+  ad         Ad        @relation(fields: [adId], references: [id], onDelete: Cascade)
+  trade      Trade     @relation(fields: [tradeId], references: [id])
+  tradeId    String    @unique
+  amount     BigInt
+  authorized Boolean   @default(false)
+  releasedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+enum TradeStatus {
+  CREATED
+  LOCKED
+  AUTH_BOTH
+  PROVING
+  PROOF_READY
+  CLAIMED
+}
+
+model Trade {
+  id String @id @default(uuid())
+
+  adId String
+  ad   Ad     @relation(fields: [adId], references: [id])
+
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id], onDelete: Restrict)
+
+  idempotencyKey String @unique
+
+  // Participants
+  adCreatorAddress String
+  bridgerAddress   String
+
+  // Amount in smallest unit (e.g., wei for ETH)
+  amount Decimal @db.Decimal(78, 0)
+
+  // Encoded signatures map (address -> sig)
+  participantSignatures Json?
+
+  status TradeStatus @default(CREATED)
+
+  signaturesCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  adLock AdLock?
+
+  @@index([adId])
+  @@index([routeId])
+  @@index([adCreatorAddress])
+  @@index([bridgerAddress])
 }
