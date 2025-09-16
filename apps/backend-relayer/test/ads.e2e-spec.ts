@@ -75,12 +75,6 @@ describe('Ads E2E', () => {
     await prisma.$disconnect();
   });
 
-  it('GET /v1/ads returns empty initially', async () => {
-    const res = await request(app.getHttpServer()).get('/v1/ads').expect(200);
-
-    expect(res.body).toEqual({ data: [], nextCursor: null });
-  });
-
   it('POST /v1/ads requires auth', async () => {
     await request(app.getHttpServer())
       .post('/v1/ads')

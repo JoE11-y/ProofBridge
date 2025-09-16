@@ -8,6 +8,7 @@ import { ChainModule } from './modules/chains/chain.module';
 import { TokenModule } from './modules/token/token.module';
 import { RoutesModule } from './modules/routes/route.module';
 import { AdsModule } from './modules/ads/ad.module';
+import { TradesModule } from './modules/trades/trade.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AdsModule } from './modules/ads/ad.module';
     TokenModule,
     RoutesModule,
     AdsModule,
+    TradesModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

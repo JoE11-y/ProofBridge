@@ -50,15 +50,15 @@ export class TradesController {
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.CREATED)
   async create(@Req() req: Request, @Body() dto: CreateTradeDto) {
-    await this.trades.create(req, dto);
+    return this.trades.create(req, dto);
   }
 
   @Post(':id/confirm')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
   confirm(
-    @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ConfirmTradeDto,
   ) {
     return this.trades.confirm(req, id, dto);

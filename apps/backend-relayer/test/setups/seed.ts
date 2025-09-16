@@ -68,3 +68,23 @@ export const seedAdmin = async (
     create: { email, passwordHash },
   });
 };
+
+export const seedAd = async (
+  prisma: PrismaClient,
+  creator: string,
+  routeId: string,
+  fromTokenId: string,
+  toTokenId: string,
+  pool = 1_000_000n,
+) =>
+  prisma.ad.create({
+    data: {
+      creatorAddress: creator,
+      routeId,
+      fromTokenId,
+      toTokenId,
+      poolAmount: pool,
+      status: 'ACTIVE',
+    },
+    select: { id: true, creatorAddress: true, routeId: true },
+  });
