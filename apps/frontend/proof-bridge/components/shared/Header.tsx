@@ -5,12 +5,19 @@ import { SpecialButton } from "../ui/SpecialButton"
 
 export const Header = () => {
   return (
-    <header className="p-4 md:p-8 md:py-3 flex items-center justify-between w-full to-grey-1000 from-grey-900 bg-gradient-to-r">
-      <Logo />
-      <div className="flex items-center justify-between text-sm gap-5">
-        <Link href={"/"}>Docs</Link>
-        <Link href={"/"}>Bridge</Link>
-        <SpecialButton>Connect Wallet</SpecialButton>
+    <header className="h-[70px] flex items-center justify-center to-grey-1000 from-grey-900 bg-gradient-to-l fixed top-0 left-0 w-full z-[20] border-b border-b-grey-800">
+      <div className="px-4 md:px-8 flex items-center justify-between w-full">
+        <div className="flex items-baseline gap-2">
+          <Logo />
+          <p className="text-sm from-primary to-amber-400 bg-gradient-to-r text-transparent bg-clip-text">
+            ProofBridge
+          </p>
+        </div>
+        <div className="flex items-center justify-between text-sm gap-5">
+          <Link href={"/"}>Docs</Link>
+          <Link href={"/"}>Bridge</Link>
+          <SpecialButton>Connect Wallet</SpecialButton>
+        </div>
       </div>
     </header>
   )
