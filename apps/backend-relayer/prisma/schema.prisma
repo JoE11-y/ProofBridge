@@ -153,15 +153,30 @@ model AdLock {
   trade      Trade     @relation(fields: [tradeId], references: [id])
   tradeId    String    @unique
   amount     BigInt
+  authorized Boolean   @default(false)
   releasedAt DateTime?
   createdAt  DateTime  @default(now())
 }
 
+enum TradeStatus {
+  CREATED
+  LOCKED
+  AUTH_BOTH
+  PROVING
+  PROOF_READY
+  CLAIMED
+}
+
 model Trade {
-  id      String @id @default(uuid())
-  adId    String // external ad ref
+  id String @id @default(uuid())
+
+  adId String
+  ad   Ad     @relation(fields: [adId], references: [id])
+
   routeId String
   route   Route  @relation(fields: [routeId], references: [id], onDelete: Restrict)
+
+  idempotencyKey String @unique
 
   // Participants
   adCreatorAddress String
@@ -171,12 +186,16 @@ model Trade {
   amount Decimal @db.Decimal(78, 0)
 
   // Encoded signatures map (address -> sig)
-  participantSignatures Json
+  participantSignatures Json?
+
+  status TradeStatus @default(CREATED)
+
+  signaturesCount Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Ad        Ad       @relation(fields: [adId], references: [id])
-  AdLock    AdLock?
+
+  adLock AdLock?
 
   @@index([adId])
   @@index([routeId])

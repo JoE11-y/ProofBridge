@@ -82,11 +82,9 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "setupFilesAfterEnv": [],
-    "globalSetup": "<rootDir>/../test/jest-e2e.setup.ts",
-    "globalTeardown": "<rootDir>/../test/jest-e2e.teardown.ts",
     "moduleNameMapper": {
       "^@prisma/(?!client)(.*)$": "<rootDir>/../prisma/$1",
-      "^@libs/(.*)$": "<rootDir>/../libs/$1"
+      "^@libs/(.*)$": "<rootDir>/libs/$1"
     }
   }
 }

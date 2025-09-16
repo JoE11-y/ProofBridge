@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
+import { PrismaService } from '@prisma/prisma.service';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { PrismaService } from '@prisma/prisma.service';
-import { AdminModule } from './admin/admin.module';
-import { ChainModule } from './chains/chain.module';
-import { TokenModule } from './token/token.module';
-import { RoutesModule } from './routes/route.module';
-import { AdsModule } from './ads/ad.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { ChainModule } from './modules/chains/chain.module';
+import { TokenModule } from './modules/token/token.module';
+import { RoutesModule } from './modules/routes/route.module';
+import { AdsModule } from './modules/ads/ad.module';
 
 @Module({
   imports: [
