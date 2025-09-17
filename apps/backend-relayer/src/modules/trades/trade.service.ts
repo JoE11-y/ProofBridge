@@ -41,14 +41,8 @@ export class TradesService {
 
     if (!user) throw new UnauthorizedException('Unauthorized');
 
-    if (!isAddress(dto.adCreatorAddress) || !isAddress(dto.bridgerAddress)) {
+    if (!isAddress(dto.bridgerDstAddress)) {
       throw new BadRequestException('Invalid address');
-    }
-
-    if (isAddress(user.walletAddress) !== isAddress(dto.bridgerAddress)) {
-      throw new UnauthorizedException(
-        'Authenticated user does not match bridgerAddress',
-      );
     }
 
     const route = await this.prisma.route.findUnique({
@@ -94,6 +88,7 @@ export class TradesService {
         select: {
           id: true,
           creatorAddress: true,
+          creatorDstAddress: true,
           routeId: true,
           poolAmount: true,
           minAmount: true,
@@ -106,8 +101,11 @@ export class TradesService {
     if (!ad || ad.routeId !== route.id) {
       throw new NotFoundException('Ad not found for route');
     }
-    if (getAddress(ad.creatorAddress) !== getAddress(dto.adCreatorAddress)) {
-      throw new BadRequestException('adCreatorAddress mismatch');
+
+    if (ad.status !== 'ACTIVE') {
+      throw new BadRequestException(
+        `Ad not ACTIVE, current status: ${ad.status}`,
+      );
     }
 
     const amount = toBI(dto.amount);
@@ -137,18 +135,18 @@ export class TradesService {
         adId: true,
         amount: true,
         bridgerAddress: true,
+        bridgerDstAddress: true,
         adCreatorAddress: true,
       },
     });
+
     if (existing) {
       const same =
         existing.routeId === route.id &&
         existing.adId === ad.id &&
         existing.amount.toString() === amount.toString() &&
-        getAddress(existing.bridgerAddress) ===
-          getAddress(dto.bridgerAddress) &&
-        getAddress(existing.adCreatorAddress) ===
-          getAddress(dto.adCreatorAddress);
+        getAddress(existing.bridgerDstAddress) ===
+          getAddress(dto.bridgerDstAddress);
 
       if (!same)
         throw new ConflictException(
@@ -168,9 +166,11 @@ export class TradesService {
           routeId: route.id,
           adId: ad.id,
           amount: amount.toString(),
-          adCreatorAddress: getAddress(dto.adCreatorAddress),
-          bridgerAddress: getAddress(dto.bridgerAddress),
-          status: 'CREATED',
+          adCreatorAddress: getAddress(ad.creatorAddress),
+          adCreatorDstAddress: getAddress(ad.creatorDstAddress),
+          bridgerAddress: getAddress(user.walletAddress),
+          bridgerDstAddress: getAddress(dto.bridgerDstAddress),
+          status: 'INACTIVE',
         },
         select: { id: true },
       });
