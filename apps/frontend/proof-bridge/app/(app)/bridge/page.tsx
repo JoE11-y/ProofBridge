@@ -5,8 +5,8 @@ import React from "react"
 
 const BridgePage = () => {
   return (
-    <div className="max-w-[950px] mx-auto space-y-4 md:space-y-4">
-      <div className="w-full bg-grey-900 p-4 rounded-md">
+    <div className="max-w-[1150px] mx-auto space-y-4 md:space-y-4">
+      <div className="w-full bg-grey-900 p-4 rounded-md md:block hidden">
         <div className="md:max-w-[60%] mx-auto">
           <div className="flex items-center gap-6 w-full">
             <div>

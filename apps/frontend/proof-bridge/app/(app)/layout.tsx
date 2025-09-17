@@ -12,7 +12,7 @@ export default function AppLayout({
       <Header />
       <div className="md:grid md:[grid-template-columns:250px_1fr]">
         <SideBar />
-        <div className="md:pt-[96px] pt-4 px-4 md:px-5">{children}</div>
+        <div className="md:pt-[96px] pt-[76px] md:px-5">{children}</div>
       </div>
     </main>
   )
