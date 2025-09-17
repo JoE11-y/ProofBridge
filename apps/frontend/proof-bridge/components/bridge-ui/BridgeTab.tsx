@@ -233,7 +233,7 @@ const BuyAd = ({
         </p>
       </div>
 
-      <div className="flex items-center gap-1 text-grey-400">
+      <div className="flex md:block items-center gap-1 text-grey-400 md:text-inherit">
         <div className="flex items-center gap-1">
           <span className="md:hidden block h-3 w-1 bg-primary"></span>
           <p>{date_posted.date}</p>
