@@ -211,7 +211,7 @@ model Trade {
   updatedAt DateTime @updatedAt
 
   adLock         AdLock?
-  TradeUpdateLog TradeUpdateLog?
+  tradeUpdateLog TradeUpdateLog?
 
   @@index([adId])
   @@index([routeId])
@@ -229,7 +229,8 @@ model TradeUpdateLog {
 }
 
 model UpdateLog {
-  id       String @id @default(uuid())
+  id       String  @id @default(uuid())
+  ctx      String?
   field    String
   oldValue String
   newValue String
