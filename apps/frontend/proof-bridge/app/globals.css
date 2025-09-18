@@ -2,8 +2,8 @@
 @import "tailwind-scrollbar-hide/v4";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
   --primary-color: #c3ff49;
   --pale-grey-color: #fdfdff;
   --night-color: #0b090a;
@@ -33,13 +33,6 @@
   --color-grey-100: #e3e1e1;
   --color-grey-50: #edebec;
   --color-grey-0: #ffffff;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 ::-webkit-scrollbar {

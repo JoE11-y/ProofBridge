@@ -38,6 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <meta name="theme-color" content="#27330f"></meta>
       <body
         className={`${pixter.variable} ${sequel.variable} ${sequel.className} ${perfectlyNineties.variable} antialiased`}
       >
