@@ -3,6 +3,15 @@ import React, { useState } from "react"
 import { Alert, Avatar, Button, Divider, Input, Tooltip } from "antd"
 import { Bot, Clock, Rabbit, Verified } from "lucide-react"
 import Image from "next/image"
+import { BuyAd } from "./BuyAd"
+import { SellAd } from "./SellAdd"
+
+const advertiser_terms = `⚠️ Warning: I'm fully active, do not be tempted to click
+                  ''Payment Completed'' box unless you have successfully
+                  completed the payment. Doing so may lead to disputes or
+                  account restrictions." -Leave an active phone number -And
+                  don't forget to leave a positive review please, I'll do same
+                  for you.🙏🙏🙏`
 
 const chainsToken = ["HBAR", "ETH", "SOL", "BNB"]
 
@@ -22,6 +31,7 @@ export const BridgeTab = () => {
       available_tokens: "182.37 HBAR",
       limit: "0.16534 ~ 0.33822 ETH",
       date_posted: { date: "Sept 13, 2025,", time: "10:30pm" },
+      advertiser_terms,
     },
     {
       ad_id: "2",
@@ -34,6 +44,7 @@ export const BridgeTab = () => {
       available_tokens: "120.00 HBAR",
       limit: "0.17000 ~ 0.34210 ETH",
       date_posted: { date: "Sept 12, 2025,", time: "8:15pm" },
+      advertiser_terms,
     },
     {
       ad_id: "3",
@@ -46,6 +57,7 @@ export const BridgeTab = () => {
       available_tokens: "500.00 HBAR",
       limit: "0.10000 ~ 0.33000 ETH",
       date_posted: { date: "Sept 10, 2025,", time: "3:45pm" },
+      advertiser_terms,
     },
   ]
   return (
@@ -152,6 +164,7 @@ export const BridgeTab = () => {
               available_tokens={ad.available_tokens}
               limit={ad.limit}
               date_posted={ad.date_posted}
+              advertiser_terms={ad.advertiser_terms}
             />
           ))}
         </div>
@@ -170,196 +183,11 @@ export const BridgeTab = () => {
               available_tokens={ad.available_tokens}
               limit={ad.limit}
               date_posted={ad.date_posted}
+              advertiser_terms={advertiser_terms}
             />
           ))}
         </div>
       )}
-    </div>
-  )
-}
-
-const BuyAd = ({
-  ad_id,
-  full_name,
-  total_orders,
-  orders_completion_rate,
-  avg_order_completion_time,
-  token,
-  price,
-  available_tokens,
-  limit,
-  date_posted,
-}: {
-  ad_id: string
-  full_name: string
-  total_orders: number
-  orders_completion_rate: string
-  avg_order_completion_time: string
-  token: string
-  price: string
-  available_tokens: string
-  limit: string
-  date_posted: { date: string; time: string }
-}) => {
-  const initial = full_name ? full_name.trim()[0].toUpperCase() : "U"
-  return (
-    <div className="md:grid md:[grid-template-columns:2fr_1fr_2fr_1fr_1fr] gap-7 items-center text-sm md:py-0 py-2">
-      <div className="space-y-[6px]">
-        <div className="flex md:flex-col justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Avatar className="!bg-amber-300/20 !text-amber-500 font-semibold">
-              {initial}
-            </Avatar>
-            <div>
-              <div className="flex items-center gap-1">
-                <p className="font-semibold tracking-wider">{full_name}</p>
-                <Verified className="text-primary" size={15} />
-              </div>
-              <div className="flex items-center gap-1 md:hidden text-xs text-grey-300">
-                <Clock size={12} />
-                <p>{avg_order_completion_time}</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center md:gap-3 gap-1 md:text-sm text-xs md:text-inherit text-grey-300">
-            <p>{total_orders} order(s)</p>
-            <p>|</p>
-            <p>{orders_completion_rate}</p>
-          </div>
-        </div>
-
-        <div className="md:flex items-center gap-1 hidden">
-          <Clock size={16} />
-          <p>{avg_order_completion_time}</p>
-        </div>
-      </div>
-
-      <div className="flex items-baseline gap-2 font-bold">
-        <p className="text-xl">{price}</p>
-        <p className="text-xs">{token}</p>
-      </div>
-
-      <div className="uppercase">
-        <p className="md:font-semibold md:text-[15px]">
-          <span className="md:hidden text-grey-400 capitalize pr-2">
-            Quantity
-          </span>
-          {available_tokens}
-        </p>
-        <p>
-          <span className="md:hidden text-grey-400 capitalize pr-2">
-            Limits
-          </span>
-          {limit}
-        </p>
-      </div>
-
-      <div className="flex md:block items-center gap-1 text-grey-400 md:text-inherit">
-        <div className="flex items-center gap-1">
-          <span className="md:hidden block h-3 w-1 bg-primary"></span>
-          <p>{date_posted.date}</p>
-        </div>
-        <p>{date_posted.time}</p>
-      </div>
-
-      <div className="w-full flex justify-end md:mt-0 -mt-8">
-        <Button type="primary" className="md:w-[120px]">
-          Buy
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-const SellAd = ({
-  ad_id,
-  full_name,
-  total_orders,
-  orders_completion_rate,
-  avg_order_completion_time,
-  token,
-  price,
-  available_tokens,
-  limit,
-  date_posted,
-}: {
-  ad_id: string
-  full_name: string
-  total_orders: number
-  orders_completion_rate: string
-  avg_order_completion_time: string
-  token: string
-  price: string
-  available_tokens: string
-  limit: string
-  date_posted: { date: string; time: string }
-}) => {
-  const initial = full_name ? full_name.trim()[0].toUpperCase() : "U"
-  return (
-    <div className="md:grid md:[grid-template-columns:2fr_1fr_2fr_1fr_1fr] gap-7 items-center text-sm md:py-0 py-2">
-      <div className="space-y-[6px]">
-        <div className="flex md:flex-col justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Avatar className="!bg-amber-300/20 !text-amber-500 font-semibold">
-              {initial}
-            </Avatar>
-            <div>
-              <div className="flex items-center gap-1">
-                <p className="font-semibold tracking-wider">{full_name}</p>
-                <Verified className="text-primary" size={15} />
-              </div>
-              <div className="flex items-center gap-1 md:hidden text-xs text-grey-300">
-                <Clock size={12} />
-                <p>{avg_order_completion_time}</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center md:gap-3 gap-1 md:text-sm text-xs md:text-inherit text-grey-300">
-            <p>{total_orders} order(s)</p>
-            <p>|</p>
-            <p>{orders_completion_rate}</p>
-          </div>
-        </div>
-
-        <div className="md:flex items-center gap-1 hidden">
-          <Clock size={16} />
-          <p>{avg_order_completion_time}</p>
-        </div>
-      </div>
-
-      <div className="flex items-baseline gap-2 font-bold">
-        <p className="text-xl">{price}</p>
-        <p className="text-xs">{token}</p>
-      </div>
-
-      <div className="uppercase">
-        <p className="md:font-semibold md:text-[15px]">
-          <span className="md:hidden text-grey-400 capitalize pr-2">
-            Quantity
-          </span>
-          {available_tokens}
-        </p>
-        <p>
-          <span className="md:hidden text-grey-400 capitalize pr-2">
-            Limits
-          </span>
-          {limit}
-        </p>
-      </div>
-
-      <div className="flex md:block items-center gap-1 text-grey-400 md:text-inherit">
-        <div className="flex items-center gap-1">
-          <span className="md:hidden block h-3 w-1 bg-primary"></span>
-          <p>{date_posted.date}</p>
-        </div>
-        <p>{date_posted.time}</p>
-      </div>
-
-      <div className="w-full flex justify-end md:mt-0 -mt-8">
-        <Button type="primary" danger className="md:w-[120px]">
-          Sell
-        </Button>
-      </div>
     </div>
   )
 }
