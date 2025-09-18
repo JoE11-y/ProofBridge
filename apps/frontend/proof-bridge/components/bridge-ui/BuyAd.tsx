@@ -82,7 +82,7 @@ export const BuyAd = ({ ...props }: propsI) => {
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-grey-200 capitalize pr-2 font-semibold text-xs">
-                    Joined
+                    Posted
                   </p>
                   <div className="flex items-center gap-1 text-grey-300">
                     <div className="flex items-center gap-1">
