@@ -23,7 +23,7 @@ export const orderTypes: Record<string, { name: string; type: string }[]> = {
     { name: "orderRecipient", type: "address" },
     { name: "adChainId", type: "uint256" },
     { name: "adManager", type: "address" },
-    { name: "adId", type: "uint256" },
+    { name: "adId", type: "string" },
     { name: "adCreator", type: "address" },
     { name: "adRecipient", type: "address" },
     { name: "salt", type: "uint256" },

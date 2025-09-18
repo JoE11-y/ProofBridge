@@ -7,7 +7,6 @@ import {MockVerifier} from "src/mocks/MockVerifier.sol";
 import {IVerifier} from "src/Verifier.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract MockAdManager is AdManager {
     constructor(address admin, IVerifier v) AdManager(admin, v) {}

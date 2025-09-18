@@ -244,6 +244,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
         }
         _grantRole(ADMIN_ROLE, admin);
         i_verifier = _verifier;
+        managers[admin] = true;
     }
 
     /*//////////////////////////////////////////////////////////////
