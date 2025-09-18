@@ -28,7 +28,9 @@ const BridgePage = () => {
           </div>
         </div>
       </div>
-      <BridgeTab />
+      <div className="mb-20">
+        <BridgeTab />
+      </div>
     </div>
   )
 }

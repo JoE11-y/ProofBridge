@@ -9,6 +9,7 @@ export default function AppLayout({
 }>) {
   return (
     <main className="relative min-h-screen">
+      <div className="h-[300px] w-[300px] rounded-full bg-primary/30 fixed -top-[100px] -left-[100px] blur-[150px]"></div>
       <Header />
       <div className="md:grid md:[grid-template-columns:250px_1fr]">
         <SideBar />

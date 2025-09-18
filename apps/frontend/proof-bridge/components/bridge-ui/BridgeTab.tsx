@@ -135,24 +135,45 @@ export const BridgeTab = () => {
         </div>
       </div>
 
-      {/* BUY ADS DUMMY DATA */}
-      <div className="space-y-4 md:space-y-10">
-        {dummyAds.map((ad) => (
-          <BuyAd
-            key={ad.ad_id}
-            ad_id={ad.ad_id}
-            full_name={ad.full_name}
-            total_orders={ad.total_orders}
-            orders_completion_rate={ad.orders_completion_rate}
-            avg_order_completion_time={ad.avg_order_completion_time}
-            token={ad.token}
-            price={ad.price}
-            available_tokens={ad.available_tokens}
-            limit={ad.limit}
-            date_posted={ad.date_posted}
-          />
-        ))}
-      </div>
+      {/* BUY and SELL ADS DUMMY DATA */}
+
+      {tabKey === "buy" ? (
+        <div className="space-y-4 md:space-y-10">
+          {[...dummyAds, ...dummyAds].map((ad, index) => (
+            <BuyAd
+              key={index}
+              ad_id={ad.ad_id}
+              full_name={ad.full_name}
+              total_orders={ad.total_orders}
+              orders_completion_rate={ad.orders_completion_rate}
+              avg_order_completion_time={ad.avg_order_completion_time}
+              token={ad.token}
+              price={ad.price}
+              available_tokens={ad.available_tokens}
+              limit={ad.limit}
+              date_posted={ad.date_posted}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4 md:space-y-10">
+          {[...dummyAds.reverse(), ...dummyAds].map((ad, index) => (
+            <SellAd
+              key={index}
+              ad_id={ad.ad_id}
+              full_name={ad.full_name}
+              total_orders={ad.total_orders}
+              orders_completion_rate={ad.orders_completion_rate}
+              avg_order_completion_time={ad.avg_order_completion_time}
+              token={ad.token}
+              price={ad.price}
+              available_tokens={ad.available_tokens}
+              limit={ad.limit}
+              date_posted={ad.date_posted}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -244,6 +265,99 @@ const BuyAd = ({
       <div className="w-full flex justify-end md:mt-0 -mt-8">
         <Button type="primary" className="md:w-[120px]">
           Buy
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+const SellAd = ({
+  ad_id,
+  full_name,
+  total_orders,
+  orders_completion_rate,
+  avg_order_completion_time,
+  token,
+  price,
+  available_tokens,
+  limit,
+  date_posted,
+}: {
+  ad_id: string
+  full_name: string
+  total_orders: number
+  orders_completion_rate: string
+  avg_order_completion_time: string
+  token: string
+  price: string
+  available_tokens: string
+  limit: string
+  date_posted: { date: string; time: string }
+}) => {
+  const initial = full_name ? full_name.trim()[0].toUpperCase() : "U"
+  return (
+    <div className="md:grid md:[grid-template-columns:2fr_1fr_2fr_1fr_1fr] gap-7 items-center text-sm md:py-0 py-2">
+      <div className="space-y-[6px]">
+        <div className="flex md:flex-col justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Avatar className="!bg-amber-300/20 !text-amber-500 font-semibold">
+              {initial}
+            </Avatar>
+            <div>
+              <div className="flex items-center gap-1">
+                <p className="font-semibold tracking-wider">{full_name}</p>
+                <Verified className="text-primary" size={15} />
+              </div>
+              <div className="flex items-center gap-1 md:hidden text-xs text-grey-300">
+                <Clock size={12} />
+                <p>{avg_order_completion_time}</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center md:gap-3 gap-1 md:text-sm text-xs md:text-inherit text-grey-300">
+            <p>{total_orders} order(s)</p>
+            <p>|</p>
+            <p>{orders_completion_rate}</p>
+          </div>
+        </div>
+
+        <div className="md:flex items-center gap-1 hidden">
+          <Clock size={16} />
+          <p>{avg_order_completion_time}</p>
+        </div>
+      </div>
+
+      <div className="flex items-baseline gap-2 font-bold">
+        <p className="text-xl">{price}</p>
+        <p className="text-xs">{token}</p>
+      </div>
+
+      <div className="uppercase">
+        <p className="md:font-semibold md:text-[15px]">
+          <span className="md:hidden text-grey-400 capitalize pr-2">
+            Quantity
+          </span>
+          {available_tokens}
+        </p>
+        <p>
+          <span className="md:hidden text-grey-400 capitalize pr-2">
+            Limits
+          </span>
+          {limit}
+        </p>
+      </div>
+
+      <div className="flex md:block items-center gap-1 text-grey-400 md:text-inherit">
+        <div className="flex items-center gap-1">
+          <span className="md:hidden block h-3 w-1 bg-primary"></span>
+          <p>{date_posted.date}</p>
+        </div>
+        <p>{date_posted.time}</p>
+      </div>
+
+      <div className="w-full flex justify-end md:mt-0 -mt-8">
+        <Button type="primary" danger className="md:w-[120px]">
+          Sell
         </Button>
       </div>
     </div>

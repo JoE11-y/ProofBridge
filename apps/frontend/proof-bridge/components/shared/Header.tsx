@@ -5,7 +5,7 @@ import { SpecialButton } from "../ui/SpecialButton"
 
 export const Header = () => {
   return (
-    <header className="h-[70px] flex items-center justify-center to-grey-1000 from-grey-900 bg-gradient-to-l fixed top-0 left-0 w-full z-[20] border-b border-b-grey-800">
+    <header className="h-[70px] flex items-center justify-center to-grey-1000/40 from-grey-900/40 backdrop-blur-2xl bg-gradient-to-l fixed top-0 left-0 w-full z-[20] border-b border-b-grey-800">
       <div className="px-4 md:px-8 flex items-center justify-between w-full">
         <div className="flex items-baseline gap-2">
           <Logo />

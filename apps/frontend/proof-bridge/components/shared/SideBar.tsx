@@ -16,7 +16,7 @@ export const SideBar = () => {
               <div
                 className={`${
                   isActive
-                    ? "bg-night text-grey-0 font-medium"
+                    ? "bg-grey-700 text-grey-0 font-medium"
                     : "text-grey-300"
                 } flex items-center gap-4 capitalize md:px-8 p-4 text-sm relative mb-2 hover:bg-night`}
               >
