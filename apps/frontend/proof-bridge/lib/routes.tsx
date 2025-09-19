@@ -26,13 +26,13 @@ export const app_routes: IRoute[] = [
     icon: <ArrowRightLeft size={20} />,
   },
   {
-    label: "Transactions",
+    label: "Orders",
     path: "/transactions",
     icon: <ReceiptText size={20} />,
   },
   {
-    label: "Your Ads",
-    path: "/ads",
+    label: "Ads Management",
+    path: "/ads-management",
     icon: <BringToFront size={20} />,
   },
 

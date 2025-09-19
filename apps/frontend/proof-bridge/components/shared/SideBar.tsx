@@ -10,7 +10,7 @@ export const SideBar = () => {
     <aside className="sticky top-0 left-0 h-screen w-full pt-[126px] to-grey-1000 from-grey-900/50 bg-gradient-to-b border-r border-r-grey-900 md:block hidden">
       <div className="">
         {app_routes.map((route) => {
-          const isActive = route.path === pathname
+          const isActive = pathname.includes(route.path)
           return (
             <Link href={route.path} key={route.path}>
               <div
