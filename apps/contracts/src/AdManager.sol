@@ -148,6 +148,9 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     /// @notice Request hash tracker to prevent replay attacks
     mapping(bytes32 => bool) public requestHashes;
 
+    /// @notice Ad Ids mapping
+    mapping(string => bool) public adIds;
+
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -309,6 +312,8 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
 
     /// @notice MerkleManager append failed
     error AdManager__MerkleManagerAppendFailed();
+    /// @notice Used Ad Id
+    error AdManager__UsedAdId();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -429,6 +434,10 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
 
         if (tokenRoute[adToken][orderChainId] == address(0)) {
             revert AdManager__ChainNotSupported(orderChainId);
+        }
+
+        if (adIds[adId]) {
+            revert AdManager__UsedAdId();
         }
 
         bytes32 message = createAdRequestHash(adId, adToken, orderChainId, adRecipient, _token, _timeToExpire);

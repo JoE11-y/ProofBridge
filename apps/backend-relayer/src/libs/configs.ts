@@ -18,4 +18,5 @@ export const env = {
   port: process.env.PORT || 9090,
   appDomain: process.env.SIGN_DOMAIN || 'proofbridge.xyz',
   appUri: process.env.SIGN_URI || 'https://proofbridge.xyz',
+  admin: process.env.ADMIN_SECRET || '',
 };
