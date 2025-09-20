@@ -1,6 +1,7 @@
 // ----------------------------
 // Proofbridge domain typed data
 
+import { Fr } from "@aztec/bb.js";
 import { getBytes } from "ethers";
 
 // ----------------------------
@@ -54,4 +55,22 @@ export function hexToArr(hex: string, isSignature = false): Array<number> {
       throw new Error(`Expected 64/65 bytes, got ${bytes.length}`);
   }
   return Array.from(bytes);
+}
+
+export function modOrderHash(orderHash: string) {
+  const buff = Buffer.from(orderHash.replace(/^0x/i, ""), "hex");
+  return Fr.fromBufferReduce(buff);
+}
+
+const ZERO_32 = `0x${"0".repeat(64)}`;
+
+export function padArray(siblings: string[], targetLen = 20): string[] {
+  if (siblings.length > targetLen) {
+    throw new Error(`Array length exceeds maximum of ${targetLen}`);
+  }
+
+  return [
+    ...siblings.map(String),
+    ...Array(targetLen - siblings.length).fill(ZERO_32),
+  ];
 }
