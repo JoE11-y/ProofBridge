@@ -30,7 +30,11 @@ export class ConfirmTradeDto {
 }
 
 export class ConfirmChainActionDto {
-  @IsString() signature!: string;
-  @IsString() logId!: string;
-  @IsOptional() @IsString() txHash?: string;
+  @IsOptional()
+  @IsString()
+  signature?: string;
+
+  @IsOptional()
+  @IsString()
+  txHash?: string;
 }

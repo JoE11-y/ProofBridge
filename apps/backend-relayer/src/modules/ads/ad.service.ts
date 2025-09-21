@@ -13,18 +13,27 @@ import {
   UpdateAdDto,
   WithdrawalAdDto,
   ConfirmChainActionDto,
+  CloseAdDto,
 } from './dto/ad.dto';
 import { getAddress } from 'ethers';
 import { Prisma } from '@prisma/client';
 import { Request } from 'express';
+import { ViemService } from '../../providers/viem/viem.service';
 
 function toBI(s?: string): bigint | undefined {
   return typeof s === 'string' ? BigInt(s) : undefined;
 }
 
+function sameSymbol(a: string, b: string) {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
 @Injectable()
 export class AdsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly viemService: ViemService,
+  ) {}
 
   async list(query: QueryAdsDto) {
     const take =
@@ -185,7 +194,7 @@ export class AdsService {
           select: {
             id: true,
             symbol: true,
-            chain: { select: { chainId: true } },
+            chain: { select: { chainId: true, adManagerAddress: true } },
             address: true,
           },
         },
@@ -208,69 +217,64 @@ export class AdsService {
       throw new BadRequestException('Route must be cross-chain');
     }
 
+    if (sameSymbol(route.fromToken.symbol, route.toToken.symbol)) {
+      throw new BadRequestException('Route tokens must have different symbols');
+    }
+
     const jsonData: Prisma.JsonObject = JSON.parse(
       JSON.stringify(dto.metadata || {}),
     ) as Prisma.JsonObject;
 
-    const { ad: created, logId } = await this.prisma.$transaction(
-      async (prisma) => {
-        const ad = await prisma.ad.create({
-          data: {
-            creatorAddress: getAddress(user.walletAddress),
-            creatorDstAddress: getAddress(dto.creatorDstAddress),
-            routeId: route.id,
-            fromTokenId: route.fromToken.id,
-            toTokenId: route.toToken.id,
-            metadata: jsonData,
-            status: 'INACTIVE',
-          },
-          select: {
-            id: true,
-            creatorDstAddress: true,
-            route: {
-              select: {
-                fromToken: {
-                  select: {
-                    address: true,
-                    chain: { select: { adManagerAddress: true } },
-                  },
-                },
+    const requestDetails = await this.prisma.$transaction(async (prisma) => {
+      const ad = await prisma.ad.create({
+        data: {
+          creatorAddress: getAddress(user.walletAddress),
+          creatorDstAddress: getAddress(dto.creatorDstAddress),
+          routeId: route.id,
+          fromTokenId: route.fromToken.id,
+          toTokenId: route.toToken.id,
+          metadata: jsonData,
+          status: 'INACTIVE',
+        },
+        select: {
+          id: true,
+          creatorDstAddress: true,
+          status: true,
+        },
+      });
+
+      const reqContractDetails =
+        await this.viemService.getCreateAdRequestContractDetails({
+          adChainId: route.fromToken.chain.chainId,
+          adContractAddress: route.fromToken.chain
+            .adManagerAddress as `0x${string}`,
+          adId: ad.id,
+          orderChainId: route.toToken.chain.chainId,
+          adToken: route.fromToken.address as `0x${string}`,
+          adRecipient: ad.creatorDstAddress as `0x${string}`,
+        });
+
+      await prisma.adUpdateLog.create({
+        data: {
+          adId: ad.id,
+          signature: reqContractDetails.signature,
+          reqHash: reqContractDetails.msgHash,
+          log: {
+            create: [
+              {
+                field: 'Status',
+                oldValue: ad.status,
+                newValue: 'ACTIVE',
               },
-            },
-            status: true,
+            ],
           },
-        });
+        },
+      });
 
-        const logEntry = await prisma.adUpdateLog.create({
-          data: {
-            adId: ad.id,
-            signature: '0x',
-            log: {
-              create: [
-                {
-                  field: 'Status',
-                  oldValue: ad.status,
-                  newValue: 'ACTIVE',
-                },
-              ],
-            },
-          },
-        });
+      return reqContractDetails;
+    });
 
-        return { ad, logId: logEntry.id };
-      },
-    );
-
-    return {
-      signature: '0x',
-      logId,
-      contractChainId: fromChainId,
-      contractAddress: created.route.fromToken.chain.adManagerAddress,
-      adId: created.id,
-      orderChainId: toChainId,
-      adToken: route.fromToken.address,
-      adRecipient: created.creatorDstAddress,
-    };
+    return requestDetails;
   }
 
   async fund(req: Request, id: string, dto: FundAdDto) {
@@ -319,11 +323,21 @@ export class AdsService {
 
     const effectiveStatus = ad.status == 'EXHAUSTED' ? 'ACTIVE' : ad.status;
 
-    const logEntry = await this.prisma.$transaction(async (prisma) => {
+    const reqContractDetails =
+      await this.viemService.getFundAdRequestContractDetails({
+        adContractAddress: ad.route.fromToken.chain
+          .adManagerAddress as `0x${string}`,
+        adChainId: ad.route.fromToken.chain.chainId,
+        adId: ad.id,
+        amount: poolBI.toString(),
+      });
+
+    await this.prisma.$transaction(async (prisma) => {
       const entry = await prisma.adUpdateLog.create({
         data: {
           adId: ad.id,
-          signature: '0x',
+          signature: reqContractDetails.signature,
+          reqHash: reqContractDetails.msgHash,
           log: {
             create: [
               {
@@ -352,14 +366,7 @@ export class AdsService {
       return entry;
     });
 
-    return {
-      signature: '0x',
-      logId: logEntry.id,
-      contractChainId: ad.route.fromToken.chain.chainId,
-      contractAddress: ad.route.fromToken.chain.adManagerAddress,
-      adId: ad.id,
-      amount: poolBI.toString(),
-    };
+    return reqContractDetails;
   }
 
   async withdraw(req: Request, id: string, dto: WithdrawalAdDto) {
@@ -420,11 +427,22 @@ export class AdsService {
 
     const effectiveStatus = available - poolBI === 0n ? 'EXHAUSTED' : ad.status;
 
-    const logEntry = await this.prisma.$transaction(async (prisma) => {
-      const entry = await prisma.adUpdateLog.create({
+    const reqContractDetails =
+      await this.viemService.getWithdrawFromAdRequestContractDetails({
+        adContractAddress: ad.route.fromToken.chain
+          .adManagerAddress as `0x${string}`,
+        adChainId: ad.route.fromToken.chain.chainId,
+        adId: ad.id,
+        amount: poolBI.toString(),
+        to: dto.to as `0x${string}`,
+      });
+
+    await this.prisma.$transaction(async (prisma) => {
+      await prisma.adUpdateLog.create({
         data: {
           adId: ad.id,
-          signature: '0x',
+          signature: reqContractDetails.signature,
+          reqHash: reqContractDetails.msgHash,
           log: {
             create: [
               {
@@ -449,18 +467,9 @@ export class AdsService {
           data: { status: 'PAUSED' },
         });
       }
-
-      return entry;
     });
 
-    return {
-      signature: '0x',
-      logId: logEntry.id,
-      contractChainId: ad.route.fromToken.chain.chainId,
-      contractAddress: ad.route.fromToken.chain.adManagerAddress,
-      adId: ad.id,
-      amount: poolBI.toString(),
-    };
+    return reqContractDetails;
   }
 
   async update(req: Request, id: string, dto: UpdateAdDto) {
@@ -513,7 +522,7 @@ export class AdsService {
     };
   }
 
-  async close(req: Request, id: string) {
+  async close(req: Request, id: string, dto: CloseAdDto) {
     const reqUser = req.user;
 
     if (!reqUser) throw new ForbiddenException('Unauthorized');
@@ -566,34 +575,48 @@ export class AdsService {
       return;
     }
 
-    const logEntry = await this.prisma.adUpdateLog.create({
-      data: {
+    const reqContractDetails =
+      await this.viemService.getCloseAdRequestContractDetails({
+        adContractAddress: ad.route.fromToken.chain
+          .adManagerAddress as `0x${string}`,
+        adChainId: ad.route.fromToken.chain.chainId,
         adId: ad.id,
-        signature: '0x',
-        log: {
-          create: [
-            {
-              field: 'PoolAmount',
-              oldValue: ad.poolAmount.toString(),
-              newValue: (0).toString(),
-            },
-            {
-              field: 'Status',
-              oldValue: ad.status,
-              newValue: 'CLOSED',
-            },
-          ],
+        to: dto.to as `0x${string}`,
+      });
+
+    await this.prisma.$transaction(async (prisma) => {
+      await this.prisma.adUpdateLog.create({
+        data: {
+          adId: ad.id,
+          signature: reqContractDetails.signature,
+          reqHash: reqContractDetails.msgHash,
+          log: {
+            create: [
+              {
+                field: 'PoolAmount',
+                oldValue: ad.poolAmount.toString(),
+                newValue: (0).toString(),
+              },
+              {
+                field: 'Status',
+                oldValue: ad.status,
+                newValue: 'CLOSED',
+              },
+            ],
+          },
         },
-      },
+      });
+
+      // mark ad as PAUSED if it was ACTIVE as log is pending
+      if (ad.status === 'ACTIVE') {
+        await prisma.ad.update({
+          where: { id: ad.id },
+          data: { status: 'PAUSED' },
+        });
+      }
     });
 
-    return {
-      signature: '0x',
-      logId: logEntry.id,
-      contractChainId: ad.route.fromToken.chain.chainId,
-      contractAddress: ad.route.fromToken.chain.adManagerAddress,
-      adId: ad.id,
-    };
+    return reqContractDetails;
   }
 
   async confirmChainAction(
@@ -612,7 +635,7 @@ export class AdsService {
     if (!user) throw new ForbiddenException('Unauthorized');
 
     const adLogUpdate = await this.prisma.adUpdateLog.findUnique({
-      where: { id: dto.logId, adId, signature: dto.signature },
+      where: { adId },
       include: { ad: true, log: true },
     });
 
@@ -621,6 +644,35 @@ export class AdsService {
     if (adLogUpdate.ad.creatorAddress !== user.walletAddress) {
       throw new ForbiddenException('Unauthorized');
     }
+
+    // get ad details
+    const ad = await this.prisma.ad.findUnique({
+      where: { id: adId },
+      select: {
+        route: {
+          select: {
+            fromToken: {
+              select: {
+                chain: { select: { adManagerAddress: true, chainId: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!ad) throw new NotFoundException('Ad for Ad Id not found');
+
+    // // verify adLog
+    const isValidated = await this.viemService.validateAdManagerRequest({
+      chainId: ad.route.fromToken.chain.chainId,
+      contractAddress: ad.route.fromToken.chain
+        .adManagerAddress as `0x${string}`,
+      msgHash: adLogUpdate.reqHash as `0x${string}`,
+    });
+
+    if (!isValidated)
+      throw new BadRequestException('Invalid request; please try again');
 
     // apply the updates
     const data: any = {};
@@ -640,6 +692,8 @@ export class AdsService {
 
     // delete the log entry
     await this.prisma.adUpdateLog.delete({ where: { id: adLogUpdate.id } });
+
+    console.log(dto);
 
     return {
       success: true,

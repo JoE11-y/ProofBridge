@@ -21,6 +21,7 @@ import {
   UpdateAdDto,
   WithdrawalAdDto,
   ConfirmChainActionDto,
+  CloseAdDto,
 } from '../ads/dto/ad.dto';
 import type { Request } from 'express';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
@@ -83,8 +84,8 @@ export class AdsController {
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
   update(
-    @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateAdDto,
   ) {
     return this.ads.update(req, id, dto);
@@ -96,7 +97,8 @@ export class AdsController {
   async close(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: CloseAdDto,
   ) {
-    await this.ads.close(req, id);
+    await this.ads.close(req, id, dto);
   }
 }

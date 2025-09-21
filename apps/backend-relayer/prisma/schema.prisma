@@ -145,6 +145,7 @@ model AdUpdateLog {
   id        String      @id @default(uuid())
   adId      String      @unique
   signature String      @unique
+  reqHash   String      @unique
   ad        Ad          @relation(fields: [adId], references: [id], onDelete: Cascade)
   log       UpdateLog[]
   createdAt DateTime    @default(now())
@@ -189,8 +190,6 @@ model Trade {
   routeId String
   route   Route  @relation(fields: [routeId], references: [id], onDelete: Restrict)
 
-  idempotencyKey String @unique
-
   // Participants
   adCreatorAddress    String
   bridgerAddress      String
@@ -219,18 +218,24 @@ model Trade {
   @@index([bridgerAddress])
 }
 
+enum ActionOrigin {
+  AD_MANAGER
+  ORDER_PORTAL
+}
+
 model TradeUpdateLog {
-  id        String      @id @default(uuid())
-  tradeId   String      @unique
-  signature String      @unique
-  trade     Trade       @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  id        String       @id @default(uuid())
+  origin    ActionOrigin
+  tradeId   String       @unique
+  signature String       @unique
+  reqHash   String       @unique
+  trade     Trade        @relation(fields: [tradeId], references: [id], onDelete: Cascade)
   log       UpdateLog[]
-  createdAt DateTime    @default(now())
+  createdAt DateTime     @default(now())
 }
 
 model UpdateLog {
-  id       String  @id @default(uuid())
-  ctx      String?
+  id       String @id @default(uuid())
   field    String
   oldValue String
   newValue String

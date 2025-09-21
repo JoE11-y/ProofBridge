@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -17,17 +16,18 @@ import {
 import { getAddress, isAddress } from 'ethers';
 import { Request } from 'express';
 import { Prisma } from '@prisma/client';
+import { ViemService } from 'src/providers/viem/viem.service';
 
 function toBI(s: string) {
   return BigInt(s);
 }
-function sameSymbol(a: string, b: string) {
-  return a.trim().toLowerCase() === b.trim().toLowerCase();
-}
 
 @Injectable()
 export class TradesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly viemService: ViemService,
+  ) {}
 
   async getById(id: string) {
     const row = await this.prisma.trade.findUnique({
@@ -152,11 +152,8 @@ export class TradesService {
   // creates a new trade along with ad lock
   async create(req: Request, dto: CreateTradeDto) {
     const reqUser = req.user;
-    const idemKey = req.headers['idempotency-key'] as string | undefined;
 
     if (!reqUser) throw new UnauthorizedException('Not authenticated');
-
-    if (!idemKey) throw new BadRequestException('Missing Idempotency-Key');
 
     const user = await this.prisma.user.findUnique({
       where: { id: reqUser.sub },
@@ -168,62 +165,29 @@ export class TradesService {
       throw new BadRequestException('Invalid address');
     }
 
-    const route = await this.prisma.route.findUnique({
-      where: { id: dto.routeId },
-      select: {
-        id: true,
-        fromToken: {
-          select: {
-            id: true,
-            symbol: true,
-            address: true,
-            decimals: true,
-            chain: {
-              select: {
-                id: true,
-                chainId: true,
-                name: true,
-                adManagerAddress: true,
-              },
-            },
-          },
-        },
-        toToken: {
-          select: {
-            id: true,
-            symbol: true,
-            address: true,
-            decimals: true,
-            chain: {
-              select: {
-                id: true,
-                chainId: true,
-                name: true,
-                orderPortalAddress: true,
-              },
-            },
-          },
-        },
-      },
-    });
-    if (!route) throw new NotFoundException('Route not found');
-
-    const from = route.fromToken;
-    const to = route.toToken;
-
-    if (!sameSymbol(from.symbol, to.symbol)) {
-      throw new BadRequestException('Route must be same-symbol on both sides');
-    }
-
-    if (from.chain.chainId === to.chain.chainId) {
-      throw new BadRequestException('Route must be cross-chain');
-    }
-
-    // Ad must exist and belong to adCreatorAddress and same route
     const ad = await this.prisma.ad
       .findUnique({
         where: { id: dto.adId },
         select: {
+          route: {
+            select: {
+              id: true,
+              toToken: {
+                select: {
+                  address: true,
+                  chain: {
+                    select: { orderPortalAddress: true, chainId: true },
+                  },
+                },
+              },
+              fromToken: {
+                select: {
+                  address: true,
+                  chain: { select: { adManagerAddress: true, chainId: true } },
+                },
+              },
+            },
+          },
           id: true,
           creatorAddress: true,
           creatorDstAddress: true,
@@ -237,8 +201,8 @@ export class TradesService {
       })
       .catch(() => null);
 
-    if (!ad || ad.routeId !== route.id) {
-      throw new NotFoundException('Ad not found for route');
+    if (!ad) {
+      throw new NotFoundException('Ad not found');
     }
 
     if (ad.adUpdateLog) {
@@ -271,64 +235,52 @@ export class TradesService {
     if (amount > available)
       throw new BadRequestException('Insufficient liquidity');
 
-    // return same trade if payload matches, else 409
-    const existing = await this.prisma.trade.findUnique({
-      where: { idempotencyKey: idemKey },
-      select: {
-        id: true,
-        routeId: true,
-        adId: true,
-        amount: true,
-        bridgerAddress: true,
-        bridgerDstAddress: true,
-        adCreatorAddress: true,
-      },
-    });
-
-    if (existing) {
-      const same =
-        existing.routeId === route.id &&
-        existing.adId === ad.id &&
-        existing.amount.toString() === amount.toString() &&
-        getAddress(existing.bridgerDstAddress) ===
-          getAddress(dto.bridgerDstAddress);
-
-      if (!same)
-        throw new ConflictException(
-          'Idempotency-Key reused with different payload',
-        );
-
-      const full = await this.getById(existing.id);
-
-      return { trade: full, idempotentHit: true as const };
-    }
-
     // Persist in a single transaction: then AdLock
     const result = await this.prisma.$transaction(async (tx) => {
       const trade = await tx.trade.create({
         data: {
-          idempotencyKey: idemKey,
-          routeId: route.id,
           adId: ad.id,
+          routeId: ad.route.id,
           amount: amount.toString(),
           adCreatorAddress: getAddress(ad.creatorAddress),
           adCreatorDstAddress: getAddress(ad.creatorDstAddress),
           bridgerAddress: getAddress(user.walletAddress),
           bridgerDstAddress: getAddress(dto.bridgerDstAddress),
-          status: 'INACTIVE',
         },
         select: { id: true, status: true },
       });
+
+      const reqContractDetails =
+        await this.viemService.getCreateOrderRequestContractDetails({
+          orderChainId: ad.route.toToken.chain.chainId,
+          orderParams: {
+            orderChainToken: ad.route.toToken.address,
+            adChainToken: ad.route.fromToken.address,
+            amount: amount.toString(),
+            bridger: getAddress(user.walletAddress),
+            orderChainId: ad.route.toToken.chain.chainId.toString(),
+            orderPortal: ad.route.toToken.chain.orderPortalAddress,
+            orderRecipient: getAddress(dto.bridgerDstAddress),
+            adChainId: ad.route.fromToken.chain.chainId.toString(),
+            adManager: ad.route.fromToken.chain.adManagerAddress,
+            adId: ad.id,
+            adCreator: getAddress(ad.creatorAddress),
+            adRecipient: getAddress(ad.creatorDstAddress),
+            salt: trade.id,
+          },
+        });
 
       await tx.adLock.create({
         data: { adId: ad.id, tradeId: trade.id, amount: amount },
       });
 
       // create trade update log to make status active
-      const logEntry = await tx.tradeUpdateLog.create({
+      await tx.tradeUpdateLog.create({
         data: {
           tradeId: trade.id,
-          signature: '0x',
+          origin: 'ORDER_PORTAL',
+          signature: reqContractDetails.signature,
+          reqHash: reqContractDetails.msgHash,
           log: {
             create: [
               {
@@ -340,26 +292,10 @@ export class TradesService {
           },
         },
       });
-      return { tradeId: trade.id, logId: logEntry.id };
+      return { tradeId: trade.id, reqContractDetails };
     });
 
-    return {
-      tradeId: result.tradeId,
-      logId: result.logId,
-      contractAddress: getAddress(to.chain.orderPortalAddress),
-      chainId: to.chain.chainId,
-      orderChainToken: to.address,
-      orderChainId: to.chain.chainId,
-      amount: amount.toString(),
-      bridger: getAddress(user.walletAddress),
-      orderRecipient: getAddress(dto.bridgerDstAddress),
-      adChainId: from.chain.chainId,
-      adManager: getAddress(from.chain.adManagerAddress),
-      adId: ad.id,
-      adCreator: getAddress(ad.creatorAddress),
-      adRecipient: getAddress(ad.creatorDstAddress),
-      salt: idemKey,
-    };
+    return result;
   }
 
   async lockTrade(req: Request, tradeId: string) {
@@ -385,7 +321,6 @@ export class TradesService {
         bridgerDstAddress: true,
         adCreatorDstAddress: true,
         adCreatorAddress: true,
-        idempotencyKey: true,
         route: {
           select: {
             fromToken: {
@@ -436,11 +371,33 @@ export class TradesService {
       throw new BadRequestException('AdLock amount mismatch');
     }
 
+    const reqContractDetails =
+      await this.viemService.getLockForOrderRequestContractDetails({
+        adChainId: trade.route.fromToken.chain.chainId,
+        orderParams: {
+          orderChainToken: trade.route.toToken.address,
+          adChainToken: trade.route.fromToken.address,
+          amount: trade.amount.toString(),
+          bridger: getAddress(user.walletAddress),
+          orderChainId: trade.route.toToken.chain.chainId.toString(),
+          orderPortal: trade.route.toToken.chain.orderPortalAddress,
+          orderRecipient: getAddress(trade.bridgerDstAddress),
+          adChainId: trade.route.fromToken.chain.chainId.toString(),
+          adManager: trade.route.fromToken.chain.adManagerAddress,
+          adId: trade.adId,
+          adCreator: getAddress(trade.adCreatorAddress),
+          adRecipient: getAddress(trade.adCreatorDstAddress),
+          salt: trade.id,
+        },
+      });
+
     // create trade update log to make status locked
-    const logEntry = await this.prisma.tradeUpdateLog.create({
+    await this.prisma.tradeUpdateLog.create({
       data: {
         tradeId: trade.id,
-        signature: '0x',
+        origin: 'AD_MANAGER',
+        signature: reqContractDetails.signature,
+        reqHash: reqContractDetails.msgHash,
         log: {
           create: [
             {
@@ -458,22 +415,7 @@ export class TradesService {
       },
     });
 
-    return {
-      logId: logEntry.id,
-      contractAddress: getAddress(trade.route.fromToken.chain.adManagerAddress),
-      chainId: trade.route.fromToken.chain.chainId,
-      orderChainToken: trade.route.toToken.address,
-      adChainToken: trade.route.fromToken.address,
-      amount: trade.amount.toString(),
-      bridger: trade.bridgerAddress,
-      orderChainId: trade.route.toToken.chain.chainId,
-      srcOrderPortal: getAddress(trade.route.toToken.chain.orderPortalAddress),
-      orderRecipient: trade.bridgerDstAddress,
-      adId: trade.adId,
-      adCreator: trade.adCreatorAddress,
-      adRecipient: trade.adCreatorDstAddress,
-      salt: trade.idempotencyKey,
-    };
+    return reqContractDetails;
   }
 
   async confirmChainAction(
@@ -492,17 +434,67 @@ export class TradesService {
     if (!user) throw new ForbiddenException('Unauthorized');
 
     const tradeLogUpdate = await this.prisma.tradeUpdateLog.findUnique({
-      where: { id: dto.logId, tradeId, signature: dto.signature },
+      where: { tradeId: tradeId, signature: dto.signature },
       include: { trade: true, log: true },
     });
 
-    if (!tradeLogUpdate) throw new NotFoundException('Ad update log not found');
+    if (!tradeLogUpdate)
+      throw new NotFoundException('Trade update log not found');
 
     if (
       tradeLogUpdate.trade.bridgerAddress !== user.walletAddress &&
       tradeLogUpdate.trade.adCreatorAddress !== user.walletAddress
     ) {
       throw new ForbiddenException('Unauthorized');
+    }
+
+    // get ad details
+    const trade = await this.prisma.trade.findUnique({
+      where: { id: tradeId },
+      select: {
+        route: {
+          select: {
+            fromToken: {
+              select: {
+                chain: { select: { adManagerAddress: true, chainId: true } },
+              },
+            },
+            toToken: {
+              select: {
+                chain: { select: { orderPortalAddress: true, chainId: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!trade) throw new NotFoundException('Ad for Ad Id not found');
+
+    if (tradeLogUpdate.origin === 'AD_MANAGER') {
+      // verify adLog
+      const isValidated = await this.viemService.validateAdManagerRequest({
+        chainId: trade.route.fromToken.chain.chainId,
+        contractAddress: trade.route.fromToken.chain
+          .adManagerAddress as `0x${string}`,
+        msgHash: tradeLogUpdate.reqHash as `0x${string}`,
+      });
+
+      if (!isValidated) {
+        throw new BadRequestException('AdManager request not validated');
+      }
+    } else {
+      // verify orderPortal
+      const isValidated = await this.viemService.validateOrderPortalRequest({
+        chainId: trade.route.toToken.chain.chainId,
+        contractAddress: trade.route.toToken.chain
+          .orderPortalAddress as `0x${string}`,
+        msgHash: tradeLogUpdate.reqHash as `0x${string}`,
+      });
+
+      if (!isValidated) {
+        throw new BadRequestException('OrderPortal request not validated');
+      }
     }
 
     // apply the updates

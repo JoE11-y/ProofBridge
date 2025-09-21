@@ -42,6 +42,8 @@ export class FundAdDto {
 export class WithdrawalAdDto {
   @Matches(/^\d+$/)
   poolAmountWithdraw!: string;
+  @IsString()
+  to!: string;
 }
 
 export class UpdateAdDto {
@@ -61,8 +63,17 @@ export class UpdateAdDto {
   metadata?: Record<string, unknown>;
 }
 
+export class CloseAdDto {
+  @IsString()
+  to: string;
+}
+
 export class ConfirmChainActionDto {
-  @IsString() signature!: string;
-  @IsString() logId!: string;
-  @IsOptional() @IsString() txHash?: string;
+  @IsOptional()
+  @IsString()
+  signature?: string;
+
+  @IsOptional()
+  @IsString()
+  txHash?: string;
 }

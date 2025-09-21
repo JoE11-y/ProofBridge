@@ -103,7 +103,7 @@ export class ViemService {
       timeToExpire: Number(timeToExpire),
       adId,
       adToken,
-      orderChainId,
+      orderChainId: orderChainId.toString(),
       adRecipient,
       msgHash: message,
     };

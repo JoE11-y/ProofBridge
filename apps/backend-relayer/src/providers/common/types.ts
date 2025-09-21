@@ -1,9 +1,9 @@
 export type T_CreateAdRequest = {
   adContractAddress: `0x${string}`;
-  adChainId: number;
+  adChainId: bigint;
   adId: string;
   adToken: `0x${string}`;
-  orderChainId: number;
+  orderChainId: bigint;
   adRecipient: `0x${string}`;
 };
 
@@ -14,14 +14,14 @@ export type T_CreateAdRequestContractDetails = {
   timeToExpire: number;
   adId: string;
   adToken: `0x${string}`;
-  orderChainId: number;
+  orderChainId: string;
   adRecipient: `0x${string}`;
   msgHash: `0x${string}`;
 };
 
 export type T_CreatFundAdRequest = {
   adContractAddress: `0x${string}`;
-  adChainId: number;
+  adChainId: bigint;
   adId: string;
   amount: string;
 };
@@ -38,7 +38,7 @@ export type T_CreatFundAdRequestContractDetails = {
 
 export type T_WithdrawFromAdRequest = {
   adContractAddress: `0x${string}`;
-  adChainId: number;
+  adChainId: bigint;
   adId: string;
   amount: string;
   to: `0x${string}`;
@@ -57,7 +57,7 @@ export type T_WithdrawFromAdRequestContractDetails = {
 
 export type T_CloseAdRequest = {
   adContractAddress: `0x${string}`;
-  adChainId: number;
+  adChainId: bigint;
   adId: string;
   to: `0x${string}`;
 };
@@ -117,7 +117,7 @@ export type T_OrderPortalParams = {
 };
 
 export type T_LockForOrderRequest = {
-  adChainId: number;
+  adChainId: bigint;
   orderParams: T_OrderParams;
 };
 
@@ -131,7 +131,7 @@ export type T_LockForOrderRequestContractDetails = {
 };
 
 export type T_CreateOrderRequest = {
-  orderChainId: number;
+  orderChainId: bigint;
   orderParams: T_OrderParams;
 };
 
@@ -145,7 +145,7 @@ export type T_CreateOrderRequestContractDetails = {
 };
 
 export type T_RequestValidation = {
-  chainId: number;
+  chainId: bigint;
   contractAddress: `0x${string}`;
   msgHash: `0x${string}`;
 };
