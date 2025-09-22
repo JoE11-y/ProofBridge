@@ -11,7 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const devOrigins = ['http://localhost:3000', `http://localhost:${PORT}`];
-  const prodOrigins = [env.appUri];
+  const prodOrigins = [env.appUri, 'https://proofbridge.onrender.com'];
   app.enableCors({
     origin: env.isProd ? prodOrigins : devOrigins,
     credentials: true,
@@ -27,6 +27,7 @@ async function bootstrap() {
     .setTitle('Proof Relayer API')
     .setVersion('0.1.0')
     .addServer(`http://localhost:${PORT}`, 'Local')
+    .addServer('https://proofbridge.onrender.com', 'Production')
     .addBearerAuth()
     .addCookieAuth()
     .build();
