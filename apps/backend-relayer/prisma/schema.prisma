@@ -282,6 +282,8 @@ model MMR {
   chain     Chain?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([chainId, id])
 }
 
 model OrderRecord {

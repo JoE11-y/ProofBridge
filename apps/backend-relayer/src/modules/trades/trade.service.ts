@@ -18,26 +18,11 @@ import { ViemService } from '../../providers/viem/viem.service';
 import { MMRService } from '../mmr/mmr.service';
 import { ProofService } from '../../providers/noir/proof.service';
 import { randomUUID } from 'crypto';
-import { TradeStatus } from '@prisma/client';
+import { Prisma, TradeStatus } from '@prisma/client';
 
 function toBI(s: string) {
   return BigInt(s);
 }
-
-type TradeQueryInput = {
-  routeId?: string;
-  adId?: string;
-  adCreatorAddress?: string;
-  bridgerAddress?: string;
-  route?: {
-    fromTokenId?: string;
-    toTokenId?: string;
-  };
-  amount?: {
-    gte?: string;
-    lte?: string;
-  };
-};
 
 @Injectable()
 export class TradesService {
@@ -94,7 +79,7 @@ export class TradesService {
     const take = q.limit && q.limit > 0 && q.limit <= 100 ? q.limit : 25;
     const cursor = q.cursor ? { id: q.cursor } : undefined;
 
-    const where: TradeQueryInput = {};
+    const where: Prisma.TradeWhereInput = {};
 
     if (q.routeId) where.routeId = q.routeId;
     if (q.adId) where.adId = q.adId;
@@ -102,15 +87,19 @@ export class TradesService {
       where.adCreatorAddress = getAddress(q.adCreatorAddress);
     if (q.bridgerAddress) where.bridgerAddress = getAddress(q.bridgerAddress);
 
-    if (q.fromTokenId)
-      where.route = { ...(where.route ?? {}), fromTokenId: q.fromTokenId };
-    if (q.toTokenId)
-      where.route = { ...(where.route ?? {}), toTokenId: q.toTokenId };
+    if (q.fromTokenId || q.toTokenId) {
+      where.route = {
+        ...(q.fromTokenId && { fromTokenId: q.fromTokenId }),
+        ...(q.toTokenId && { toTokenId: q.toTokenId }),
+      };
+    }
 
-    if (q.minAmount)
-      where.amount = { ...(where.amount ?? {}), gte: q.minAmount };
-    if (q.maxAmount)
-      where.amount = { ...(where.amount ?? {}), lte: q.maxAmount };
+    if (q.minAmount || q.maxAmount) {
+      where.amount = {
+        ...(q.minAmount ? { gte: q.minAmount } : {}),
+        ...(q.maxAmount ? { lte: q.maxAmount } : {}),
+      } as Prisma.StringFilter;
+    }
 
     const rows = await this.prisma.trade.findMany({
       where,
@@ -413,7 +402,7 @@ export class TradesService {
           orderChainToken: trade.route.toToken.address,
           adChainToken: trade.route.fromToken.address,
           amount: trade.amount.toString(),
-          bridger: getAddress(user.walletAddress),
+          bridger: getAddress(trade.bridgerAddress),
           orderChainId: trade.route.toToken.chain.chainId.toString(),
           orderPortal: trade.route.toToken.chain.orderPortalAddress,
           orderRecipient: getAddress(trade.bridgerDstAddress),
@@ -468,6 +457,7 @@ export class TradesService {
       where: { id },
       select: {
         id: true,
+        adId: true,
         status: true,
         bridgerAddress: true,
         adCreatorAddress: true,
@@ -619,7 +609,7 @@ export class TradesService {
           adChainId: trade.route.fromToken.chain.chainId.toString() as string,
           adManager: trade.route.fromToken.chain
             .adManagerAddress as `0x${string}`,
-          adId: trade.id,
+          adId: trade.adId,
           adCreator: getAddress(trade.adCreatorAddress),
           adRecipient: getAddress(trade.adCreatorDstAddress),
           salt: trade.id,

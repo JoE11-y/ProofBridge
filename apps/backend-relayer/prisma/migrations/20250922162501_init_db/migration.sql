@@ -319,6 +319,9 @@ CREATE UNIQUE INDEX "TradeUpdateLog_reqHash_key" ON "public"."TradeUpdateLog"("r
 CREATE UNIQUE INDEX "MMR_chainId_key" ON "public"."MMR"("chainId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "MMR_chainId_id_key" ON "public"."MMR"("chainId", "id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "OrderRecord_orderHash_key" ON "public"."OrderRecord"("orderHash");
 
 -- CreateIndex

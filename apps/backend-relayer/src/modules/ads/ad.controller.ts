@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -98,9 +97,9 @@ export class AdsController {
   }
 
   @ApiBearerAuth()
-  @Delete(':id')
+  @Post(':id')
   @UseGuards(UserJwtGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async close(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,

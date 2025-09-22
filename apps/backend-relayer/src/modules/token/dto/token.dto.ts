@@ -22,11 +22,13 @@ export class QueryTokensDto {
   chainUid?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by chain id',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Filter by EVM chain id',
+    example: '1',
+    type: String,
   })
   @IsOptional()
-  @IsUUID()
+  @Type(() => String)
+  @IsString()
   chainId?: string;
 
   @ApiPropertyOptional({

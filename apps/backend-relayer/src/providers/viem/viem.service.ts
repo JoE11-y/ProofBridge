@@ -6,7 +6,6 @@ import {
   createWalletClient,
   http,
   keccak256,
-  parseUnits,
   toHex,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -48,10 +47,14 @@ export class ViemService {
   getClient(chainId: string): { wallet: any; client: any } {
     let chain: Chain;
 
-    if (chainId === '11155111') {
+    const id = Number(chainId);
+
+    if (id === sepolia.id) {
       chain = sepolia;
-    } else {
+    } else if (id === hederaTestnet.id) {
       chain = hederaTestnet;
+    } else {
+      throw new Error(`Unsupported chainId: ${chainId}`);
     }
 
     const adminKey = env.admin as `0x${string}`;
@@ -139,7 +142,7 @@ export class ViemService {
       address: adContractAddress,
       abi: AD_MANAGER_ABI,
       functionName: 'fundAdRequestHash',
-      args: [adId, parseUnits(amount, 18), token, timeToExpire],
+      args: [adId, BigInt(amount), token, timeToExpire],
     });
 
     const signature = await wallet.signMessage({
@@ -174,7 +177,7 @@ export class ViemService {
       address: adContractAddress,
       abi: AD_MANAGER_ABI,
       functionName: 'withdrawFromAdRequestHash',
-      args: [adId, parseUnits(amount, 18), to, token, timeToExpire],
+      args: [adId, BigInt(amount), to, token, timeToExpire],
     });
 
     const signature = await wallet.signMessage({
@@ -410,7 +413,7 @@ export class ViemService {
     const orderHash = getTypedHash(data.orderParams);
 
     const message = await client.readContract({
-      address: orderParams.orderPortal,
+      address: contractAddress,
       abi: isAdCreator ? ORDER_PORTAL_ABI : AD_MANAGER_ABI,
       functionName: 'unlockOrderRequestHash',
       args: [orderParams.adId, orderHash, targetRoot, token, timeToExpire],

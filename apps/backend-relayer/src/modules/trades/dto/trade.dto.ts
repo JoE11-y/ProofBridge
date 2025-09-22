@@ -1,5 +1,13 @@
-import { IsOptional, IsString, IsUUID, Matches } from 'class-validator';
-import { Transform } from 'class-transformer';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  Max,
+  Min,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class QueryTradesDto {
@@ -56,7 +64,7 @@ export class QueryTradesDto {
     description: 'Minimum amount for filtering trades',
   })
   @IsOptional()
-  @Matches(/^\d+$/)
+  @Matches(/^\d$/)
   minAmount?: string;
 
   @ApiPropertyOptional({
@@ -64,7 +72,7 @@ export class QueryTradesDto {
     description: 'Maximum amount for filtering trades',
   })
   @IsOptional()
-  @Matches(/^\d+$/)
+  @Matches(/^\d$/)
   maxAmount?: string;
 
   @ApiPropertyOptional({
@@ -80,6 +88,10 @@ export class QueryTradesDto {
     description: 'Number of results to return per page',
   })
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
   @Transform(({ value }) => Number(value))
   limit?: number;
 }
@@ -103,7 +115,7 @@ export class CreateTradeDto {
     example: '1000',
     description: 'Amount of tokens to trade',
   })
-  @Matches(/^\d+$/)
+  @Matches(/^\d$/)
   amount!: string;
 
   @ApiProperty({

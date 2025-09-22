@@ -28,6 +28,7 @@ export class QueryAdsDto {
   })
   @IsOptional()
   @IsString()
+  @IsIn(['ACTIVE', 'PAUSED', 'EXHAUSTED', 'CLOSED'] as const)
   status?: 'ACTIVE' | 'PAUSED' | 'EXHAUSTED' | 'CLOSED';
 
   @ApiPropertyOptional({
