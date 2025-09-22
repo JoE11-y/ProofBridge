@@ -1,7 +1,7 @@
 import React from "react"
 import { Logo } from "./Logo"
 import Link from "next/link"
-import { SpecialButton } from "../ui/SpecialButton"
+import { ConnectWalletButton } from "../connect-wallet/ConnectWalletButton"
 
 export const Header = () => {
   return (
@@ -20,7 +20,7 @@ export const Header = () => {
           <Link href={"/"} className="hidden md:inline">
             Bridge
           </Link>
-          <SpecialButton>Connect Wallet</SpecialButton>
+          <ConnectWalletButton />
         </div>
       </div>
     </header>
