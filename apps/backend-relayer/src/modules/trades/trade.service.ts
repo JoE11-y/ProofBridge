@@ -8,15 +8,17 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
 import {
+  AuthorizeTradeDto,
   ConfirmChainActionDto,
-  ConfirmTradeDto,
   CreateTradeDto,
   QueryTradesDto,
 } from './dto/trade.dto';
 import { getAddress, isAddress } from 'ethers';
 import { Request } from 'express';
-import { Prisma } from '@prisma/client';
-import { ViemService } from 'src/providers/viem/viem.service';
+import { ViemService } from '../../providers/viem/viem.service';
+import { MMRService } from '../mmr/mmr.service';
+import { ProofService } from 'src/providers/noir/proof.service';
+import { randomUUID } from 'crypto';
 
 function toBI(s: string) {
   return BigInt(s);
@@ -27,6 +29,8 @@ export class TradesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly viemService: ViemService,
+    private readonly merkleService: MMRService,
+    private readonly proofService: ProofService,
   ) {}
 
   async getById(id: string) {
@@ -40,7 +44,6 @@ export class TradesService {
         routeId: true,
         adCreatorAddress: true,
         bridgerAddress: true,
-        participantSignatures: true,
         createdAt: true,
         updatedAt: true,
         ad: {
@@ -176,14 +179,23 @@ export class TradesService {
                 select: {
                   address: true,
                   chain: {
-                    select: { orderPortalAddress: true, chainId: true },
+                    select: {
+                      orderPortalAddress: true,
+                      chainId: true,
+                      mmrId: true,
+                    },
                   },
                 },
               },
               fromToken: {
                 select: {
                   address: true,
-                  chain: { select: { adManagerAddress: true, chainId: true } },
+                  chain: {
+                    select: {
+                      adManagerAddress: true,
+                      chainId: true,
+                    },
+                  },
                 },
               },
             },
@@ -235,10 +247,33 @@ export class TradesService {
     if (amount > available)
       throw new BadRequestException('Insufficient liquidity');
 
+    const secret = this.proofService.generateSecret();
+    const tradeId = randomUUID();
+    const reqContractDetails =
+      await this.viemService.getCreateOrderRequestContractDetails({
+        orderChainId: ad.route.toToken.chain.chainId,
+        orderParams: {
+          orderChainToken: ad.route.toToken.address,
+          adChainToken: ad.route.fromToken.address,
+          amount: amount.toString(),
+          bridger: getAddress(user.walletAddress),
+          orderChainId: ad.route.toToken.chain.chainId.toString(),
+          orderPortal: ad.route.toToken.chain.orderPortalAddress,
+          orderRecipient: getAddress(dto.bridgerDstAddress),
+          adChainId: ad.route.fromToken.chain.chainId.toString(),
+          adManager: ad.route.fromToken.chain.adManagerAddress,
+          adId: ad.id,
+          adCreator: getAddress(ad.creatorAddress),
+          adRecipient: getAddress(ad.creatorDstAddress),
+          salt: tradeId,
+        },
+      });
+
     // Persist in a single transaction: then AdLock
     const result = await this.prisma.$transaction(async (tx) => {
       const trade = await tx.trade.create({
         data: {
+          id: tradeId,
           adId: ad.id,
           routeId: ad.route.id,
           amount: amount.toString(),
@@ -246,29 +281,10 @@ export class TradesService {
           adCreatorDstAddress: getAddress(ad.creatorDstAddress),
           bridgerAddress: getAddress(user.walletAddress),
           bridgerDstAddress: getAddress(dto.bridgerDstAddress),
+          orderHash: reqContractDetails.orderHash,
         },
         select: { id: true, status: true },
       });
-
-      const reqContractDetails =
-        await this.viemService.getCreateOrderRequestContractDetails({
-          orderChainId: ad.route.toToken.chain.chainId,
-          orderParams: {
-            orderChainToken: ad.route.toToken.address,
-            adChainToken: ad.route.fromToken.address,
-            amount: amount.toString(),
-            bridger: getAddress(user.walletAddress),
-            orderChainId: ad.route.toToken.chain.chainId.toString(),
-            orderPortal: ad.route.toToken.chain.orderPortalAddress,
-            orderRecipient: getAddress(dto.bridgerDstAddress),
-            adChainId: ad.route.fromToken.chain.chainId.toString(),
-            adManager: ad.route.fromToken.chain.adManagerAddress,
-            adId: ad.id,
-            adCreator: getAddress(ad.creatorAddress),
-            adRecipient: getAddress(ad.creatorDstAddress),
-            salt: trade.id,
-          },
-        });
 
       await tx.adLock.create({
         data: { adId: ad.id, tradeId: trade.id, amount: amount },
@@ -280,7 +296,8 @@ export class TradesService {
           tradeId: trade.id,
           origin: 'ORDER_PORTAL',
           signature: reqContractDetails.signature,
-          reqHash: reqContractDetails.msgHash,
+          reqHash: reqContractDetails.reqHash,
+          ctx: 'CREATEORDER',
           log: {
             create: [
               {
@@ -292,6 +309,14 @@ export class TradesService {
           },
         },
       });
+
+      await tx.secret.create({
+        data: {
+          tradeId: trade.id,
+          secret,
+        },
+      });
+
       return { tradeId: trade.id, reqContractDetails };
     });
 
@@ -330,6 +355,7 @@ export class TradesService {
                   select: {
                     chainId: true,
                     adManagerAddress: true,
+                    mmrId: true,
                   },
                 },
               },
@@ -397,7 +423,8 @@ export class TradesService {
         tradeId: trade.id,
         origin: 'AD_MANAGER',
         signature: reqContractDetails.signature,
-        reqHash: reqContractDetails.msgHash,
+        reqHash: reqContractDetails.reqHash,
+        ctx: 'LOCKORDER',
         log: {
           create: [
             {
@@ -416,6 +443,183 @@ export class TradesService {
     });
 
     return reqContractDetails;
+  }
+
+  async authorize(req: Request, id: string, dto: AuthorizeTradeDto) {
+    const reqUser = req.user;
+    if (!reqUser) throw new UnauthorizedException('Not authenticated');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: reqUser.sub },
+    });
+
+    if (!user) throw new UnauthorizedException('Unauthorized');
+
+    const trade = await this.prisma.trade.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        bridgerAddress: true,
+        adCreatorAddress: true,
+        bridgerDstAddress: true,
+        adCreatorDstAddress: true,
+        orderHash: true,
+        amount: true,
+        route: {
+          select: {
+            fromToken: {
+              select: {
+                address: true,
+                chain: {
+                  select: {
+                    adManagerAddress: true,
+                    chainId: true,
+                    mmrId: true,
+                  },
+                },
+              },
+            },
+            toToken: {
+              select: {
+                address: true,
+                chain: {
+                  select: {
+                    orderPortalAddress: true,
+                    chainId: true,
+                    mmrId: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!trade) throw new NotFoundException('Trade not found');
+
+    const caller = getAddress(user.walletAddress);
+
+    const isParty =
+      caller === getAddress(trade.bridgerAddress) ||
+      caller === getAddress(trade.adCreatorAddress);
+
+    if (!isParty) throw new UnauthorizedException('Not a participant');
+
+    // ensure that trade status is locked
+    if (trade.status !== 'LOCKED') {
+      throw new BadRequestException(
+        `Trade status must be LOCKED to confirm, got ${trade.status}`,
+      );
+    }
+
+    const isAuthorized = this.viemService.verifyOrderSignature(
+      caller as `0x${string}`,
+      trade.orderHash as `0x${string}`,
+      dto.signature as `0x${string}`,
+    );
+
+    if (!isAuthorized) {
+      throw new BadRequestException('Invalid User Signature');
+    }
+
+    const isAdCreator = caller === getAddress(trade.adCreatorAddress);
+
+    // get the secret
+    const tradeSecret = await this.prisma.secret.findUnique({
+      where: { tradeId: trade.id },
+    });
+
+    if (!tradeSecret) {
+      throw new NotFoundException('Secret not found for trade');
+    }
+
+    let mmrId: string;
+    if (isAdCreator) {
+      mmrId = trade.route.toToken.chain.mmrId;
+    } else {
+      mmrId = trade.route.fromToken.chain.mmrId;
+    }
+
+    // get merkle proof
+    const merkleProof = await this.merkleService.getMerkleProof(
+      mmrId,
+      trade.orderHash,
+    );
+
+    const localRoot = await this.merkleService.getRoot(mmrId);
+
+    const onChainRoot = await this.viemService.fetchOnChainRoot(isAdCreator, {
+      chainId: isAdCreator
+        ? trade.route.toToken.chain.chainId
+        : trade.route.fromToken.chain.chainId,
+      contractAddress: isAdCreator
+        ? (trade.route.toToken.chain.mmrId as `0x${string}`)
+        : (trade.route.fromToken.chain.mmrId as `0x${string}`),
+    });
+
+    if (onChainRoot.toLowerCase() !== localRoot.toLowerCase()) {
+      throw new BadRequestException(
+        'MMR root mismatch - chain is not up to date',
+      );
+    }
+
+    const { proof } = await this.proofService.generateProof({
+      merkleProof,
+      orderHash: trade.orderHash,
+      secret: tradeSecret.secret,
+      isAdCreator,
+      targetRoot: onChainRoot,
+    });
+
+    const nullifierHash = await this.proofService.generateNullifierHash(
+      tradeSecret.secret,
+      isAdCreator,
+      trade.orderHash,
+    );
+
+    const requestContractDetails =
+      await this.viemService.getUnlockOrderContractDetails({
+        chainId: isAdCreator
+          ? trade.route.toToken.chain.chainId
+          : trade.route.fromToken.chain.chainId,
+        contractAddress: isAdCreator
+          ? (trade.route.toToken.chain.orderPortalAddress as `0x${string}`)
+          : (trade.route.fromToken.chain.adManagerAddress as `0x${string}`),
+        isAdCreator,
+        orderParams: {
+          orderChainToken: trade.route.toToken.address,
+          adChainToken: trade.route.fromToken.address,
+          amount: trade.amount.toString(),
+          bridger: getAddress(trade.bridgerAddress),
+          orderChainId: trade.route.toToken.chain.chainId.toString(),
+          orderPortal: trade.route.toToken.chain.orderPortalAddress,
+          orderRecipient: getAddress(trade.bridgerDstAddress),
+          adChainId: trade.route.fromToken.chain.chainId.toString(),
+          adManager: trade.route.fromToken.chain.adManagerAddress,
+          adId: trade.id,
+          adCreator: getAddress(trade.adCreatorAddress),
+          adRecipient: getAddress(trade.adCreatorDstAddress),
+          salt: trade.id,
+        },
+        nullifierHash: nullifierHash,
+        targetRoot: onChainRoot,
+        proof,
+      });
+
+    // create authorization log for tracking
+    await this.prisma.authorizationLog.create({
+      data: {
+        origin: isAdCreator ? 'ORDER_PORTAL' : 'AD_MANAGER',
+        tradeId: trade.id,
+        userAddress: caller,
+        signature: dto.signature,
+        reqHash: requestContractDetails.reqHash,
+      },
+    });
+
+    return requestContractDetails;
   }
 
   async confirmChainAction(
@@ -456,12 +660,24 @@ export class TradesService {
           select: {
             fromToken: {
               select: {
-                chain: { select: { adManagerAddress: true, chainId: true } },
+                chain: {
+                  select: {
+                    adManagerAddress: true,
+                    chainId: true,
+                    mmrId: true,
+                  },
+                },
               },
             },
             toToken: {
               select: {
-                chain: { select: { orderPortalAddress: true, chainId: true } },
+                chain: {
+                  select: {
+                    orderPortalAddress: true,
+                    chainId: true,
+                    mmrId: true,
+                  },
+                },
               },
             },
           },
@@ -497,6 +713,18 @@ export class TradesService {
       }
     }
 
+    if (tradeLogUpdate.ctx == 'LOCKORDER') {
+      await this.merkleService.append(
+        trade.route.fromToken.chain.mmrId,
+        tradeLogUpdate.reqHash,
+      );
+    } else if (tradeLogUpdate.ctx == 'CREATEORDER') {
+      await this.merkleService.append(
+        trade.route.toToken.chain.mmrId,
+        tradeLogUpdate.reqHash,
+      );
+    }
+
     // apply the updates
     const data: any = {};
 
@@ -520,79 +748,6 @@ export class TradesService {
 
     return {
       success: true,
-    };
-  }
-
-  async authorize(req: Request, id: string, dto: ConfirmTradeDto) {
-    const reqUser = req.user;
-    if (!reqUser) throw new UnauthorizedException('Not authenticated');
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: reqUser.sub },
-    });
-
-    if (!user) throw new UnauthorizedException('Unauthorized');
-
-    const trade = await this.prisma.trade.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        status: true,
-        bridgerAddress: true,
-        adCreatorAddress: true,
-        participantSignatures: true,
-      },
-    });
-
-    if (!trade) throw new NotFoundException('Trade not found');
-
-    const caller = getAddress(user.walletAddress);
-
-    const isParty =
-      caller === getAddress(trade.bridgerAddress) ||
-      caller === getAddress(trade.adCreatorAddress);
-
-    if (!isParty) throw new UnauthorizedException('Not a participant');
-
-    // ensure that trade status is locked
-    if (trade.status !== 'LOCKED') {
-      throw new BadRequestException(
-        `Trade status must be LOCKED to confirm, got ${trade.status}`,
-      );
-    }
-
-    // check if caller has already submitted signature
-    if (
-      trade.participantSignatures &&
-      trade.participantSignatures[caller] === dto.encodedSignature
-    ) {
-      return {
-        status: trade.status,
-        participantSignatures: trade.participantSignatures,
-      };
-    }
-
-    // update the signature for caller
-    const sigs: Prisma.JsonObject = JSON.parse(
-      JSON.stringify(trade.participantSignatures || {}),
-    ) as Prisma.JsonObject;
-
-    sigs[caller] = dto.encodedSignature;
-
-    const hasBridgerSig = !!sigs[getAddress(trade.bridgerAddress)];
-    const hasCreatorSig = !!sigs[getAddress(trade.adCreatorAddress)];
-
-    const newStatus = hasBridgerSig && hasCreatorSig ? 'AUTH_BOTH' : 'LOCKED';
-
-    const updated = await this.prisma.trade.update({
-      where: { id: trade.id },
-      data: { participantSignatures: sigs, status: newStatus },
-      select: { status: true, participantSignatures: true },
-    });
-
-    return {
-      status: updated.status,
-      participantSignatures: updated.participantSignatures,
     };
   }
 }

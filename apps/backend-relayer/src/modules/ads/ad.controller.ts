@@ -40,7 +40,7 @@ export class AdsController {
   get(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.ads.getById(id);
   }
-  @Post()
+  @Post('create')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.CREATED)
   create(@Req() req: Request, @Body() dto: CreateAdDto) {

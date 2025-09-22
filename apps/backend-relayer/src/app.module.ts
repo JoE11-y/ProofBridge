@@ -9,6 +9,8 @@ import { TokenModule } from './modules/token/token.module';
 import { RoutesModule } from './modules/routes/route.module';
 import { AdsModule } from './modules/ads/ad.module';
 import { TradesModule } from './modules/trades/trade.module';
+import { MMRModule } from './modules/mmr/mmr.module';
+import { ViemModule } from './providers/viem/viem.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { TradesModule } from './modules/trades/trade.module';
     RoutesModule,
     AdsModule,
     TradesModule,
+    MMRModule,
+    ViemModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

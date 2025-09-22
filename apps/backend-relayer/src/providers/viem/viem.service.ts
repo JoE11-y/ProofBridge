@@ -23,16 +23,20 @@ import {
   T_CreateAdRequestContractDetails,
   T_CreateOrderRequest,
   T_CreateOrderRequestContractDetails,
+  T_CreateUnlockOrderContractDetails,
+  T_FetchRoot,
   T_LockForOrderRequest,
   T_LockForOrderRequestContractDetails,
+  T_OrderParams,
   T_RequestValidation,
+  T_UnlockOrderContractDetails,
   T_WithdrawFromAdRequest,
   T_WithdrawFromAdRequestContractDetails,
-} from '../common/types';
+} from './types';
 import { AD_MANAGER_ABI } from './abis/adManager.abi';
 import { ORDER_PORTAL_ABI } from './abis/orderPortal.abi';
 import { env } from '@libs/configs';
-import { getTypedHash } from '../ethers/typedData';
+import { getTypedHash, verifyTypedData } from './ethers/typedData';
 
 @Injectable()
 export class ViemService {
@@ -248,7 +252,8 @@ export class ViemService {
       token,
       timeToExpire: Number(timeToExpire),
       orderParams,
-      msgHash: message,
+      reqHash: message,
+      orderHash: orderHash as `0x${string}`,
     };
   }
 
@@ -285,7 +290,8 @@ export class ViemService {
       token,
       timeToExpire: Number(timeToExpire),
       orderParams,
-      msgHash: message,
+      reqHash: message,
+      orderHash: orderHash as `0x${string}`,
     };
   }
 
@@ -327,5 +333,108 @@ export class ViemService {
     } else {
       return false;
     }
+  }
+
+  async fetchOnChainRoot(
+    isAdCreator: boolean,
+    data: T_FetchRoot,
+  ): Promise<string> {
+    if (isAdCreator) {
+      return this.fetchAdChainRoot(data);
+    } else {
+      return this.fetchOrderChainRoot(data);
+    }
+  }
+
+  async fetchAdChainRoot(data: T_FetchRoot): Promise<string> {
+    const { chainId, contractAddress } = data;
+
+    const { client } = this.getClient(chainId.toString());
+
+    const root = await client.readContract({
+      address: contractAddress,
+      abi: AD_MANAGER_ABI,
+      functionName: 'getMerkleRoot',
+      args: [],
+    });
+
+    return root;
+  }
+
+  async fetchOrderChainRoot(data: T_FetchRoot): Promise<string> {
+    const { chainId, contractAddress } = data;
+
+    const { client } = this.getClient(chainId.toString());
+
+    const root = await client.readContract({
+      address: contractAddress,
+      abi: ORDER_PORTAL_ABI,
+      functionName: 'getMerkleRoot',
+      args: [],
+    });
+
+    return root;
+  }
+
+  async getUnlockOrderContractDetails(
+    data: T_CreateUnlockOrderContractDetails,
+  ): Promise<T_UnlockOrderContractDetails> {
+    const {
+      chainId,
+      contractAddress,
+      isAdCreator,
+      orderParams,
+      nullifierHash,
+      targetRoot,
+      proof,
+    } = data;
+
+    const { client, wallet } = this.getClient(chainId.toString());
+    const token: `0x${string}` = keccak256(toHex(randomUUID()));
+
+    const timeToMilliseconds: number =
+      getTime(new Date()) + ViemService.TEN_MINUTES;
+
+    const timeToExpire: bigint = BigInt(
+      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
+    );
+
+    const orderHash = getTypedHash(data.orderParams);
+
+    const message = await client.readContract({
+      address: orderParams.orderPortal,
+      abi: isAdCreator ? ORDER_PORTAL_ABI : AD_MANAGER_ABI,
+      functionName: 'unlockOrderRequestHash',
+      args: [orderParams.adId, orderHash, targetRoot, token, timeToExpire],
+    });
+
+    const signature = await wallet.signMessage({
+      message: { raw: message },
+    });
+
+    return {
+      contractAddress,
+      signature,
+      token,
+      timeToExpire: Number(timeToExpire),
+      orderParams,
+      nullifierHash,
+      targetRoot,
+      proof,
+      reqHash: message,
+      orderHash: orderHash as `0x${string}`,
+    };
+  }
+
+  orderTypeHash(orderParams: T_OrderParams): string {
+    return getTypedHash(orderParams);
+  }
+
+  verifyOrderSignature(
+    address: `0x${string}`,
+    orderHash: `0x${string}`,
+    signature: `0x${string}`,
+  ): boolean {
+    return verifyTypedData(orderHash, signature, address);
   }
 }

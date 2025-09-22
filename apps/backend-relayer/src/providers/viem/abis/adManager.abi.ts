@@ -46,14 +46,17 @@ export const AD_MANAGER_ABI = [
   },
   {
     type: 'function',
+    name: 'adIds',
+    inputs: [{ name: '', type: 'string', internalType: 'string' }],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'ads',
     inputs: [{ name: '', type: 'string', internalType: 'string' }],
     outputs: [
-      {
-        name: 'orderChainId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: 'orderChainId', type: 'uint256', internalType: 'uint256' },
       { name: 'adRecipient', type: 'address', internalType: 'address' },
       { name: 'maker', type: 'address', internalType: 'address' },
       { name: 'token', type: 'address', internalType: 'address' },
@@ -93,11 +96,7 @@ export const AD_MANAGER_ABI = [
     inputs: [
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'to', type: 'address', internalType: 'address' },
     ],
@@ -111,11 +110,7 @@ export const AD_MANAGER_ABI = [
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'to', type: 'address', internalType: 'address' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'pure',
@@ -126,18 +121,10 @@ export const AD_MANAGER_ABI = [
     inputs: [
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'adToken', type: 'address', internalType: 'address' },
-      {
-        name: 'orderChainId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: 'orderChainId', type: 'uint256', internalType: 'uint256' },
       { name: 'adRecipient', type: 'address', internalType: 'address' },
     ],
     outputs: [],
@@ -149,18 +136,10 @@ export const AD_MANAGER_ABI = [
     inputs: [
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'adToken', type: 'address', internalType: 'address' },
-      {
-        name: 'orderChainId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: 'orderChainId', type: 'uint256', internalType: 'uint256' },
       { name: 'adRecipient', type: 'address', internalType: 'address' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'pure',
@@ -174,17 +153,9 @@ export const AD_MANAGER_ABI = [
       { name: 'name', type: 'string', internalType: 'string' },
       { name: 'version', type: 'string', internalType: 'string' },
       { name: 'chainId', type: 'uint256', internalType: 'uint256' },
-      {
-        name: 'verifyingContract',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: 'verifyingContract', type: 'address', internalType: 'address' },
       { name: 'salt', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: 'extensions',
-        type: 'uint256[]',
-        internalType: 'uint256[]',
-      },
+      { name: 'extensions', type: 'uint256[]', internalType: 'uint256[]' },
     ],
     stateMutability: 'view',
   },
@@ -194,11 +165,7 @@ export const AD_MANAGER_ABI = [
     inputs: [
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'amount', type: 'uint256', internalType: 'uint256' },
     ],
@@ -212,11 +179,7 @@ export const AD_MANAGER_ABI = [
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'amount', type: 'uint256', internalType: 'uint256' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'pure',
@@ -226,6 +189,13 @@ export const AD_MANAGER_ABI = [
     name: 'getChainID',
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getMerkleRoot',
+    inputs: [],
+    outputs: [{ name: 'root', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'view',
   },
   {
@@ -270,11 +240,7 @@ export const AD_MANAGER_ABI = [
     name: 'hashRequest',
     inputs: [
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       { name: '_action', type: 'string', internalType: 'string' },
       { name: '_params', type: 'bytes[]', internalType: 'bytes[]' },
     ],
@@ -286,11 +252,7 @@ export const AD_MANAGER_ABI = [
     name: 'i_merkleManager',
     inputs: [],
     outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'contract IMerkleManager',
-      },
+      { name: '', type: 'address', internalType: 'contract IMerkleManager' },
     ],
     stateMutability: 'view',
   },
@@ -309,54 +271,22 @@ export const AD_MANAGER_ABI = [
     inputs: [
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       {
         name: 'params',
         type: 'tuple',
         internalType: 'struct AdManager.OrderParams',
         components: [
-          {
-            name: 'orderChainToken',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'adChainToken',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'orderChainToken', type: 'address', internalType: 'address' },
+          { name: 'adChainToken', type: 'address', internalType: 'address' },
           { name: 'amount', type: 'uint256', internalType: 'uint256' },
           { name: 'bridger', type: 'address', internalType: 'address' },
-          {
-            name: 'orderChainId',
-            type: 'uint256',
-            internalType: 'uint256',
-          },
-          {
-            name: 'srcOrderPortal',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'orderRecipient',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'orderChainId', type: 'uint256', internalType: 'uint256' },
+          { name: 'srcOrderPortal', type: 'address', internalType: 'address' },
+          { name: 'orderRecipient', type: 'address', internalType: 'address' },
           { name: 'adId', type: 'string', internalType: 'string' },
-          {
-            name: 'adCreator',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'adRecipient',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'adCreator', type: 'address', internalType: 'address' },
+          { name: 'adRecipient', type: 'address', internalType: 'address' },
           { name: 'salt', type: 'uint256', internalType: 'uint256' },
         ],
       },
@@ -371,11 +301,7 @@ export const AD_MANAGER_ABI = [
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'orderHash', type: 'bytes32', internalType: 'bytes32' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'pure',
@@ -409,11 +335,7 @@ export const AD_MANAGER_ABI = [
     inputs: [
       { name: '_message', type: 'bytes32', internalType: 'bytes32' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
@@ -443,11 +365,7 @@ export const AD_MANAGER_ABI = [
     name: 'renounceRole',
     inputs: [
       { name: 'role', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: 'callerConfirmation',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: 'callerConfirmation', type: 'address', internalType: 'address' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -480,11 +398,7 @@ export const AD_MANAGER_ABI = [
     type: 'function',
     name: 'setChain',
     inputs: [
-      {
-        name: 'orderChainId',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: 'orderChainId', type: 'uint256', internalType: 'uint256' },
       { name: 'orderPortal', type: 'address', internalType: 'address' },
       { name: 'supported', type: 'bool', internalType: 'bool' },
     ],
@@ -535,62 +449,26 @@ export const AD_MANAGER_ABI = [
     inputs: [
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       {
         name: 'params',
         type: 'tuple',
         internalType: 'struct AdManager.OrderParams',
         components: [
-          {
-            name: 'orderChainToken',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'adChainToken',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'orderChainToken', type: 'address', internalType: 'address' },
+          { name: 'adChainToken', type: 'address', internalType: 'address' },
           { name: 'amount', type: 'uint256', internalType: 'uint256' },
           { name: 'bridger', type: 'address', internalType: 'address' },
-          {
-            name: 'orderChainId',
-            type: 'uint256',
-            internalType: 'uint256',
-          },
-          {
-            name: 'srcOrderPortal',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'orderRecipient',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'orderChainId', type: 'uint256', internalType: 'uint256' },
+          { name: 'srcOrderPortal', type: 'address', internalType: 'address' },
+          { name: 'orderRecipient', type: 'address', internalType: 'address' },
           { name: 'adId', type: 'string', internalType: 'string' },
-          {
-            name: 'adCreator',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'adRecipient',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'adCreator', type: 'address', internalType: 'address' },
+          { name: 'adRecipient', type: 'address', internalType: 'address' },
           { name: 'salt', type: 'uint256', internalType: 'uint256' },
         ],
       },
-      {
-        name: 'nullifierHash',
-        type: 'bytes32',
-        internalType: 'bytes32',
-      },
+      { name: 'nullifierHash', type: 'bytes32', internalType: 'bytes32' },
       { name: 'targetRoot', type: 'bytes32', internalType: 'bytes32' },
       { name: 'proof', type: 'bytes', internalType: 'bytes' },
     ],
@@ -605,11 +483,7 @@ export const AD_MANAGER_ABI = [
       { name: 'orderHash', type: 'bytes32', internalType: 'bytes32' },
       { name: '_targetRoot', type: 'bytes32', internalType: 'bytes32' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'pure',
@@ -620,11 +494,7 @@ export const AD_MANAGER_ABI = [
     inputs: [
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'amount', type: 'uint256', internalType: 'uint256' },
       { name: 'to', type: 'address', internalType: 'address' },
@@ -640,11 +510,7 @@ export const AD_MANAGER_ABI = [
       { name: 'amount', type: 'uint256', internalType: 'uint256' },
       { name: 'to', type: 'address', internalType: 'address' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'pure',
@@ -653,12 +519,7 @@ export const AD_MANAGER_ABI = [
     type: 'event',
     name: 'AdClosed',
     inputs: [
-      {
-        name: 'adId',
-        type: 'string',
-        indexed: true,
-        internalType: 'string',
-      },
+      { name: 'adId', type: 'string', indexed: true, internalType: 'string' },
       {
         name: 'maker',
         type: 'address',
@@ -672,12 +533,7 @@ export const AD_MANAGER_ABI = [
     type: 'event',
     name: 'AdCreated',
     inputs: [
-      {
-        name: 'adId',
-        type: 'string',
-        indexed: true,
-        internalType: 'string',
-      },
+      { name: 'adId', type: 'string', indexed: true, internalType: 'string' },
       {
         name: 'maker',
         type: 'address',
@@ -703,12 +559,7 @@ export const AD_MANAGER_ABI = [
     type: 'event',
     name: 'AdFunded',
     inputs: [
-      {
-        name: 'adId',
-        type: 'string',
-        indexed: true,
-        internalType: 'string',
-      },
+      { name: 'adId', type: 'string', indexed: true, internalType: 'string' },
       {
         name: 'maker',
         type: 'address',
@@ -734,12 +585,7 @@ export const AD_MANAGER_ABI = [
     type: 'event',
     name: 'AdWithdrawn',
     inputs: [
-      {
-        name: 'adId',
-        type: 'string',
-        indexed: true,
-        internalType: 'string',
-      },
+      { name: 'adId', type: 'string', indexed: true, internalType: 'string' },
       {
         name: 'maker',
         type: 'address',
@@ -777,31 +623,16 @@ export const AD_MANAGER_ABI = [
         indexed: true,
         internalType: 'address',
       },
-      {
-        name: 'supported',
-        type: 'bool',
-        indexed: false,
-        internalType: 'bool',
-      },
+      { name: 'supported', type: 'bool', indexed: false, internalType: 'bool' },
     ],
     anonymous: false,
   },
-  {
-    type: 'event',
-    name: 'EIP712DomainChanged',
-    inputs: [],
-    anonymous: false,
-  },
+  { type: 'event', name: 'EIP712DomainChanged', inputs: [], anonymous: false },
   {
     type: 'event',
     name: 'OrderLocked',
     inputs: [
-      {
-        name: 'adId',
-        type: 'string',
-        indexed: true,
-        internalType: 'string',
-      },
+      { name: 'adId', type: 'string', indexed: true, internalType: 'string' },
       {
         name: 'orderHash',
         type: 'bytes32',
@@ -870,12 +701,7 @@ export const AD_MANAGER_ABI = [
     type: 'event',
     name: 'RoleAdminChanged',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'previousAdminRole',
         type: 'bytes32',
@@ -895,12 +721,7 @@ export const AD_MANAGER_ABI = [
     type: 'event',
     name: 'RoleGranted',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'account',
         type: 'address',
@@ -920,12 +741,7 @@ export const AD_MANAGER_ABI = [
     type: 'event',
     name: 'RoleRevoked',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'account',
         type: 'address',
@@ -1001,12 +817,7 @@ export const AD_MANAGER_ABI = [
         indexed: true,
         internalType: 'address',
       },
-      {
-        name: 'status',
-        type: 'bool',
-        indexed: false,
-        internalType: 'bool',
-      },
+      { name: 'status', type: 'bool', indexed: false, internalType: 'bool' },
     ],
     anonymous: false,
   },
@@ -1043,27 +854,15 @@ export const AD_MANAGER_ABI = [
     name: 'AdManager__ChainNotSupported',
     inputs: [{ name: 'chainId', type: 'uint256', internalType: 'uint256' }],
   },
-  {
-    type: 'error',
-    name: 'AdManager__InsufficientLiquidity',
-    inputs: [],
-  },
+  { type: 'error', name: 'AdManager__InsufficientLiquidity', inputs: [] },
   { type: 'error', name: 'AdManager__InvalidMessage', inputs: [] },
   { type: 'error', name: 'AdManager__InvalidProof', inputs: [] },
-  {
-    type: 'error',
-    name: 'AdManager__MerkleManagerAppendFailed',
-    inputs: [],
-  },
+  { type: 'error', name: 'AdManager__MerkleManagerAppendFailed', inputs: [] },
   {
     type: 'error',
     name: 'AdManager__MissingRoute',
     inputs: [
-      {
-        name: 'orderChainToken',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: 'orderChainToken', type: 'address', internalType: 'address' },
       { name: 'adChainId', type: 'uint256', internalType: 'uint256' },
     ],
   },
@@ -1072,11 +871,7 @@ export const AD_MANAGER_ABI = [
     type: 'error',
     name: 'AdManager__NullifierUsed',
     inputs: [
-      {
-        name: 'nullifierHash',
-        type: 'bytes32',
-        internalType: 'bytes32',
-      },
+      { name: 'nullifierHash', type: 'bytes32', internalType: 'bytes32' },
     ],
   },
   {
@@ -1117,16 +912,13 @@ export const AD_MANAGER_ABI = [
   { type: 'error', name: 'AdManager__RequestTokenExpired', inputs: [] },
   { type: 'error', name: 'AdManager__TokenAlreadyUsed', inputs: [] },
   { type: 'error', name: 'AdManager__TokenZeroAddress', inputs: [] },
+  { type: 'error', name: 'AdManager__UsedAdId', inputs: [] },
   { type: 'error', name: 'AdManager__ZeroAddress', inputs: [] },
   { type: 'error', name: 'AdManager__ZeroAmount', inputs: [] },
   { type: 'error', name: 'Admanage__ZeroSigner', inputs: [] },
   { type: 'error', name: 'Admanager__ActiveLocks', inputs: [] },
   { type: 'error', name: 'Admanager__InvalidSigner', inputs: [] },
-  {
-    type: 'error',
-    name: 'Admanager__RequestHashedProcessed',
-    inputs: [],
-  },
+  { type: 'error', name: 'Admanager__RequestHashedProcessed', inputs: [] },
   { type: 'error', name: 'ECDSAInvalidSignature', inputs: [] },
   {
     type: 'error',

@@ -21,6 +21,21 @@ importers:
 
   apps/backend-relayer:
     dependencies:
+      '@accumulators/core':
+        specifier: ^4.2.3
+        version: 4.2.3
+      '@accumulators/hashers':
+        specifier: ^4.2.3
+        version: 4.2.3
+      '@accumulators/memory':
+        specifier: ^4.2.3
+        version: 4.2.3
+      '@accumulators/merkle-mountain-range':
+        specifier: ^4.2.3
+        version: 4.2.3
+      '@accumulators/rocksdb':
+        specifier: ^4.2.3
+        version: 4.2.3
       '@biconomy/account':
         specifier: ^4.5.7
         version: 4.5.7(typescript@5.9.2)(viem@2.37.7(typescript@5.9.2))
@@ -39,12 +54,24 @@ importers:
       '@nestjs/platform-express':
         specifier: ^11.0.1
         version: 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)
+      '@noble/curves':
+        specifier: ^2.0.0
+        version: 2.0.0
       '@node-rs/argon2':
         specifier: ^2.0.2
         version: 2.0.2
       '@prisma/client':
         specifier: 6.16.1
         version: 6.16.1(prisma@6.16.1(typescript@5.9.2))(typescript@5.9.2)
+      '@zkpassport/poseidon2':
+        specifier: ^0.6.2
+        version: 0.6.2
+      abstract-level:
+        specifier: ^3.1.0
+        version: 3.1.0
+      async-mutex:
+        specifier: ^0.5.0
+        version: 0.5.0
       bignumber.js:
         specifier: ^9.3.1
         version: 9.3.1
@@ -57,6 +84,9 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
+      level:
+        specifier: ^10.0.0
+        version: 10.0.0
       nest-winston:
         specifier: ^1.10.2
         version: 1.10.2(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(winston@3.17.0)
@@ -215,6 +245,9 @@ packages:
 
   '@accumulators/merkle-mountain-range@4.2.3':
     resolution: {integrity: sha512-+JIaJobDF0EDGKb8kdeLAHBsJEbcYMpAwJH6ucOH6PQC1ju8elEXih7gVnObagsN1kcBzqAaB9GcYJPiNhWKbQ==}
+
+  '@accumulators/rocksdb@4.2.3':
+    resolution: {integrity: sha512-fVUI1hTVewylkmXhMH6DWwDVSQbhJ0cRYdoGhIY6i37UOY5dILnTTNvDGbDIml29s4xJZkTKZbnSI/O3XKgMVw==}
 
   '@adraffy/ens-normalize@1.10.1':
     resolution: {integrity: sha512-96Z2IP3mYmF1Xg2cDm8f1gWGf/HUVedQ3FMifV4kG/PQ4yEP51xDtRAEfhVNt5f/uzpNkZHwWQuUcu6D6K+Ekw==}
@@ -1636,6 +1669,15 @@ packages:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
     engines: {node: '>=6.5'}
 
+  abstract-level@3.1.0:
+    resolution: {integrity: sha512-j2e+TsAxy7Ri+0h7dJqwasymgt0zHBWX4+nMk3XatyuqgHfdstBJ9wsMfbiGwE1O+QovRyPcVAqcViMYdyPaaw==}
+    engines: {node: '>=18'}
+
+  abstract-leveldown@7.2.0:
+    resolution: {integrity: sha512-DnhQwcFEaYsvYDnACLZhMmCWd3rkOeEvglpa4q5i/5Jlm3UIsWaxVzuXvDLFCSCWRO3yy2/+V/G7FusFgejnfQ==}
+    engines: {node: '>=10'}
+    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
+
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
     engines: {node: '>= 0.6'}
@@ -1769,6 +1811,9 @@ packages:
   async-lock@1.4.1:
     resolution: {integrity: sha512-Az2ZTpuytrtqENulXwO3GGv1Bztugx6TT37NIo7imr/Qo0gsYiGtSdBa2B6fsXhTpVZDNfu1Qn3pk531e3q+nQ==}
 
+  async-mutex@0.5.0:
+    resolution: {integrity: sha512-1A94B18jkJ3DYq284ohPxoXbfTA5HsQ7/Mf4DEhcyLx3Bz27Rh59iScbB6EPiP+B+joue6YCxcMXSbFC1tZKwA==}
+
   async@3.2.6:
     resolution: {integrity: sha512-htCUDlxyyCLMgaM3xXg0C0LW2xqfuQ6p05pCEIsXuyQ+a1koYKTuBMzRNwmybfLgvJDMd0r1LTn4+E0Ti6C2AA==}
 
@@ -1896,6 +1941,9 @@ packages:
   brorand@1.1.0:
     resolution: {integrity: sha512-cKV8tMCEpQs4hK/ik71d6LrPOnpkpGBR0wzxqr68g2m/LB2GxVYQroAjMJZRVM1Y4BCjCKc3vAamxSzOY2RP+w==}
 
+  browser-level@3.0.0:
+    resolution: {integrity: sha512-kGXtLh29jMwqKaskz5xeDLtCtN1KBz/DbQSqmvH7QdJiyGRC7RAM8PPg6gvUiNMa+wVnaxS9eSmEtP/f5ajOVw==}
+
   browserslist@4.25.4:
     resolution: {integrity: sha512-4jYpcjabC606xJ3kw2QwGEZKX0Aw7sgQdZCvIK9dhVSPh76BKo+C+btT1RRofH7B+8iNpEbgGNVWiLki5q93yg==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
@@ -1974,6 +2022,10 @@ packages:
   caniuse-lite@1.0.30001741:
     resolution: {integrity: sha512-QGUGitqsc8ARjLdgAfxETDhRbJ0REsP6O3I96TAth/mVjh2cYzN2u+3AzPP3aVSm2FehEItaJw1xd+IGBXWeSw==}
 
+  catering@2.1.1:
+    resolution: {integrity: sha512-K7Qy8O9p76sL3/3m7/zLKbRkyOlSZAgzEaLhyj2mXS8PsCud2Eo4hAb8aLtZqHh0QGqLcb9dlJSu6lHRVENm1w==}
+    engines: {node: '>=6'}
+
   chalk@4.1.2:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
@@ -2014,6 +2066,10 @@ packages:
 
   class-validator@0.14.2:
     resolution: {integrity: sha512-3kMVRF2io8N8pY1IFIXlho9r8IPUUIfHe2hYVtiebvAzU2XeQFXTv+XI4WX+TnXmtwXMDcjngcpkiPM0O9PvLw==}
+
+  classic-level@3.0.0:
+    resolution: {integrity: sha512-yGy8j8LjPbN0Bh3+ygmyYvrmskVita92pD/zCoalfcC9XxZj6iDtZTAnz+ot7GG8p9KLTG+MZ84tSA4AhkgVZQ==}
+    engines: {node: '>=18'}
 
   cli-cursor@3.1.0:
     resolution: {integrity: sha512-I/zHAwsKf9FqGoXM4WWRACob9+SNukZTd94DWF57E4toouRulbCxcUh6RKUEOQlYTHJnzkPMySvPNaaSLNfLZw==}
@@ -2206,6 +2262,11 @@ packages:
   defaults@1.0.4:
     resolution: {integrity: sha512-eFuaLoy/Rxalv2kr+lqMlUnrDWV+3j4pljOIJgLIhI058IQfWJ7vXhyEIHu+HtC738klGALYxOKDO0bQP3tg8A==}
 
+  deferred-leveldown@7.0.0:
+    resolution: {integrity: sha512-QKN8NtuS3BC6m0B8vAnBls44tX1WXAFATUsJlruyAYbZpysWV3siH6o/i3g9DCHauzodksO60bdj5NazNbjCmg==}
+    engines: {node: '>=10'}
+    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
+
   defu@6.1.4:
     resolution: {integrity: sha512-mEQCMmwJu317oSz8CwdIOdwf3xMif1ttiM8LTufzc3g6kR+9Pe236twL8j3IYT1F7GfRgGcW6MWxzZjLIkuHIg==}
 
@@ -2305,6 +2366,11 @@ packages:
   encodeurl@2.0.0:
     resolution: {integrity: sha512-Q0n9HRi4m6JuGIV1eFlmvJB7ZEVxu93IrMyiMsGC0lrMJMWzRgx6WGquyfQgZVb31vhGgXnfmPNNXmxnOkRBrg==}
     engines: {node: '>= 0.8'}
+
+  encoding-down@7.1.0:
+    resolution: {integrity: sha512-ky47X5jP84ryk5EQmvedQzELwVJPjCgXDQZGeb9F6r4PdChByCGHTBrVcF3h8ynKVJ1wVbkxTsDC8zBROPypgQ==}
+    engines: {node: '>=10'}
+    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
 
   end-of-stream@1.4.5:
     resolution: {integrity: sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==}
@@ -2792,6 +2858,10 @@ packages:
   is-arrayish@0.3.4:
     resolution: {integrity: sha512-m6UrgzFVUYawGBh1dUsWR5M2Clqic9RVXC/9f8ceNlv2IcO9j9J/z8UoCLPqtsPBFNzEpfR3xftohbfqDx8EQA==}
 
+  is-buffer@2.0.5:
+    resolution: {integrity: sha512-i2R6zNFDwgEHJyQUtJEk0XFi1i0dPFn/oqjK3/vPCcDeJvW5NQ83V8QbicfF1SupOaB0h8ntgBC2YiE7dfyctQ==}
+    engines: {node: '>=4'}
+
   is-extglob@2.1.1:
     resolution: {integrity: sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==}
     engines: {node: '>=0.10.0'}
@@ -3082,6 +3152,56 @@ packages:
     resolution: {integrity: sha512-b94GiNHQNy6JNTrt5w6zNyffMrNkXZb3KTkCZJb2V1xaEGCk093vkZ2jk3tpaeP33/OiXC+WvK9AxUebnf5nbw==}
     engines: {node: '>= 0.6.3'}
 
+  level-codec@10.0.0:
+    resolution: {integrity: sha512-QW3VteVNAp6c/LuV6nDjg7XDXx9XHK4abmQarxZmlRSDyXYk20UdaJTSX6yzVvQ4i0JyWSB7jert0DsyD/kk6g==}
+    engines: {node: '>=10'}
+    deprecated: Superseded by level-transcoder (https://github.com/Level/community#faq)
+
+  level-concat-iterator@3.1.0:
+    resolution: {integrity: sha512-BWRCMHBxbIqPxJ8vHOvKUsaO0v1sLYZtjN3K2iZJsRBYtp+ONsY6Jfi6hy9K3+zolgQRryhIn2NRZjZnWJ9NmQ==}
+    engines: {node: '>=10'}
+    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
+
+  level-errors@3.0.1:
+    resolution: {integrity: sha512-tqTL2DxzPDzpwl0iV5+rBCv65HWbHp6eutluHNcVIftKZlQN//b6GEnZDM2CvGZvzGYMwyPtYppYnydBQd2SMQ==}
+    engines: {node: '>=10'}
+    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
+
+  level-iterator-stream@5.0.0:
+    resolution: {integrity: sha512-wnb1+o+CVFUDdiSMR/ZymE2prPs3cjVLlXuDeSq9Zb8o032XrabGEXcTCsBxprAtseO3qvFeGzh6406z9sOTRA==}
+    engines: {node: '>=10'}
+
+  level-packager@6.0.1:
+    resolution: {integrity: sha512-8Ezr0XM6hmAwqX9uu8IGzGNkWz/9doyPA8Oo9/D7qcMI6meJC+XhIbNYHukJhIn8OGdlzQs/JPcL9B8lA2F6EQ==}
+    engines: {node: '>=10'}
+    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
+
+  level-rocksdb@5.0.0:
+    resolution: {integrity: sha512-nS/HcKFdzS/kzLIN2PYpeamesqgZVR3fz430/PpW0Q2NLVMPfvJogo0ndwwDotk0KBEq41V1J24B7OKDAG5/dw==}
+    engines: {node: '>=10.12.0'}
+    deprecated: Discontinued (https://github.com/Level/community#faq)
+
+  level-supports@2.1.0:
+    resolution: {integrity: sha512-E486g1NCjW5cF78KGPrMDRBYzPuueMZ6VBXHT6gC7A8UYWGiM14fGgp+s/L1oFfDWSPV/+SFkYCmZ0SiESkRKA==}
+    engines: {node: '>=10'}
+
+  level-supports@6.2.0:
+    resolution: {integrity: sha512-QNxVXP0IRnBmMsJIh+sb2kwNCYcKciQZJEt+L1hPCHrKNELllXhvrlClVHXBYZVT+a7aTSM6StgNXdAldoab3w==}
+    engines: {node: '>=16'}
+
+  level-transcoder@1.0.1:
+    resolution: {integrity: sha512-t7bFwFtsQeD8cl8NIoQ2iwxA0CL/9IFw7/9gAjOonH0PWTTiRfY7Hq+Ejbsxh86tXobDQ6IOiddjNYIfOBs06w==}
+    engines: {node: '>=12'}
+
+  level@10.0.0:
+    resolution: {integrity: sha512-aZJvdfRr/f0VBbSRF5C81FHON47ZsC2TkGxbBezXpGGXAUEL/s6+GP73nnhAYRSCIqUNsmJjfeOF4lzRDKbUig==}
+    engines: {node: '>=18'}
+
+  levelup@5.1.1:
+    resolution: {integrity: sha512-0mFCcHcEebOwsQuk00WJwjLI6oCjbBuEYdh/RaRqhjnyVlzqf41T1NnDtCedumZ56qyIh8euLFDqV1KfzTAVhg==}
+    engines: {node: '>=10'}
+    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
+
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
     engines: {node: '>=6'}
@@ -3182,6 +3302,10 @@ packages:
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
+
+  maybe-combine-errors@1.0.0:
+    resolution: {integrity: sha512-eefp6IduNPT6fVdwPp+1NgD0PML1NU5P6j1Mj5nz1nidX8/sWY7119WL8vTAHgqfsY74TzW0w1XPgdYEKkGZ5A==}
+    engines: {node: '>=10'}
 
   mcl-wasm@2.0.0:
     resolution: {integrity: sha512-VFw8jTwY9iJV6XQXPzq3nPK3roQ1sd48iyT35i//+7EVAi5Z+nyyI6l0/m0EmvMmjGTLLDBXtiWBVYJ/+oFgMA==}
@@ -3290,6 +3414,10 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  module-error@1.0.2:
+    resolution: {integrity: sha512-0yuvsqSCv8LbaOKhnsQ/T5JhyFlCYLPXK3U2sgV10zoKQwzs/MyfuQUOZQ1V/6OCOJsK/TRgNVrPuPDqtdMFtA==}
+    engines: {node: '>=10'}
+
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
@@ -3313,6 +3441,9 @@ packages:
 
   nanoassert@2.0.0:
     resolution: {integrity: sha512-7vO7n28+aYO4J+8w96AzhmU8G+Y/xpPDJz/se19ICsqj/momRbb9mh9ZUtkoJ5X3nTnPdhEJyc0qnM6yAsHBaA==}
+
+  napi-macros@2.2.2:
+    resolution: {integrity: sha512-hmEVtAGYzVQpCKdbQea4skABsdXW4RUh5t5mJ2zzqowJS2OyXZTU1KhDVFhx+NlWZ4ap9mqR9TcDO3LTTttd+g==}
 
   napi-postinstall@0.3.3:
     resolution: {integrity: sha512-uTp172LLXSxuSYHv/kou+f6KW3SMppU9ivthaVTXian9sOt3XM/zHYHpRZiLgQoxeWfYUnslNWQHF1+G71xcow==}
@@ -3699,6 +3830,11 @@ packages:
   reusify@1.1.0:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
+
+  rocksdb@5.2.1:
+    resolution: {integrity: sha512-SN9RRLfqDEGfZ6MgfjpQ4DIn3+TdN5ECKYHgeuPKFy6Yw0I9hYyE46giLidngjZU47JXUmWXJDZuU1CyEcf4Fw==}
+    engines: {node: '>=10.12.0'}
+    deprecated: Discontinued (https://github.com/Level/community#faq)
 
   router@2.2.0:
     resolution: {integrity: sha512-nLTrUKm2UyiL7rlhapu/Zl45FwNgkZGaCpZbIHajDYgwlJCOzLSk+cIPAnsEqV955GjILJnKbdQC1nVPz+gAYQ==}
@@ -4430,6 +4566,11 @@ snapshots:
     dependencies:
       '@accumulators/core': 4.2.3
       ulid: 2.4.0
+
+  '@accumulators/rocksdb@4.2.3':
+    dependencies:
+      '@accumulators/core': 4.2.3
+      level-rocksdb: 5.0.0
 
   '@adraffy/ens-normalize@1.10.1': {}
 
@@ -6228,6 +6369,24 @@ snapshots:
     dependencies:
       event-target-shim: 5.0.1
 
+  abstract-level@3.1.0:
+    dependencies:
+      buffer: 6.0.3
+      is-buffer: 2.0.5
+      level-supports: 6.2.0
+      level-transcoder: 1.0.1
+      maybe-combine-errors: 1.0.0
+      module-error: 1.0.2
+
+  abstract-leveldown@7.2.0:
+    dependencies:
+      buffer: 6.0.3
+      catering: 2.1.1
+      is-buffer: 2.0.5
+      level-concat-iterator: 3.1.0
+      level-supports: 2.1.0
+      queue-microtask: 1.2.3
+
   accepts@2.0.0:
     dependencies:
       mime-types: 3.0.1
@@ -6350,6 +6509,10 @@ snapshots:
       safer-buffer: 2.1.2
 
   async-lock@1.4.1: {}
+
+  async-mutex@0.5.0:
+    dependencies:
+      tslib: 2.8.1
 
   async@3.2.6: {}
 
@@ -6520,6 +6683,10 @@ snapshots:
 
   brorand@1.1.0: {}
 
+  browser-level@3.0.0:
+    dependencies:
+      abstract-level: 3.1.0
+
   browserslist@4.25.4:
     dependencies:
       caniuse-lite: 1.0.30001741
@@ -6597,6 +6764,8 @@ snapshots:
 
   caniuse-lite@1.0.30001741: {}
 
+  catering@2.1.1: {}
+
   chalk@4.1.2:
     dependencies:
       ansi-styles: 4.3.0
@@ -6640,6 +6809,13 @@ snapshots:
       '@types/validator': 13.15.3
       libphonenumber-js: 1.12.17
       validator: 13.15.15
+
+  classic-level@3.0.0:
+    dependencies:
+      abstract-level: 3.1.0
+      module-error: 1.0.2
+      napi-macros: 2.2.2
+      node-gyp-build: 4.8.4
 
   cli-cursor@3.1.0:
     dependencies:
@@ -6808,6 +6984,11 @@ snapshots:
     dependencies:
       clone: 1.0.4
 
+  deferred-leveldown@7.0.0:
+    dependencies:
+      abstract-leveldown: 7.2.0
+      inherits: 2.0.4
+
   defu@6.1.4: {}
 
   delayed-stream@1.0.0: {}
@@ -6905,6 +7086,13 @@ snapshots:
   enabled@2.0.0: {}
 
   encodeurl@2.0.0: {}
+
+  encoding-down@7.1.0:
+    dependencies:
+      abstract-leveldown: 7.2.0
+      inherits: 2.0.4
+      level-codec: 10.0.0
+      level-errors: 3.0.1
 
   end-of-stream@1.4.5:
     dependencies:
@@ -7520,6 +7708,8 @@ snapshots:
 
   is-arrayish@0.3.4: {}
 
+  is-buffer@2.0.5: {}
+
   is-extglob@2.1.1: {}
 
   is-fullwidth-code-point@3.0.0: {}
@@ -8019,6 +8209,55 @@ snapshots:
     dependencies:
       readable-stream: 2.3.8
 
+  level-codec@10.0.0:
+    dependencies:
+      buffer: 6.0.3
+
+  level-concat-iterator@3.1.0:
+    dependencies:
+      catering: 2.1.1
+
+  level-errors@3.0.1: {}
+
+  level-iterator-stream@5.0.0:
+    dependencies:
+      inherits: 2.0.4
+      readable-stream: 3.6.2
+
+  level-packager@6.0.1:
+    dependencies:
+      encoding-down: 7.1.0
+      levelup: 5.1.1
+
+  level-rocksdb@5.0.0:
+    dependencies:
+      level-packager: 6.0.1
+      rocksdb: 5.2.1
+
+  level-supports@2.1.0: {}
+
+  level-supports@6.2.0: {}
+
+  level-transcoder@1.0.1:
+    dependencies:
+      buffer: 6.0.3
+      module-error: 1.0.2
+
+  level@10.0.0:
+    dependencies:
+      abstract-level: 3.1.0
+      browser-level: 3.0.0
+      classic-level: 3.0.0
+
+  levelup@5.1.1:
+    dependencies:
+      catering: 2.1.1
+      deferred-leveldown: 7.0.0
+      level-errors: 3.0.1
+      level-iterator-stream: 5.0.0
+      level-supports: 2.1.0
+      queue-microtask: 1.2.3
+
   leven@3.1.0: {}
 
   levn@0.4.1:
@@ -8104,6 +8343,8 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
+  maybe-combine-errors@1.0.0: {}
+
   mcl-wasm@2.0.0:
     dependencies:
       '@types/node': 20.19.17
@@ -8188,6 +8429,8 @@ snapshots:
 
   mkdirp@1.0.4: {}
 
+  module-error@1.0.2: {}
+
   ms@2.1.3: {}
 
   msgpackr-extract@3.0.3:
@@ -8222,6 +8465,8 @@ snapshots:
     optional: true
 
   nanoassert@2.0.0: {}
+
+  napi-macros@2.2.2: {}
 
   napi-postinstall@0.3.3: {}
 
@@ -8600,6 +8845,12 @@ snapshots:
   retry@0.12.0: {}
 
   reusify@1.1.0: {}
+
+  rocksdb@5.2.1:
+    dependencies:
+      abstract-leveldown: 7.2.0
+      napi-macros: 2.2.2
+      node-gyp-build: 4.8.4
 
   router@2.2.0:
     dependencies:

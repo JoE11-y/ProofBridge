@@ -127,12 +127,36 @@ export type T_LockForOrderRequestContractDetails = {
   token: string;
   timeToExpire: number;
   orderParams: T_AdManagerOrderParams;
-  msgHash: `0x${string}`;
+  reqHash: `0x${string}`;
+  orderHash: `0x${string}`;
 };
 
 export type T_CreateOrderRequest = {
   orderChainId: bigint;
   orderParams: T_OrderParams;
+};
+
+export type T_CreateUnlockOrderContractDetails = {
+  chainId: bigint;
+  contractAddress: `0x${string}`;
+  isAdCreator: boolean;
+  orderParams: T_OrderParams;
+  nullifierHash: string;
+  targetRoot: string;
+  proof: string;
+};
+
+export type T_UnlockOrderContractDetails = {
+  contractAddress: `0x${string}`;
+  signature: `0x${string}`;
+  token: string;
+  timeToExpire: number;
+  orderParams: T_OrderParams;
+  nullifierHash: string;
+  targetRoot: string;
+  proof: string;
+  orderHash: `0x${string}`;
+  reqHash: `0x${string}`;
 };
 
 export type T_CreateOrderRequestContractDetails = {
@@ -141,11 +165,21 @@ export type T_CreateOrderRequestContractDetails = {
   token: string;
   timeToExpire: number;
   orderParams: T_OrderPortalParams;
-  msgHash: `0x${string}`;
+  orderHash: `0x${string}`;
+  reqHash: `0x${string}`;
 };
 
 export type T_RequestValidation = {
   chainId: bigint;
   contractAddress: `0x${string}`;
   msgHash: `0x${string}`;
+};
+
+export type T_FetchRoot = {
+  chainId: bigint;
+  contractAddress: `0x${string}`;
+};
+
+export type T_FetchRootResponse = {
+  root: string;
 };

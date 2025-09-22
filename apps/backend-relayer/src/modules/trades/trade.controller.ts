@@ -13,8 +13,8 @@ import {
 } from '@nestjs/common';
 import { TradesService } from './trade.service';
 import {
+  AuthorizeTradeDto,
   ConfirmChainActionDto,
-  ConfirmTradeDto,
   CreateTradeDto,
   QueryTradesDto,
 } from './dto/trade.dto';
@@ -57,7 +57,7 @@ export class TradesController {
   confirm(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: ConfirmTradeDto,
+    @Body() dto: AuthorizeTradeDto,
   ) {
     return this.trades.authorize(req, id, dto);
   }

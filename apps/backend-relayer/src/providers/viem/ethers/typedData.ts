@@ -1,5 +1,5 @@
-import { TypedDataEncoder } from 'ethers';
-import { T_OrderParams } from '../common/types';
+import { TypedDataEncoder, recoverAddress } from 'ethers';
+import { T_OrderParams } from '../types';
 
 // ----------------------------
 // OrderPortal typed data
@@ -34,4 +34,13 @@ export const orderTypes: Record<string, { name: string; type: string }[]> = {
 export function getTypedHash(data: T_OrderParams) {
   const orderHash = TypedDataEncoder.hash(domain, orderTypes, data);
   return orderHash;
+}
+
+export function verifyTypedData(
+  hash: `0x${string}`,
+  signature: `0x${string}`,
+  expectedAddress: `0x${string}`,
+) {
+  const recoveredAddress = recoverAddress(hash, signature);
+  return recoveredAddress.toLowerCase() === expectedAddress.toLowerCase();
 }

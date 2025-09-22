@@ -2,7 +2,6 @@ import MemoryStore from "@accumulators/memory";
 import Mmr from "@accumulators/merkle-mountain-range";
 import { Fr } from "@aztec/bb.js";
 import { Poseidon2Hasher } from "./Poseidon2Hasher";
-import { assert } from "console";
 
 export class MerkleTree {
   private store: MemoryStore;
@@ -38,7 +37,9 @@ export class MerkleTree {
     const x = this.mod(orderHash);
     const proof = await this.mmr.getProof(elementIndex);
     const isValid = await this.mmr.verifyProof(proof, x.toString());
-    assert(isValid, "Invalid proof generated");
+    if (!isValid) {
+      throw new Error("Invalid proof generated");
+    }
     return proof;
   }
 

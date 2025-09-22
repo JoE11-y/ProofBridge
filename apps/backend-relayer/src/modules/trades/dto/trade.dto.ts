@@ -25,8 +25,8 @@ export class CreateTradeDto {
   @IsString() bridgerDstAddress!: string;
 }
 
-export class ConfirmTradeDto {
-  @IsString() encodedSignature!: string;
+export class AuthorizeTradeDto {
+  @IsString() signature!: string;
 }
 
 export class ConfirmChainActionDto {

@@ -56,6 +56,8 @@ model Chain {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  mmr       MMR      @relation(fields: [mmrId], references: [id])
+  mmrId     String   @unique
 
   @@unique([chainId, id])
   @@index([name])
@@ -175,10 +177,7 @@ enum TradeStatus {
   INACTIVE
   ACTIVE
   LOCKED
-  AUTH_BOTH
-  PROVING
-  PROOF_READY
-  CLAIMED
+  COMPLETED
 }
 
 model Trade {
@@ -196,11 +195,10 @@ model Trade {
   bridgerDstAddress   String
   adCreatorDstAddress String
 
+  // Order hash
+  orderHash String
   // Amount in smallest unit (e.g., wei for ETH)
-  amount Decimal @db.Decimal(78, 0)
-
-  // Encoded signatures map (address -> sig)
-  participantSignatures Json?
+  amount    Decimal @db.Decimal(78, 0)
 
   status TradeStatus @default(INACTIVE)
 
@@ -211,6 +209,9 @@ model Trade {
 
   adLock         AdLock?
   tradeUpdateLog TradeUpdateLog?
+
+  secret           Secret?
+  AuthorizationLog AuthorizationLog[]
 
   @@index([adId])
   @@index([routeId])
@@ -223,15 +224,33 @@ enum ActionOrigin {
   ORDER_PORTAL
 }
 
+enum ActionContext {
+  CREATEORDER
+  LOCKORDER
+  AUTHORIZE
+}
+
+model AuthorizationLog {
+  id          String       @id @default(uuid())
+  userAddress String
+  origin      ActionOrigin
+  tradeId     String
+  signature   String       @unique
+  reqHash     String       @unique
+  trade       Trade        @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+}
+
 model TradeUpdateLog {
-  id        String       @id @default(uuid())
+  id        String        @id @default(uuid())
+  ctx       ActionContext
   origin    ActionOrigin
-  tradeId   String       @unique
-  signature String       @unique
-  reqHash   String       @unique
-  trade     Trade        @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  tradeId   String        @unique
+  signature String        @unique
+  reqHash   String        @unique
+  trade     Trade         @relation(fields: [tradeId], references: [id], onDelete: Cascade)
   log       UpdateLog[]
-  createdAt DateTime     @default(now())
+  createdAt DateTime      @default(now())
 }
 
 model UpdateLog {
@@ -244,4 +263,32 @@ model UpdateLog {
   adUpdateLogId    String?
   TradeUpdateLog   TradeUpdateLog? @relation(fields: [tradeUpdateLogId], references: [id])
   tradeUpdateLogId String?
+}
+
+model MMR {
+  id     String        @id @default(uuid())
+  orders OrderRecord[]
+
+  chainId   String   @unique
+  chain     Chain?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderRecord {
+  id           String   @id @default(uuid())
+  orderHash    String   @unique
+  elementIndex Int      @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  mmrId        String?
+  mmr          MMR?     @relation(fields: [mmrId], references: [id])
+}
+
+model Secret {
+  id        String   @id @default(uuid())
+  tradeId   String   @unique
+  trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  secret    String   @unique
+  createdAt DateTime @default(now())
 }

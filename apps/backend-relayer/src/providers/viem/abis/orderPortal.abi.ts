@@ -67,54 +67,22 @@ export const ORDER_PORTAL_ABI = [
     inputs: [
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       {
         name: 'params',
         type: 'tuple',
         internalType: 'struct OrderPortal.OrderParams',
         components: [
-          {
-            name: 'orderChainToken',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'adChainToken',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'orderChainToken', type: 'address', internalType: 'address' },
+          { name: 'adChainToken', type: 'address', internalType: 'address' },
           { name: 'amount', type: 'uint256', internalType: 'uint256' },
           { name: 'bridger', type: 'address', internalType: 'address' },
-          {
-            name: 'orderRecipient',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'adChainId',
-            type: 'uint256',
-            internalType: 'uint256',
-          },
-          {
-            name: 'adManager',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'orderRecipient', type: 'address', internalType: 'address' },
+          { name: 'adChainId', type: 'uint256', internalType: 'uint256' },
+          { name: 'adManager', type: 'address', internalType: 'address' },
           { name: 'adId', type: 'string', internalType: 'string' },
-          {
-            name: 'adCreator',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'adRecipient',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'adCreator', type: 'address', internalType: 'address' },
+          { name: 'adRecipient', type: 'address', internalType: 'address' },
           { name: 'salt', type: 'uint256', internalType: 'uint256' },
         ],
       },
@@ -129,11 +97,7 @@ export const ORDER_PORTAL_ABI = [
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'orderHash', type: 'bytes32', internalType: 'bytes32' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'pure',
@@ -147,17 +111,9 @@ export const ORDER_PORTAL_ABI = [
       { name: 'name', type: 'string', internalType: 'string' },
       { name: 'version', type: 'string', internalType: 'string' },
       { name: 'chainId', type: 'uint256', internalType: 'uint256' },
-      {
-        name: 'verifyingContract',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: 'verifyingContract', type: 'address', internalType: 'address' },
       { name: 'salt', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: 'extensions',
-        type: 'uint256[]',
-        internalType: 'uint256[]',
-      },
+      { name: 'extensions', type: 'uint256[]', internalType: 'uint256[]' },
     ],
     stateMutability: 'view',
   },
@@ -178,6 +134,13 @@ export const ORDER_PORTAL_ABI = [
     outputs: [
       { name: 'adChainToken', type: 'address', internalType: 'address' },
     ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getMerkleRoot',
+    inputs: [],
+    outputs: [{ name: 'root', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'view',
   },
   {
@@ -222,11 +185,7 @@ export const ORDER_PORTAL_ABI = [
     name: 'hashRequest',
     inputs: [
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       { name: '_action', type: 'string', internalType: 'string' },
       { name: '_params', type: 'bytes[]', internalType: 'bytes[]' },
     ],
@@ -238,11 +197,7 @@ export const ORDER_PORTAL_ABI = [
     name: 'i_merkleManager',
     inputs: [],
     outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'contract IMerkleManager',
-      },
+      { name: '', type: 'address', internalType: 'contract IMerkleManager' },
     ],
     stateMutability: 'view',
   },
@@ -274,11 +229,7 @@ export const ORDER_PORTAL_ABI = [
     name: 'orders',
     inputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
     outputs: [
-      {
-        name: '',
-        type: 'uint8',
-        internalType: 'enum OrderPortal.Status',
-      },
+      { name: '', type: 'uint8', internalType: 'enum OrderPortal.Status' },
     ],
     stateMutability: 'view',
   },
@@ -288,11 +239,7 @@ export const ORDER_PORTAL_ABI = [
     inputs: [
       { name: '_message', type: 'bytes32', internalType: 'bytes32' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
@@ -320,11 +267,7 @@ export const ORDER_PORTAL_ABI = [
     name: 'renounceRole',
     inputs: [
       { name: 'role', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: 'callerConfirmation',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: 'callerConfirmation', type: 'address', internalType: 'address' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -408,62 +351,26 @@ export const ORDER_PORTAL_ABI = [
     inputs: [
       { name: '_signature', type: 'bytes', internalType: 'bytes' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
       {
         name: 'params',
         type: 'tuple',
         internalType: 'struct OrderPortal.OrderParams',
         components: [
-          {
-            name: 'orderChainToken',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'adChainToken',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'orderChainToken', type: 'address', internalType: 'address' },
+          { name: 'adChainToken', type: 'address', internalType: 'address' },
           { name: 'amount', type: 'uint256', internalType: 'uint256' },
           { name: 'bridger', type: 'address', internalType: 'address' },
-          {
-            name: 'orderRecipient',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'adChainId',
-            type: 'uint256',
-            internalType: 'uint256',
-          },
-          {
-            name: 'adManager',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'orderRecipient', type: 'address', internalType: 'address' },
+          { name: 'adChainId', type: 'uint256', internalType: 'uint256' },
+          { name: 'adManager', type: 'address', internalType: 'address' },
           { name: 'adId', type: 'string', internalType: 'string' },
-          {
-            name: 'adCreator',
-            type: 'address',
-            internalType: 'address',
-          },
-          {
-            name: 'adRecipient',
-            type: 'address',
-            internalType: 'address',
-          },
+          { name: 'adCreator', type: 'address', internalType: 'address' },
+          { name: 'adRecipient', type: 'address', internalType: 'address' },
           { name: 'salt', type: 'uint256', internalType: 'uint256' },
         ],
       },
-      {
-        name: 'nullifierHash',
-        type: 'bytes32',
-        internalType: 'bytes32',
-      },
+      { name: 'nullifierHash', type: 'bytes32', internalType: 'bytes32' },
       { name: 'targetRoot', type: 'bytes32', internalType: 'bytes32' },
       { name: 'proof', type: 'bytes', internalType: 'bytes' },
     ],
@@ -478,11 +385,7 @@ export const ORDER_PORTAL_ABI = [
       { name: 'orderHash', type: 'bytes32', internalType: 'bytes32' },
       { name: '_targetRoot', type: 'bytes32', internalType: 'bytes32' },
       { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: '_timeToExpire',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'pure',
@@ -503,21 +406,11 @@ export const ORDER_PORTAL_ABI = [
         indexed: true,
         internalType: 'address',
       },
-      {
-        name: 'supported',
-        type: 'bool',
-        indexed: false,
-        internalType: 'bool',
-      },
+      { name: 'supported', type: 'bool', indexed: false, internalType: 'bool' },
     ],
     anonymous: false,
   },
-  {
-    type: 'event',
-    name: 'EIP712DomainChanged',
-    inputs: [],
-    anonymous: false,
-  },
+  { type: 'event', name: 'EIP712DomainChanged', inputs: [], anonymous: false },
   {
     type: 'event',
     name: 'OrderCreated',
@@ -564,12 +457,7 @@ export const ORDER_PORTAL_ABI = [
         indexed: false,
         internalType: 'address',
       },
-      {
-        name: 'adId',
-        type: 'string',
-        indexed: false,
-        internalType: 'string',
-      },
+      { name: 'adId', type: 'string', indexed: false, internalType: 'string' },
       {
         name: 'adCreator',
         type: 'address',
@@ -614,12 +502,7 @@ export const ORDER_PORTAL_ABI = [
     type: 'event',
     name: 'RoleAdminChanged',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'previousAdminRole',
         type: 'bytes32',
@@ -639,12 +522,7 @@ export const ORDER_PORTAL_ABI = [
     type: 'event',
     name: 'RoleGranted',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'account',
         type: 'address',
@@ -664,12 +542,7 @@ export const ORDER_PORTAL_ABI = [
     type: 'event',
     name: 'RoleRevoked',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'account',
         type: 'address',
@@ -739,12 +612,7 @@ export const ORDER_PORTAL_ABI = [
         indexed: true,
         internalType: 'address',
       },
-      {
-        name: 'status',
-        type: 'bool',
-        indexed: false,
-        internalType: 'bool',
-      },
+      { name: 'status', type: 'bool', indexed: false, internalType: 'bool' },
     ],
     anonymous: false,
   },
@@ -780,34 +648,18 @@ export const ORDER_PORTAL_ABI = [
     inputs: [{ name: 'expected', type: 'address', internalType: 'address' }],
   },
   { type: 'error', name: 'OrderPortal__AdTokenMismatch', inputs: [] },
-  {
-    type: 'error',
-    name: 'OrderPortal__BridgerMustBeSender',
-    inputs: [],
-  },
-  {
-    type: 'error',
-    name: 'OrderPortal__InvalidAdRecipient',
-    inputs: [],
-  },
+  { type: 'error', name: 'OrderPortal__BridgerMustBeSender', inputs: [] },
+  { type: 'error', name: 'OrderPortal__InvalidAdRecipient', inputs: [] },
   { type: 'error', name: 'OrderPortal__InvalidMessage', inputs: [] },
   { type: 'error', name: 'OrderPortal__InvalidProof', inputs: [] },
   { type: 'error', name: 'OrderPortal__InvalidSigner', inputs: [] },
-  {
-    type: 'error',
-    name: 'OrderPortal__MerkleManagerAppendFailed',
-    inputs: [],
-  },
+  { type: 'error', name: 'OrderPortal__MerkleManagerAppendFailed', inputs: [] },
   { type: 'error', name: 'OrderPortal__MissingRoute', inputs: [] },
   {
     type: 'error',
     name: 'OrderPortal__NullifierUsed',
     inputs: [
-      {
-        name: 'nullifierHash',
-        type: 'bytes32',
-        internalType: 'bytes32',
-      },
+      { name: 'nullifierHash', type: 'bytes32', internalType: 'bytes32' },
     ],
   },
   {
@@ -820,16 +672,8 @@ export const ORDER_PORTAL_ABI = [
     name: 'OrderPortal__OrderNotOpen',
     inputs: [{ name: 'orderHash', type: 'bytes32', internalType: 'bytes32' }],
   },
-  {
-    type: 'error',
-    name: 'OrderPortal__RequestHashedProcessed',
-    inputs: [],
-  },
-  {
-    type: 'error',
-    name: 'OrderPortal__RequestTokenExpired',
-    inputs: [],
-  },
+  { type: 'error', name: 'OrderPortal__RequestHashedProcessed', inputs: [] },
+  { type: 'error', name: 'OrderPortal__RequestTokenExpired', inputs: [] },
   {
     type: 'error',
     name: 'OrderPortal__RoutesZeroAddress',
