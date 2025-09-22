@@ -17,7 +17,7 @@ import { getAddress, isAddress } from 'ethers';
 import { Request } from 'express';
 import { ViemService } from '../../providers/viem/viem.service';
 import { MMRService } from '../mmr/mmr.service';
-import { ProofService } from 'src/providers/noir/proof.service';
+import { ProofService } from '../../providers/noir/proof.service';
 import { randomUUID } from 'crypto';
 
 function toBI(s: string) {

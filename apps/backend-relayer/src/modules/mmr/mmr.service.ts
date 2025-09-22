@@ -11,6 +11,7 @@ type MmrId = string;
 
 const DB_PATH =
   process.env.ROCKS_PATH ?? path.resolve(process.cwd(), 'leveldb_data');
+
 fs.mkdirSync(DB_PATH, { recursive: true });
 
 @Injectable()
