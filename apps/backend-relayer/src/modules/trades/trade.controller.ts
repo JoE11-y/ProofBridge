@@ -62,6 +62,17 @@ export class TradesController {
     return this.trades.authorize(req, id, dto);
   }
 
+  @Post(':id/authorize/confirm')
+  @UseGuards(UserJwtGuard)
+  @HttpCode(HttpStatus.OK)
+  confirmAuthorization(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ConfirmChainActionDto,
+  ) {
+    return this.trades.confirmAuthorizeAction(req, id, dto);
+  }
+
   @Post(':id/confirm')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)

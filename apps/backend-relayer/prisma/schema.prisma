@@ -202,7 +202,8 @@ model Trade {
 
   status TradeStatus @default(INACTIVE)
 
-  signaturesCount Int @default(0)
+  adCreatorClaimed Boolean @default(false)
+  bridgerClaimed   Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

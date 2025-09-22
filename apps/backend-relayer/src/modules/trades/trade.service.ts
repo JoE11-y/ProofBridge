@@ -466,6 +466,8 @@ export class TradesService {
         adCreatorDstAddress: true,
         orderHash: true,
         amount: true,
+        adCreatorClaimed: true,
+        bridgerClaimed: true,
         route: {
           select: {
             fromToken: {
@@ -525,6 +527,14 @@ export class TradesService {
     }
 
     const isAdCreator = caller === getAddress(trade.adCreatorAddress);
+
+    if (trade.adCreatorClaimed && isAdCreator) {
+      throw new BadRequestException('Ad Creator has already authorized');
+    }
+
+    if (trade.bridgerClaimed && !isAdCreator) {
+      throw new BadRequestException('Bridger has already authorized');
+    }
 
     // get the secret
     const tradeSecret = await this.prisma.secret.findUnique({
@@ -744,6 +754,127 @@ export class TradesService {
     // delete the log entry
     await this.prisma.tradeUpdateLog.delete({
       where: { id: tradeLogUpdate.id },
+    });
+
+    return {
+      success: true,
+    };
+  }
+
+  async confirmAuthorizeAction(
+    req: Request,
+    tradeId: string,
+    dto: ConfirmChainActionDto,
+  ) {
+    const reqUser = req.user;
+
+    if (!reqUser) throw new ForbiddenException('Unauthorized');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: reqUser.sub },
+    });
+
+    if (!user) throw new ForbiddenException('Unauthorized');
+
+    const authorizationLog = await this.prisma.authorizationLog.findFirst({
+      where: {
+        tradeId: tradeId,
+        signature: dto.signature,
+        userAddress: user.walletAddress,
+      },
+      orderBy: { createdAt: 'desc' },
+      include: { trade: true },
+    });
+
+    if (!authorizationLog)
+      throw new NotFoundException('Authorization log not found');
+
+    if (
+      authorizationLog.trade.bridgerAddress !== user.walletAddress &&
+      authorizationLog.trade.adCreatorAddress !== user.walletAddress
+    ) {
+      throw new ForbiddenException('Unauthorized');
+    }
+
+    // get ad details
+    const trade = await this.prisma.trade.findUnique({
+      where: { id: tradeId },
+      select: {
+        route: {
+          select: {
+            fromToken: {
+              select: {
+                chain: {
+                  select: {
+                    adManagerAddress: true,
+                    chainId: true,
+                  },
+                },
+              },
+            },
+            toToken: {
+              select: {
+                chain: {
+                  select: {
+                    orderPortalAddress: true,
+                    chainId: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!trade) throw new NotFoundException('Ad for Ad Id not found');
+
+    if (authorizationLog.origin === 'AD_MANAGER') {
+      // verify log
+      const isValidated = await this.viemService.validateAdManagerRequest({
+        chainId: trade.route.fromToken.chain.chainId,
+        contractAddress: trade.route.fromToken.chain
+          .adManagerAddress as `0x${string}`,
+        msgHash: authorizationLog.reqHash as `0x${string}`,
+      });
+
+      if (!isValidated) {
+        throw new BadRequestException('AdManager request not validated');
+      }
+    } else {
+      // verify log
+      const isValidated = await this.viemService.validateOrderPortalRequest({
+        chainId: trade.route.toToken.chain.chainId,
+        contractAddress: trade.route.toToken.chain
+          .orderPortalAddress as `0x${string}`,
+        msgHash: authorizationLog.reqHash as `0x${string}`,
+      });
+
+      if (!isValidated) {
+        throw new BadRequestException('OrderPortal request not validated');
+      }
+    }
+
+    const caller = getAddress(user.walletAddress);
+
+    const isAdCreator =
+      caller === getAddress(authorizationLog.trade.adCreatorAddress);
+
+    await this.prisma.trade.update({
+      where: { id: authorizationLog.tradeId },
+      data: {
+        adCreatorClaimed: isAdCreator
+          ? true
+          : authorizationLog.trade.adCreatorClaimed,
+        bridgerClaimed: !isAdCreator
+          ? true
+          : authorizationLog.trade.bridgerClaimed,
+      },
+    });
+
+    // delete the log entry
+    await this.prisma.authorizationLog.delete({
+      where: { id: authorizationLog.id },
     });
 
     return {
