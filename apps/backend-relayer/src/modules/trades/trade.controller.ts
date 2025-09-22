@@ -59,7 +59,7 @@ export class TradesController {
   @Post(':id/authorize')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
-  confirm(
+  authorize(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: AuthorizeTradeDto,
