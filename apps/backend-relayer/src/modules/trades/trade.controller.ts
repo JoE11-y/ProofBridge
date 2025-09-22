@@ -14,13 +14,15 @@ import {
 import { TradesService } from './trade.service';
 import {
   AuthorizeTradeDto,
-  ConfirmChainActionDto,
+  ConfirmTradeActionDto,
   CreateTradeDto,
   QueryTradesDto,
 } from './dto/trade.dto';
 import type { Request } from 'express';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Trades')
 @Controller('v1/trades')
 export class TradesController {
   constructor(private readonly trades: TradesService) {}
@@ -37,6 +39,7 @@ export class TradesController {
     return this.trades.getById(id);
   }
 
+  @ApiBearerAuth()
   @Post(':id/lock')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
@@ -44,6 +47,7 @@ export class TradesController {
     return this.trades.lockTrade(req, id);
   }
 
+  @ApiBearerAuth()
   @Post()
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -51,6 +55,7 @@ export class TradesController {
     return this.trades.create(req, dto);
   }
 
+  @ApiBearerAuth()
   @Post(':id/authorize')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
@@ -62,24 +67,26 @@ export class TradesController {
     return this.trades.authorize(req, id, dto);
   }
 
+  @ApiBearerAuth()
   @Post(':id/authorize/confirm')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
   confirmAuthorization(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: ConfirmChainActionDto,
+    @Body() dto: ConfirmTradeActionDto,
   ) {
     return this.trades.confirmAuthorizeAction(req, id, dto);
   }
 
+  @ApiBearerAuth()
   @Post(':id/confirm')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
   confirmChainAction(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: ConfirmChainActionDto,
+    @Body() dto: ConfirmTradeActionDto,
   ) {
     return this.trades.confirmChainAction(req, id, dto);
   }

@@ -20,12 +20,13 @@ import {
   QueryAdsDto,
   UpdateAdDto,
   WithdrawalAdDto,
-  ConfirmChainActionDto,
+  ConfirmAdActionDto,
   CloseAdDto,
 } from '../ads/dto/ad.dto';
 import type { Request } from 'express';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
-
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+@ApiTags('Ads')
 @Controller('v1/ads')
 export class AdsController {
   constructor(private readonly ads: AdsService) {}
@@ -40,6 +41,7 @@ export class AdsController {
   get(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.ads.getById(id);
   }
+  @ApiBearerAuth()
   @Post('create')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -47,6 +49,7 @@ export class AdsController {
     return this.ads.create(req, dto);
   }
 
+  @ApiBearerAuth()
   @Post(':id/fund')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
@@ -58,6 +61,7 @@ export class AdsController {
     return this.ads.fund(req, id, dto);
   }
 
+  @ApiBearerAuth()
   @Post(':id/withdraw')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
@@ -69,17 +73,19 @@ export class AdsController {
     return this.ads.withdraw(req, id, dto);
   }
 
+  @ApiBearerAuth()
   @Post(':id/confirm')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
   confirmUpdate(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: ConfirmChainActionDto,
+    @Body() dto: ConfirmAdActionDto,
   ) {
     return this.ads.confirmChainAction(req, id, dto);
   }
 
+  @ApiBearerAuth()
   @Patch(':id')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
@@ -91,6 +97,7 @@ export class AdsController {
     return this.ads.update(req, id, dto);
   }
 
+  @ApiBearerAuth()
   @Delete(':id')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

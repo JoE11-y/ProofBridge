@@ -10,30 +10,56 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { TokenKind } from '@prisma/client';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class QueryTokensDto {
-  // Filter by chain uuid
+  @ApiPropertyOptional({
+    description: 'Filter by chain uuid',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsOptional()
   @IsUUID()
   chainUid?: string;
 
-  // Filter by chain id
+  @ApiPropertyOptional({
+    description: 'Filter by chain id',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsOptional()
   @IsUUID()
   chainId?: string;
 
+  @ApiPropertyOptional({
+    description: 'Filter by token symbol',
+    example: 'ETH',
+  })
   @IsOptional()
   @IsString()
   symbol?: string;
 
+  @ApiPropertyOptional({
+    description: 'Filter by token address',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
   @IsOptional()
   @IsString()
   address?: string;
 
+  @ApiPropertyOptional({
+    description: 'Pagination cursor',
+    example: 'eyJpZCI6MTAwLCJfcG9pbnRzVG9OZXh0SXRlbXMiOnRydWV9',
+  })
   @IsOptional()
   @IsString()
   cursor?: string;
 
+  @ApiPropertyOptional({
+    description: 'Number of items per page',
+    minimum: 1,
+    maximum: 100,
+    default: 25,
+    example: 25,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -43,27 +69,54 @@ export class QueryTokensDto {
 }
 
 export class CreateTokenDto {
+  @ApiProperty({
+    description: 'Internal chain UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
-  chainUid!: string; // internal chain UUID
+  chainUid!: string;
 
+  @ApiProperty({
+    description: 'Token symbol',
+    example: 'ETH',
+  })
   @IsString()
   @IsNotEmpty()
   symbol!: string;
 
+  @ApiProperty({
+    description: 'Token name',
+    example: 'Ethereum',
+  })
   @IsString()
   @IsNotEmpty()
   name!: string;
 
+  @ApiProperty({
+    description: 'Token address (will be lowercased)',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
   @IsString()
   @IsNotEmpty()
-  address!: string; // we’ll lowercase
+  address!: string;
 
+  @ApiProperty({
+    description: 'Token decimals',
+    minimum: 0,
+    maximum: 255,
+    example: 18,
+  })
   @Type(() => Number)
   @IsInt()
   @Min(0)
   @Max(255)
   decimals!: number;
 
+  @ApiPropertyOptional({
+    description: 'Token kind',
+    enum: TokenKind,
+    example: 'NATIVE',
+  })
   @IsOptional()
   @Transform(({ value }) =>
     typeof value === 'string' ? value.toUpperCase() : value,
@@ -75,22 +128,44 @@ export class CreateTokenDto {
 }
 
 export class UpdateTokenDto {
+  @ApiPropertyOptional({
+    description: 'Internal chain UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsOptional()
   @IsUUID()
   chainUid?: string;
 
+  @ApiPropertyOptional({
+    description: 'Token symbol',
+    example: 'ETH',
+  })
   @IsOptional()
   @IsString()
   symbol?: string;
 
+  @ApiPropertyOptional({
+    description: 'Token name',
+    example: 'Ethereum',
+  })
   @IsOptional()
   @IsString()
   name?: string;
 
+  @ApiPropertyOptional({
+    description: 'Token address',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
   @IsOptional()
   @IsString()
   address?: string;
 
+  @ApiPropertyOptional({
+    description: 'Token decimals',
+    minimum: 0,
+    maximum: 255,
+    example: 18,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -98,6 +173,11 @@ export class UpdateTokenDto {
   @Max(255)
   decimals?: number;
 
+  @ApiPropertyOptional({
+    description: 'Token kind',
+    enum: TokenKind,
+    example: 'NATIVE',
+  })
   @IsOptional()
   @Transform(({ value }) =>
     typeof value === 'string' ? value.toUpperCase() : value,

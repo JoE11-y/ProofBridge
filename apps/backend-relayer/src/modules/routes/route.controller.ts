@@ -9,7 +9,9 @@ import {
 } from '@nestjs/common';
 import { RoutesService } from './route.service';
 import { QueryRoutesDto } from './dto/route.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Routes')
 @Controller('v1/routes')
 export class RoutesController {
   constructor(private readonly routes: RoutesService) {}

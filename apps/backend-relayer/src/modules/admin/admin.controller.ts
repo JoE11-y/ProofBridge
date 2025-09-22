@@ -24,7 +24,9 @@ import {
 } from '../chains/dto/chain.dto';
 import { CreateTokenDto, UpdateTokenDto } from '../token/dto/token.dto';
 import { CreateRouteDto } from '../routes/dto/route.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Admin')
 @Controller('/v1/admin')
 export class AdminController {
   constructor(private readonly service: AdminService) {}
@@ -35,6 +37,7 @@ export class AdminController {
     return this.service.login(dto);
   }
 
+  @ApiBearerAuth()
   @Post('addAdmin')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -42,6 +45,7 @@ export class AdminController {
     return this.service.addAdmin(req, dto);
   }
 
+  @ApiBearerAuth()
   @Get('chains')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.OK)
@@ -49,6 +53,7 @@ export class AdminController {
     return this.service.listChains(query);
   }
 
+  @ApiBearerAuth()
   @Post('chains/create')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -56,6 +61,7 @@ export class AdminController {
     return this.service.createChain(dto);
   }
 
+  @ApiBearerAuth()
   @Patch('chains/:id')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.OK)
@@ -66,6 +72,7 @@ export class AdminController {
     return this.service.updateChain(chainId, dto);
   }
 
+  @ApiBearerAuth()
   @Delete('chains/:id')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -73,6 +80,7 @@ export class AdminController {
     await this.service.removeChain(chainId);
   }
 
+  @ApiBearerAuth()
   @Post('tokens/create')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -80,6 +88,7 @@ export class AdminController {
     return this.service.createToken(dto);
   }
 
+  @ApiBearerAuth()
   @Patch('tokens/:id')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.OK)
@@ -90,6 +99,7 @@ export class AdminController {
     return this.service.updateToken(id, dto);
   }
 
+  @ApiBearerAuth()
   @Delete('tokens/:id')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -98,6 +108,7 @@ export class AdminController {
   }
 
   // POST /v1/routes (admin)
+  @ApiBearerAuth()
   @Post('routes/create')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -106,6 +117,7 @@ export class AdminController {
   }
 
   // DELETE /v1/routes/:id (admin)
+  @ApiBearerAuth()
   @Delete('routes/:id')
   @UseGuards(AdminJwtGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

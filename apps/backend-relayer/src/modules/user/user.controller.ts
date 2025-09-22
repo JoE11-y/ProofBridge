@@ -9,11 +9,14 @@ import {
 import { UserService } from './user.service';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
 import type { Request } from 'express';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('User')
 @Controller('v1/user')
 export class UserController {
   constructor(private readonly users: UserService) {}
 
+  @ApiBearerAuth()
   @Get('me')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)

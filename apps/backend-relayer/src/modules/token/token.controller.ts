@@ -10,7 +10,9 @@ import {
 } from '@nestjs/common';
 import { TokenService } from './token.service';
 import { QueryTokensDto } from './dto/token.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Tokens')
 @Controller('v1/tokens')
 export class TokenController {
   constructor(private readonly tokens: TokenService) {}

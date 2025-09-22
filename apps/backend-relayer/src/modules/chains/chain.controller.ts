@@ -9,7 +9,9 @@ import {
 import { ChainService } from './chain.service';
 import { QueryChainsDto } from './dto/chain.dto';
 import { ParseChainIdPipe } from '../../common/pipes/parse-chain-id.pipe';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Chains')
 @Controller('v1/chains')
 export class ChainController {
   constructor(private readonly chains: ChainService) {}

@@ -11,7 +11,7 @@ import {
   QueryAdsDto,
   UpdateAdDto,
   WithdrawalAdDto,
-  ConfirmChainActionDto,
+  ConfirmAdActionDto,
   CloseAdDto,
 } from './dto/ad.dto';
 import { getAddress, isAddress } from 'ethers';
@@ -640,7 +640,7 @@ export class AdsService {
   async confirmChainAction(
     req: Request,
     adId: string,
-    dto: ConfirmChainActionDto,
+    dto: ConfirmAdActionDto,
   ) {
     const reqUser = req.user;
 

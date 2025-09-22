@@ -8,7 +8,7 @@ import {
 import { PrismaService } from '@prisma/prisma.service';
 import {
   AuthorizeTradeDto,
-  ConfirmChainActionDto,
+  ConfirmTradeActionDto,
   CreateTradeDto,
   QueryTradesDto,
 } from './dto/trade.dto';
@@ -646,7 +646,7 @@ export class TradesService {
   async confirmChainAction(
     req: Request,
     tradeId: string,
-    dto: ConfirmChainActionDto,
+    dto: ConfirmTradeActionDto,
   ) {
     const reqUser = req.user;
 
@@ -782,7 +782,7 @@ export class TradesService {
   async confirmAuthorizeAction(
     req: Request,
     tradeId: string,
-    dto: ConfirmChainActionDto,
+    dto: ConfirmTradeActionDto,
   ) {
     const reqUser = req.user;
 
