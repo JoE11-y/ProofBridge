@@ -29,7 +29,7 @@ This design enables **secure peer-to-peer asset transfers and data verification*
 
 ## 🛠 Architecture
 
-The ProofBridge system is composed of three main layers, each working together to enable secure, peer-to-peer cross-chain transfers.
+The ProofBridge system is composed of four main layers, each working together to enable secure, peer-to-peer cross-chain transfers.
 
 ### Contracts
 
@@ -51,7 +51,17 @@ The ProofBridge system is composed of three main layers, each working together t
 
 * **Planned extensions:** batching, fee markets, and cross-chain reconciliation listeners (marking ads as settled on Chain A after unlocks on Chain B).
 
-### 📍 Roadmap
+### AI Layer
+
+* **Maker support:** AI agents assist liquidity providers by **monitoring ads, deposits, and proofs in real time**. They can flag anomalies, recommend adjustments, or automatically trigger follow-up actions such as closing ads or rebalancing liquidity.
+
+* **Order processing:** The AI layer helps makers **process incoming orders quickly**, reducing manual overhead. It can pre-validate order parameters, match ads with bridging demand, and optimize settlement flows.
+
+* **Automation:** By handling routine checks and repetitive tasks, the AI layer frees up makers to focus on strategy while ensuring a faster, smoother experience for bridgers.
+
+* **Future potential:** The AI layer will later expand to adaptive fee setting, predictive liquidity provisioning, and even operating as **co-pilot relayers** in a permissionless environment.
+
+## 📍 Roadmap
 
 * **Phase 1 – Preauth Relayer (MVP):**
 
@@ -66,18 +76,21 @@ The ProofBridge system is composed of three main layers, each working together t
   * Aggregate into compact proof of agreement
   * Reduce reliance on relayer state by shifting authentication to signatures
 
-* **Phase 3 – Stateless Relayers:**
+* **Phase 3 – AI Layer Introduction:**
+
+  * Deploy AI-driven assistants to help makers process orders quickly
+  * Agents monitor ads, deposits, and proofs in real-time
+  * Automate order validation, matching, and settlement tracking
+  * Improve UX and reduce operational overhead for liquidity providers
+
+* **Phase 4 – Stateless Relayers:**
 
   * Transition to permissionless relayers
   * Any actor can submit proofs to the `OrderPortal`
   * Multi-relayer competition for liveness and decentralization
   * Support for batching and fee markets
 
-* **Phase 3 — Ecosystem Extensions**
-
-  * Relayer fee markets and batching support.
-
-* **Phase 4 – Extended Cross-Chain Support:**
+* **Phase 5 – Extended Cross-Chain Support:**
 
   * Expand to non-EVM chains (e.g., Starknet, Solana)
   * Add monitoring, reconciliation, and safe-mode controls for anomaly handling
