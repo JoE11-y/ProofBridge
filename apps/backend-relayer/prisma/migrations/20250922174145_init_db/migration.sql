@@ -225,7 +225,10 @@ CREATE TABLE "public"."OrderRecord" (
 CREATE TABLE "public"."Secret" (
     "id" TEXT NOT NULL,
     "tradeId" TEXT NOT NULL,
-    "secret" TEXT NOT NULL,
+    "iv" TEXT NOT NULL,
+    "secretCipherText" TEXT NOT NULL,
+    "authTag" TEXT NOT NULL,
+    "secretHash" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Secret_pkey" PRIMARY KEY ("id")
@@ -313,7 +316,7 @@ CREATE UNIQUE INDEX "AuthorizationLog_reqHash_key" ON "public"."AuthorizationLog
 CREATE UNIQUE INDEX "TradeUpdateLog_tradeId_key" ON "public"."TradeUpdateLog"("tradeId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "TradeUpdateLog_reqHash_key" ON "public"."TradeUpdateLog"("reqHash");
+CREATE INDEX "TradeUpdateLog_reqHash_idx" ON "public"."TradeUpdateLog"("reqHash");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "MMR_chainId_key" ON "public"."MMR"("chainId");
@@ -334,7 +337,7 @@ CREATE UNIQUE INDEX "OrderRecord_orderHash_mmrId_key" ON "public"."OrderRecord"(
 CREATE UNIQUE INDEX "Secret_tradeId_key" ON "public"."Secret"("tradeId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Secret_secret_key" ON "public"."Secret"("secret");
+CREATE UNIQUE INDEX "Secret_secretHash_key" ON "public"."Secret"("secretHash");
 
 -- AddForeignKey
 ALTER TABLE "public"."Chain" ADD CONSTRAINT "Chain_mmrId_fkey" FOREIGN KEY ("mmrId") REFERENCES "public"."MMR"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

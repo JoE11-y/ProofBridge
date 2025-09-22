@@ -36,6 +36,7 @@ import { AD_MANAGER_ABI } from './abis/adManager.abi';
 import { ORDER_PORTAL_ABI } from './abis/orderPortal.abi';
 import { env } from '@libs/configs';
 import { getTypedHash, verifyTypedData } from './ethers/typedData';
+import { ethLocalnet, hederaLocalnet } from '../viem/localnet';
 
 @Injectable()
 export class ViemService {
@@ -53,6 +54,10 @@ export class ViemService {
       chain = sepolia;
     } else if (id === hederaTestnet.id) {
       chain = hederaTestnet;
+    } else if (id === ethLocalnet.id) {
+      chain = ethLocalnet;
+    } else if (id === hederaLocalnet.id) {
+      chain = hederaLocalnet;
     } else {
       throw new Error(`Unsupported chainId: ${chainId}`);
     }

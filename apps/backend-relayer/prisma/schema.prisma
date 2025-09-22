@@ -248,10 +248,12 @@ model TradeUpdateLog {
   origin    ActionOrigin
   tradeId   String        @unique
   signature String?
-  reqHash   String        @unique
+  reqHash   String
   trade     Trade         @relation(fields: [tradeId], references: [id], onDelete: Cascade)
   log       TradeLog[]
   createdAt DateTime      @default(now())
+
+  @@index([reqHash])
 }
 
 model AdLog {
@@ -300,9 +302,12 @@ model OrderRecord {
 }
 
 model Secret {
-  id        String   @id @default(uuid())
-  tradeId   String   @unique
-  trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
-  secret    String   @unique
-  createdAt DateTime @default(now())
+  id               String   @id @default(uuid())
+  tradeId          String   @unique
+  trade            Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  iv               String
+  secretCipherText String
+  authTag          String
+  secretHash       String   @unique
+  createdAt        DateTime @default(now())
 }

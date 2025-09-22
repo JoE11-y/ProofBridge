@@ -19,6 +19,7 @@ import { MMRService } from '../mmr/mmr.service';
 import { ProofService } from '../../providers/noir/proof.service';
 import { randomUUID } from 'crypto';
 import { Prisma, TradeStatus } from '@prisma/client';
+import { EncryptionService } from '@libs/encryption.service';
 
 function toBI(s: string) {
   return BigInt(s);
@@ -31,6 +32,7 @@ export class TradesService {
     private readonly viemService: ViemService,
     private readonly merkleService: MMRService,
     private readonly proofService: ProofService,
+    private readonly encryptionService: EncryptionService,
   ) {}
 
   async getById(id: string) {
@@ -98,7 +100,7 @@ export class TradesService {
       where.amount = {
         ...(q.minAmount ? { gte: q.minAmount } : {}),
         ...(q.maxAmount ? { lte: q.maxAmount } : {}),
-      } as Prisma.StringFilter;
+      } as Prisma.DecimalFilter;
     }
 
     const rows = await this.prisma.trade.findMany({
@@ -308,10 +310,15 @@ export class TradesService {
         },
       });
 
+      const encrypted = await this.encryptionService.encryptSecret(secret);
+
       await tx.secret.create({
         data: {
           tradeId: trade.id,
-          secret,
+          iv: encrypted.iv,
+          secretCipherText: encrypted.ciphertext,
+          secretHash: encrypted.secretHash,
+          authTag: encrypted.authTag,
         },
       });
 
@@ -574,16 +581,22 @@ export class TradesService {
       );
     }
 
+    const secret = this.encryptionService.decryptSecret({
+      iv: tradeSecret.iv as string,
+      ciphertext: tradeSecret.secretCipherText as string,
+      authTag: tradeSecret.authTag as string,
+    });
+
     const { proof } = await this.proofService.generateProof({
       merkleProof,
       orderHash: trade.orderHash as string,
-      secret: tradeSecret.secret,
+      secret: secret,
       isAdCreator,
       targetRoot: onChainRoot,
     });
 
     const nullifierHash = await this.proofService.generateNullifierHash(
-      tradeSecret.secret,
+      secret,
       isAdCreator,
       trade.orderHash,
     );

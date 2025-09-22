@@ -91,6 +91,6 @@ describe('AdsController (unit)', () => {
 
     await controller.close(req, 'ad-1', dto);
 
-    expect(spy).toHaveBeenCalledWith({ user: { sub: 'user_id' } }, 'ad-1');
+    expect(spy).toHaveBeenCalledWith({ user: { sub: 'user_id' } }, 'ad-1', dto);
   });
 });

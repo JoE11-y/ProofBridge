@@ -64,7 +64,7 @@ export class QueryTradesDto {
     description: 'Minimum amount for filtering trades',
   })
   @IsOptional()
-  @Matches(/^\d$/)
+  @Matches(/^\d+$/)
   minAmount?: string;
 
   @ApiPropertyOptional({
@@ -72,7 +72,7 @@ export class QueryTradesDto {
     description: 'Maximum amount for filtering trades',
   })
   @IsOptional()
-  @Matches(/^\d$/)
+  @Matches(/^\d+$/)
   maxAmount?: string;
 
   @ApiPropertyOptional({
@@ -115,7 +115,7 @@ export class CreateTradeDto {
     example: '1000',
     description: 'Amount of tokens to trade',
   })
-  @Matches(/^\d$/)
+  @Matches(/^\d+$/)
   amount!: string;
 
   @ApiProperty({

@@ -10,11 +10,13 @@ async function bootstrap() {
   const PORT = parseInt(String(env.port), 10) || 2005;
   const app = await NestFactory.create(AppModule);
 
+  const devOrigins = ['http://localhost:3000', `http://localhost:${PORT}`];
+  const prodOrigins = [env.appUri];
   app.enableCors({
-    origin: ['http://localhost:3000', `http://localhost:${PORT}`],
+    origin: env.isProd ? prodOrigins : devOrigins,
     credentials: true,
+    methods: ['GET', 'POST', 'DELETE', 'PATCH', 'PUT'],
     optionsSuccessStatus: 200,
-    methods: 'GET,POST,DELETE,PATCH,PUT',
   });
 
   app.use(morgan('tiny'));
@@ -22,8 +24,8 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   const swaggerOptions = new DocumentBuilder()
-    .setTitle('Memegoat Game')
-    .setVersion('1.7.2')
+    .setTitle('Proof Relayer API')
+    .setVersion('0.1.0')
     .addServer(`http://localhost:${PORT}`, 'Local')
     .addBearerAuth()
     .addCookieAuth()

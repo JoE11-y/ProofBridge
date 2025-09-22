@@ -19,4 +19,5 @@ export const env = {
   appDomain: process.env.SIGN_DOMAIN || 'proofbridge.xyz',
   appUri: process.env.SIGN_URI || 'https://proofbridge.xyz',
   admin: process.env.ADMIN_SECRET || '',
+  secretKey: process.env.SECRET_KEY || '32_byte_secret_key_for_aes!',
 };
