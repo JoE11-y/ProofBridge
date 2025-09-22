@@ -26,7 +26,7 @@ export class AuthService {
 
   async challenge(address: string) {
     if (!ethers.isAddress(address)) {
-      throw new BadRequestException('Invalid Ethereum address format');
+      throw new BadRequestException('Invalid EVM format');
     }
 
     try {
