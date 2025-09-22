@@ -51,7 +51,11 @@ describe('AdsController (unit)', () => {
   });
 
   it('create -> passes user from req.user', async () => {
-    const dto = { routeId: 'r-1', poolAmount: '1000' };
+    const dto = {
+      routeId: 'r-1',
+      creatorDstAddress: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+      poolAmount: '1000',
+    };
     const req: any = { user: { sub: 'user_id' } };
     const created = { id: 'ad-1' };
 
@@ -65,7 +69,7 @@ describe('AdsController (unit)', () => {
   });
 
   it('update -> passes user from req.user', async () => {
-    const dto = { poolAmountTopUp: '500' };
+    const dto = { minAmount: '500' };
     const req: any = { user: { sub: 'user_id' } };
     const updated = { id: 'ad-1' };
 
@@ -73,19 +77,20 @@ describe('AdsController (unit)', () => {
       .spyOn(service, 'update')
       .mockResolvedValueOnce(updated as any);
 
-    const res = await controller.update('ad-1', req, dto);
+    const res = await controller.update(req, 'ad-1', dto);
 
     expect(spy).toHaveBeenCalledWith({ user: { sub: 'user_id' } }, 'ad-1', dto);
     expect(res).toEqual(updated);
   });
 
   it('close -> passes user from req.user', async () => {
+    const dto = { to: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' };
     const req: any = { user: { sub: 'user_id' } };
 
     const spy = jest.spyOn(service, 'close').mockResolvedValueOnce(undefined);
 
-    await controller.close(req, 'ad-1');
+    await controller.close(req, 'ad-1', dto);
 
-    expect(spy).toHaveBeenCalledWith({ user: { sub: 'user_id' } }, 'ad-1');
+    expect(spy).toHaveBeenCalledWith({ user: { sub: 'user_id' } }, 'ad-1', dto);
   });
 });

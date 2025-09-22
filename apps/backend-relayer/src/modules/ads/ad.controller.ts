@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -14,10 +13,19 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { AdsService } from './ad.service';
-import { CreateAdDto, QueryAdsDto, UpdateAdDto } from '../ads/dto/ad.dto';
+import {
+  CreateAdDto,
+  FundAdDto,
+  QueryAdsDto,
+  UpdateAdDto,
+  WithdrawalAdDto,
+  ConfirmAdActionDto,
+  CloseAdDto,
+} from '../ads/dto/ad.dto';
 import type { Request } from 'express';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
-
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+@ApiTags('Ads')
 @Controller('v1/ads')
 export class AdsController {
   constructor(private readonly ads: AdsService) {}
@@ -32,31 +40,71 @@ export class AdsController {
   get(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.ads.getById(id);
   }
-  @Post()
+  @ApiBearerAuth()
+  @Post('create')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.CREATED)
   create(@Req() req: Request, @Body() dto: CreateAdDto) {
     return this.ads.create(req, dto);
   }
 
+  @ApiBearerAuth()
+  @Post(':id/fund')
+  @UseGuards(UserJwtGuard)
+  @HttpCode(HttpStatus.OK)
+  fund(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: FundAdDto,
+  ) {
+    return this.ads.fund(req, id, dto);
+  }
+
+  @ApiBearerAuth()
+  @Post(':id/withdraw')
+  @UseGuards(UserJwtGuard)
+  @HttpCode(HttpStatus.OK)
+  withdraw(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: WithdrawalAdDto,
+  ) {
+    return this.ads.withdraw(req, id, dto);
+  }
+
+  @ApiBearerAuth()
+  @Post(':id/confirm')
+  @UseGuards(UserJwtGuard)
+  @HttpCode(HttpStatus.OK)
+  confirmUpdate(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ConfirmAdActionDto,
+  ) {
+    return this.ads.confirmChainAction(req, id, dto);
+  }
+
+  @ApiBearerAuth()
   @Patch(':id')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
   update(
-    @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateAdDto,
   ) {
     return this.ads.update(req, id, dto);
   }
 
-  @Delete(':id')
+  @ApiBearerAuth()
+  @Post(':id')
   @UseGuards(UserJwtGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async close(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: CloseAdDto,
   ) {
-    await this.ads.close(req, id);
+    await this.ads.close(req, id, dto);
   }
 }

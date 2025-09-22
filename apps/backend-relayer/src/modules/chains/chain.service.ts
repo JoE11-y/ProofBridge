@@ -47,6 +47,7 @@ export class ChainService {
         id: true,
         name: true,
         chainId: true,
+        mmrId: true,
         adManagerAddress: true,
         orderPortalAddress: true,
         createdAt: true,
@@ -69,6 +70,7 @@ export class ChainService {
       select: {
         id: true,
         name: true,
+        mmrId: true,
         chainId: true,
         adManagerAddress: true,
         orderPortalAddress: true,
@@ -89,6 +91,11 @@ export class ChainService {
           chainId: BigInt(dto.chainId),
           adManagerAddress: dto.adManagerAddress,
           orderPortalAddress: dto.orderPortalAddress,
+          mmr: {
+            create: {
+              chainId: dto.chainId,
+            },
+          },
         },
         select: {
           id: true,

@@ -13,13 +13,16 @@ import {
 } from '@nestjs/common';
 import { TradesService } from './trade.service';
 import {
-  ConfirmTradeDto,
+  AuthorizeTradeDto,
+  ConfirmTradeActionDto,
   CreateTradeDto,
   QueryTradesDto,
 } from './dto/trade.dto';
 import type { Request } from 'express';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Trades')
 @Controller('v1/trades')
 export class TradesController {
   constructor(private readonly trades: TradesService) {}
@@ -36,16 +39,15 @@ export class TradesController {
     return this.trades.getById(id);
   }
 
-  @Post(':id/authorize')
+  @ApiBearerAuth()
+  @Post(':id/lock')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
-  authorizeLock(
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Req() req: Request,
-  ) {
-    return this.trades.authorizeLock(req, id);
+  lock(@Param('id', new ParseUUIDPipe()) id: string, @Req() req: Request) {
+    return this.trades.lockTrade(req, id);
   }
 
+  @ApiBearerAuth()
   @Post()
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -53,14 +55,39 @@ export class TradesController {
     return this.trades.create(req, dto);
   }
 
+  @ApiBearerAuth()
+  @Post(':id/authorize')
+  @UseGuards(UserJwtGuard)
+  @HttpCode(HttpStatus.OK)
+  authorize(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: AuthorizeTradeDto,
+  ) {
+    return this.trades.authorize(req, id, dto);
+  }
+
+  @ApiBearerAuth()
+  @Post(':id/authorize/confirm')
+  @UseGuards(UserJwtGuard)
+  @HttpCode(HttpStatus.OK)
+  confirmAuthorization(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ConfirmTradeActionDto,
+  ) {
+    return this.trades.confirmAuthorizeAction(req, id, dto);
+  }
+
+  @ApiBearerAuth()
   @Post(':id/confirm')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
-  confirm(
+  confirmChainAction(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: ConfirmTradeDto,
+    @Body() dto: ConfirmTradeActionDto,
   ) {
-    return this.trades.confirm(req, id, dto);
+    return this.trades.confirmChainAction(req, id, dto);
   }
 }

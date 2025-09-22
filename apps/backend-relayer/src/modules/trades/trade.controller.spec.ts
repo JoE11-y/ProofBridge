@@ -18,7 +18,7 @@ describe('TradesController (unit)', () => {
             list: jest.fn(),
             getById: jest.fn(),
             create: jest.fn(),
-            confirm: jest.fn(),
+            authorize: jest.fn(),
           },
         },
         PrismaService,
@@ -49,10 +49,9 @@ describe('TradesController (unit)', () => {
     expect(res).toEqual({ id: 'tr-1' });
   });
 
-  it('create passes user + idem key', async () => {
+  it('create passes user', async () => {
     const req: any = {
       user: { sub: '0xB' },
-      headers: { 'idempotency-key': 'abc' },
     };
 
     const dto: any = {
@@ -70,24 +69,23 @@ describe('TradesController (unit)', () => {
       idempotentHit: false,
     } as any);
 
-    const res = await controller.create(req, dto);
+    await controller.create(req, dto);
     expect(spy).toHaveBeenCalledWith(req, dto);
-    expect(res.trade).toEqual({ id: 'tr-1' });
   });
 
   it('confirm delegates to service', async () => {
     const req: any = { user: { sub: '0xB' } };
 
     const spy = jest
-      .spyOn(service, 'confirm')
+      .spyOn(service, 'authorize')
       .mockResolvedValueOnce({ status: 'PROOF_READY' } as any);
 
-    const res = await controller.confirm(req, 'tr-1', {
-      encodedSignature: '0x01',
+    const res = await controller.authorize(req, 'tr-1', {
+      signature: '0x01',
     });
 
     expect(spy).toHaveBeenCalledWith(req, 'tr-1', {
-      encodedSignature: '0x01',
+      signature: '0x01',
     });
     expect(res).toEqual({ status: 'PROOF_READY' });
   });
