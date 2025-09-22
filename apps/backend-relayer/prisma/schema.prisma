@@ -144,13 +144,13 @@ model Ad {
 }
 
 model AdUpdateLog {
-  id        String      @id @default(uuid())
-  adId      String      @unique
-  signature String      @unique
-  reqHash   String      @unique
-  ad        Ad          @relation(fields: [adId], references: [id], onDelete: Cascade)
-  log       UpdateLog[]
-  createdAt DateTime    @default(now())
+  id        String   @id @default(uuid())
+  adId      String   @unique
+  signature String?
+  reqHash   String   @unique
+  ad        Ad       @relation(fields: [adId], references: [id], onDelete: Cascade)
+  log       AdLog[]
+  createdAt DateTime @default(now())
 }
 
 enum AdStatus {
@@ -236,7 +236,7 @@ model AuthorizationLog {
   userAddress String
   origin      ActionOrigin
   tradeId     String
-  signature   String       @unique
+  signature   String?
   reqHash     String       @unique
   trade       Trade        @relation(fields: [tradeId], references: [id], onDelete: Cascade)
   createdAt   DateTime     @default(now())
@@ -247,21 +247,29 @@ model TradeUpdateLog {
   ctx       ActionContext
   origin    ActionOrigin
   tradeId   String        @unique
-  signature String        @unique
+  signature String?
   reqHash   String        @unique
   trade     Trade         @relation(fields: [tradeId], references: [id], onDelete: Cascade)
-  log       UpdateLog[]
+  log       TradeLog[]
   createdAt DateTime      @default(now())
 }
 
-model UpdateLog {
+model AdLog {
   id       String @id @default(uuid())
   field    String
   oldValue String
   newValue String
 
-  AdUpdateLog      AdUpdateLog?    @relation(fields: [adUpdateLogId], references: [id])
-  adUpdateLogId    String?
+  AdUpdateLog   AdUpdateLog? @relation(fields: [adUpdateLogId], references: [id])
+  adUpdateLogId String?
+}
+
+model TradeLog {
+  id       String @id @default(uuid())
+  field    String
+  oldValue String
+  newValue String
+
   TradeUpdateLog   TradeUpdateLog? @relation(fields: [tradeUpdateLogId], references: [id])
   tradeUpdateLogId String?
 }
@@ -279,11 +287,14 @@ model MMR {
 model OrderRecord {
   id           String   @id @default(uuid())
   orderHash    String   @unique
-  elementIndex Int      @unique
+  elementIndex Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  mmrId        String?
-  mmr          MMR?     @relation(fields: [mmrId], references: [id])
+  mmrId        String
+  mmr          MMR      @relation(fields: [mmrId], references: [id])
+
+  @@unique([mmrId, elementIndex])
+  @@unique([orderHash, mmrId])
 }
 
 model Secret {

@@ -10,16 +10,23 @@ pub fn verify_proof(
     elements_count: Field,
     root: Field,
 ) -> bool {
+    // Basic sanity checks on lengths and index
+    assert((sibling_hashes_len as u32) <= 20);
+    assert((peaks_hashes_len as u32) <= 20);
+    assert((elements_count as u32) > 0u32);
+    assert((index as u32) <= (elements_count as u32));
+
     // Recompute the MMR *root commitment* from peaks and elements_count
     let root_hash = compute_root(peaks_hashes_len, peak_hashes, elements_count);
+
     // computed root must match expected `root`
     assert(root_hash == root);
 
     // compute the top peak containing `order_hash`
     let top_peak = get_proof_top_peak(
-        0,
-        order_hash,
-        index as u128,
+        0, // initial height
+        order_hash, // strarting leaf hash
+        index as u128, // mmr_index
         sibling_hashes,
         sibling_hashes_len as u32,
     );
@@ -113,14 +120,14 @@ pub fn mmr_index_to_leaf_index(mmr_index: u128) -> u128 {
 pub fn get_proof_top_peak<let N: u32>(
     mut height: u32,
     mut hash: Field,
-    mut elements_count: u128,
+    mut mmr_index: u128,
     proof: [Field; N],
     proof_len: u32,
 ) -> Field {
     assert(proof_len <= N);
 
     // Convert element count to leaf index
-    let mut leaf_index: u32 = mmr_index_to_leaf_index(elements_count) as u32;
+    let mut leaf_index: u32 = mmr_index_to_leaf_index(mmr_index) as u32;
 
     // Calculate initial span (2^height)
     let mut span: u32 = 1u32 << (height as u8);
@@ -134,10 +141,10 @@ pub fn get_proof_top_peak<let N: u32>(
 
             if is_right_child == 1u32 {
                 hash = poseidon2::Poseidon2::hash([sibling, hash], 2);
-                elements_count = elements_count + 1u128;
+                mmr_index = mmr_index + 1u128;
             } else {
                 hash = poseidon2::Poseidon2::hash([hash, sibling], 2);
-                elements_count = elements_count + (2u128 * span as u128);
+                mmr_index = mmr_index + (2u128 * span as u128);
             }
 
             // Move up one level in tree

@@ -63,9 +63,15 @@ contract Proofbridge is Script {
         console2.log("Deployed OrderPortal :", address(orderPortal));
 
         // --- Assign Manager role to deployed contrats ---
+
         IAccessControl merkleManagerAsAccessControl = IAccessControl(address(merkleManager));
-        merkleManagerAsAccessControl.grantRole(MANAGER_ROLE, address(adManager));
-        merkleManagerAsAccessControl.grantRole(MANAGER_ROLE, address(orderPortal));
+        bytes32 DEFAULT_ADMIN_ROLE = 0x00;
+        if (merkleManagerAsAccessControl.hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            merkleManagerAsAccessControl.grantRole(MANAGER_ROLE, address(adManager));
+            merkleManagerAsAccessControl.grantRole(MANAGER_ROLE, address(orderPortal));
+        } else {
+            console2.log("WARN: Skipping grantRole: sender lacks DEFAULT_ADMIN_ROLE");
+        }
 
         vm.stopBroadcast();
     }

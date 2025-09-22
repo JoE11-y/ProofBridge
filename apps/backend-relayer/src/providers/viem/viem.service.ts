@@ -54,10 +54,18 @@ export class ViemService {
       chain = hederaTestnet;
     }
 
+    const adminKey = env.admin as `0x${string}`;
+
+    if (!adminKey) {
+      throw new Error(
+        'Missing/invalid ADMIN_SECRET (expected 0x-prefixed 32-byte hex).',
+      );
+    }
+
     const wallet = createWalletClient({
       chain,
       transport: http(),
-      account: privateKeyToAccount(env.admin as `0x${string}`),
+      account: privateKeyToAccount(adminKey),
     });
 
     const client = createPublicClient({
@@ -277,7 +285,7 @@ export class ViemService {
       address: orderParams.orderPortal,
       abi: ORDER_PORTAL_ABI,
       functionName: 'createOrderRequestHash',
-      args: [orderHash, token, timeToExpire],
+      args: [orderParams.adId, orderHash, token, timeToExpire],
     });
 
     const signature = await wallet.signMessage({
@@ -323,7 +331,7 @@ export class ViemService {
 
     const recorded = await client.readContract({
       address: contractAddress,
-      abi: AD_MANAGER_ABI,
+      abi: ORDER_PORTAL_ABI,
       functionName: 'checkRequestHashExists',
       args: [msgHash],
     });

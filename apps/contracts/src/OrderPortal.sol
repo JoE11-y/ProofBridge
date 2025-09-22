@@ -247,7 +247,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      * @param _verifier External proof verifier contract.
      */
     constructor(address admin, IVerifier _verifier, IMerkleManager _merkleManager) EIP712(_NAME, _VERSION) {
-        if (admin == address(0) || address(_verifier) == address(0)) {
+        if (admin == address(0) || address(_verifier) == address(0) || address(_merkleManager) == address(0)) {
             revert OrderPortal__ZeroAddress();
         }
         _grantRole(ADMIN_ROLE, admin);
@@ -487,7 +487,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      * @return address Signer of the message
      */
     function preAuthValidations(bytes32 _message, bytes32 _token, uint256 _timeToExpire, bytes memory _signature)
-        public
+        internal
         returns (address)
     {
         if (_message == bytes32(0)) {
@@ -575,10 +575,10 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      */
     function hashRequest(bytes32 _token, uint256 _timeToExpire, string memory _action, bytes[] memory _params)
         public
-        pure
+        view
         returns (bytes32)
     {
-        return keccak256(abi.encode(_token, _timeToExpire, _action, _params));
+        return keccak256(abi.encode(_token, _timeToExpire, _action, _params, getChainID(), address(this)));
     }
 
     /**
@@ -665,7 +665,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      */
     function createOrderRequestHash(string memory adId, bytes32 orderHash, bytes32 _token, uint256 _timeToExpire)
         public
-        pure
+        view
         returns (bytes32 message)
     {
         string memory action = "createOrder";
@@ -691,7 +691,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
         bytes32 _targetRoot,
         bytes32 _token,
         uint256 _timeToExpire
-    ) public pure returns (bytes32 message) {
+    ) public view returns (bytes32 message) {
         string memory action = "unlockOrder";
         bytes[] memory params = new bytes[](3);
         params[0] = abi.encode(adId);

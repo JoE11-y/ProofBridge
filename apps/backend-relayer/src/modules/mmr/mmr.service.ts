@@ -94,9 +94,11 @@ export class MMRService implements OnModuleDestroy {
     if (this.store) return;
 
     if (!this.storeInitPromise) {
-      this.store = new LevelDB(DB_PATH);
       this.storeInitPromise = (async () => {
-        await this.store!.init();
+        if (this.store) return;
+        const store = new LevelDB(DB_PATH);
+        await store.init();
+        this.store = store;
       })().catch((err) => {
         this.store = null;
         this.storeInitPromise = null;

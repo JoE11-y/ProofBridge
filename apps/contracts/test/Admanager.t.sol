@@ -897,7 +897,7 @@ contract AdManagerTest is Test {
 
         // Open two orders with different salts
         (AdManager.OrderParams memory p1, bytes32 oh1) = _openOrder(adId, 80 ether, 777, bridger, recipient);
-        (AdManager.OrderParams memory p2,) = _openOrder(adId, 90 ether, 778, other, recipient);
+        (AdManager.OrderParams memory p2, bytes32 oh2) = _openOrder(adId, 90 ether, 778, other, recipient);
 
         bytes32 nullifier = keccak256("N");
 
@@ -911,7 +911,7 @@ contract AdManagerTest is Test {
         adManager.unlock(signature, authToken, timeToLive, p1, nullifier, t_root, hex"");
 
         /// get auth
-        (authToken, timeToLive, signature) = generateUnlockOrderRequestHash(adId, oh1, t_root);
+        (authToken, timeToLive, signature) = generateUnlockOrderRequestHash(adId, oh2, t_root);
 
         // Second unlock with the same nullifier on a different (still open) order
         vm.prank(bridger);

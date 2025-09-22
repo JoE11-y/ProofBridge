@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
   ForbiddenException,
@@ -15,8 +14,8 @@ import {
   ConfirmChainActionDto,
   CloseAdDto,
 } from './dto/ad.dto';
-import { getAddress } from 'ethers';
-import { Prisma } from '@prisma/client';
+import { getAddress, isAddress } from 'ethers';
+import { AdStatus, Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { ViemService } from '../../providers/viem/viem.service';
 
@@ -27,6 +26,24 @@ function toBI(s?: string): bigint | undefined {
 function sameSymbol(a: string, b: string) {
   return a.trim().toLowerCase() === b.trim().toLowerCase();
 }
+
+type AdQueryInput = {
+  routeId?: string;
+  creatorAddress?: string;
+  status?: AdStatus;
+};
+
+type AdUpdateInput = {
+  minAmount?: bigint | undefined;
+  maxAmount?: bigint | undefined;
+  metadata?: any;
+  status?: AdStatus;
+};
+
+type AdUpdateLogInput = {
+  poolAmount?: bigint;
+  status?: AdStatus;
+};
 
 @Injectable()
 export class AdsService {
@@ -40,7 +57,8 @@ export class AdsService {
       query.limit && query.limit > 0 && query.limit <= 100 ? query.limit : 25;
     const cursor = query.cursor ? { id: query.cursor } : undefined;
 
-    const where: any = {};
+    const where: AdQueryInput = {};
+
     if (query.routeId) where.routeId = query.routeId;
     if (query.creatorAddress) where.creatorAddress = query.creatorAddress;
     if (query.status) where.status = query.status;
@@ -181,7 +199,7 @@ export class AdsService {
 
     if (!user) throw new ForbiddenException('Unauthorized');
 
-    if (getAddress(dto.creatorDstAddress)) {
+    if (isAddress(dto.creatorDstAddress)) {
       throw new BadRequestException('Invalid address');
     }
 
@@ -289,7 +307,7 @@ export class AdsService {
     if (!user) throw new ForbiddenException('Unauthorized');
 
     const ad = await this.prisma.ad.findUnique({
-      where: { id, creatorAddress: user.walletAddress },
+      where: { id, creatorAddress: getAddress(user.walletAddress) },
       select: {
         id: true,
         creatorAddress: true,
@@ -381,7 +399,7 @@ export class AdsService {
     if (!user) throw new ForbiddenException('Unauthorized');
 
     const ad = await this.prisma.ad.findUnique({
-      where: { id, creatorAddress: user.walletAddress },
+      where: { id, creatorAddress: getAddress(user.walletAddress) },
       select: {
         id: true,
         creatorAddress: true,
@@ -493,8 +511,8 @@ export class AdsService {
     });
     if (!ad) throw new NotFoundException('Ad not found');
 
-    // Build data
-    const data: any = {};
+    const data: AdUpdateInput = {};
+
     if (dto.minAmount !== undefined) data.minAmount = toBI(dto.minAmount);
     if (dto.maxAmount !== undefined) data.maxAmount = toBI(dto.maxAmount);
     if (dto.metadata !== undefined) data.metadata = dto.metadata;
@@ -533,8 +551,8 @@ export class AdsService {
 
     if (!user) throw new ForbiddenException('Unauthorized');
 
-    const ad = await this.prisma.ad.findUnique({
-      where: { id, creatorAddress: user.walletAddress },
+    const ad = await this.prisma.ad.findFirst({
+      where: { id, creatorAddress: getAddress(user.walletAddress) },
       select: {
         id: true,
         creatorAddress: true,
@@ -585,7 +603,7 @@ export class AdsService {
       });
 
     await this.prisma.$transaction(async (prisma) => {
-      await this.prisma.adUpdateLog.create({
+      await prisma.adUpdateLog.create({
         data: {
           adId: ad.id,
           signature: reqContractDetails.signature,
@@ -641,7 +659,10 @@ export class AdsService {
 
     if (!adLogUpdate) throw new NotFoundException('Ad update log not found');
 
-    if (adLogUpdate.ad.creatorAddress !== user.walletAddress) {
+    if (
+      getAddress(adLogUpdate.ad.creatorAddress) !==
+      getAddress(user.walletAddress)
+    ) {
       throw new ForbiddenException('Unauthorized');
     }
 
@@ -675,13 +696,13 @@ export class AdsService {
       throw new BadRequestException('Invalid request; please try again');
 
     // apply the updates
-    const data: any = {};
+    const data: AdUpdateLogInput = {};
 
     adLogUpdate.log.forEach((entry) => {
       if (entry.field === 'PoolAmount') {
-        data.poolAmount = entry.newValue;
+        data.poolAmount = BigInt(entry.newValue);
       } else if (entry.field === 'Status') {
-        data.status = entry.newValue;
+        data.status = entry.newValue as AdStatus;
       }
     });
 

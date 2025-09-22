@@ -26,6 +26,11 @@ export default async function generateProof(): Promise<string> {
 
   const tree = await merkleTree(leaves);
   const elementIndex = tree.getIndex(orderHash);
+
+  if (elementIndex === undefined) {
+    throw new Error("orderHash not found in provided leaves");
+  }
+
   const merkleProof = await tree.genProof(elementIndex, orderHash);
   const targetRoot = await tree.getRoot();
 

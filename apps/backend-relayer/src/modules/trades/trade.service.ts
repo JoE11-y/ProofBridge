@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
   ForbiddenException,
@@ -19,10 +18,26 @@ import { ViemService } from '../../providers/viem/viem.service';
 import { MMRService } from '../mmr/mmr.service';
 import { ProofService } from '../../providers/noir/proof.service';
 import { randomUUID } from 'crypto';
+import { TradeStatus } from '@prisma/client';
 
 function toBI(s: string) {
   return BigInt(s);
 }
+
+type TradeQueryInput = {
+  routeId?: string;
+  adId?: string;
+  adCreatorAddress?: string;
+  bridgerAddress?: string;
+  route?: {
+    fromTokenId?: string;
+    toTokenId?: string;
+  };
+  amount?: {
+    gte?: string;
+    lte?: string;
+  };
+};
 
 @Injectable()
 export class TradesService {
@@ -79,19 +94,13 @@ export class TradesService {
     const take = q.limit && q.limit > 0 && q.limit <= 100 ? q.limit : 25;
     const cursor = q.cursor ? { id: q.cursor } : undefined;
 
-    const where: {
-      routeId?: string;
-      adId?: string;
-      adCreatorAddress?: string;
-      bridgerAddress?: string;
-      route?: { fromTokenId?: string; toTokenId?: string };
-      amount?: { gte?: string; lte?: string };
-    } = {};
+    const where: TradeQueryInput = {};
 
     if (q.routeId) where.routeId = q.routeId;
     if (q.adId) where.adId = q.adId;
-    if (q.adCreatorAddress) where.adCreatorAddress = q.adCreatorAddress;
-    if (q.bridgerAddress) where.bridgerAddress = q.bridgerAddress;
+    if (q.adCreatorAddress)
+      where.adCreatorAddress = getAddress(q.adCreatorAddress);
+    if (q.bridgerAddress) where.bridgerAddress = getAddress(q.bridgerAddress);
 
     if (q.fromTokenId)
       where.route = { ...(where.route ?? {}), fromTokenId: q.fromTokenId };
@@ -333,7 +342,7 @@ export class TradesService {
 
     if (!user) throw new UnauthorizedException('Unauthorized');
 
-    const trade = await this.prisma.trade.findUnique({
+    const trade = await this.prisma.trade.findFirst({
       where: { id: tradeId, adCreatorAddress: getAddress(user.walletAddress) },
       select: {
         id: true,
@@ -547,9 +556,9 @@ export class TradesService {
 
     let mmrId: string;
     if (isAdCreator) {
-      mmrId = trade.route.toToken.chain.mmrId;
+      mmrId = trade.route.toToken.chain.mmrId as string;
     } else {
-      mmrId = trade.route.fromToken.chain.mmrId;
+      mmrId = trade.route.fromToken.chain.mmrId as string;
     }
 
     // get merkle proof
@@ -562,8 +571,8 @@ export class TradesService {
 
     const onChainRoot = await this.viemService.fetchOnChainRoot(isAdCreator, {
       chainId: isAdCreator
-        ? trade.route.toToken.chain.chainId
-        : trade.route.fromToken.chain.chainId,
+        ? (trade.route.toToken.chain.chainId as bigint)
+        : (trade.route.fromToken.chain.chainId as bigint),
       contractAddress: isAdCreator
         ? (trade.route.toToken.chain.mmrId as `0x${string}`)
         : (trade.route.fromToken.chain.mmrId as `0x${string}`),
@@ -577,7 +586,7 @@ export class TradesService {
 
     const { proof } = await this.proofService.generateProof({
       merkleProof,
-      orderHash: trade.orderHash,
+      orderHash: trade.orderHash as string,
       secret: tradeSecret.secret,
       isAdCreator,
       targetRoot: onChainRoot,
@@ -592,22 +601,24 @@ export class TradesService {
     const requestContractDetails =
       await this.viemService.getUnlockOrderContractDetails({
         chainId: isAdCreator
-          ? trade.route.toToken.chain.chainId
-          : trade.route.fromToken.chain.chainId,
+          ? (trade.route.toToken.chain.chainId as bigint)
+          : (trade.route.fromToken.chain.chainId as bigint),
         contractAddress: isAdCreator
           ? (trade.route.toToken.chain.orderPortalAddress as `0x${string}`)
           : (trade.route.fromToken.chain.adManagerAddress as `0x${string}`),
         isAdCreator,
         orderParams: {
-          orderChainToken: trade.route.toToken.address,
-          adChainToken: trade.route.fromToken.address,
+          orderChainToken: trade.route.toToken.address as `0x${string}`,
+          adChainToken: trade.route.fromToken.address as `0x${string}`,
           amount: trade.amount.toString(),
           bridger: getAddress(trade.bridgerAddress),
-          orderChainId: trade.route.toToken.chain.chainId.toString(),
-          orderPortal: trade.route.toToken.chain.orderPortalAddress,
+          orderChainId: trade.route.toToken.chain.chainId.toString() as string,
+          orderPortal: trade.route.toToken.chain
+            .orderPortalAddress as `0x${string}`,
           orderRecipient: getAddress(trade.bridgerDstAddress),
-          adChainId: trade.route.fromToken.chain.chainId.toString(),
-          adManager: trade.route.fromToken.chain.adManagerAddress,
+          adChainId: trade.route.fromToken.chain.chainId.toString() as string,
+          adManager: trade.route.fromToken.chain
+            .adManagerAddress as `0x${string}`,
           adId: trade.id,
           adCreator: getAddress(trade.adCreatorAddress),
           adRecipient: getAddress(trade.adCreatorDstAddress),
@@ -656,8 +667,10 @@ export class TradesService {
       throw new NotFoundException('Trade update log not found');
 
     if (
-      tradeLogUpdate.trade.bridgerAddress !== user.walletAddress &&
-      tradeLogUpdate.trade.adCreatorAddress !== user.walletAddress
+      getAddress(tradeLogUpdate.trade.bridgerAddress) !==
+        getAddress(user.walletAddress) &&
+      getAddress(tradeLogUpdate.trade.adCreatorAddress) !==
+        getAddress(user.walletAddress)
     ) {
       throw new ForbiddenException('Unauthorized');
     }
@@ -735,20 +748,25 @@ export class TradesService {
       );
     }
 
-    // apply the updates
-    const data: any = {};
+    let status: TradeStatus | undefined = undefined;
+    let adLockAuthorized: boolean | undefined = undefined;
 
     tradeLogUpdate.log.forEach((entry) => {
       if (entry.field === 'Status') {
-        data.status = entry.newValue;
+        status = entry.newValue as TradeStatus;
       } else if (entry.field === 'AdLock') {
-        data.adLock = { authorized: entry.newValue === 'true' };
+        adLockAuthorized = entry.newValue === 'true';
       }
     });
 
     await this.prisma.trade.update({
       where: { id: tradeLogUpdate.tradeId },
-      data,
+      data: {
+        status,
+        adLock: adLockAuthorized
+          ? { update: { authorized: adLockAuthorized } }
+          : undefined,
+      },
     });
 
     // delete the log entry
@@ -776,11 +794,11 @@ export class TradesService {
 
     if (!user) throw new ForbiddenException('Unauthorized');
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const authorizationLog = await this.prisma.authorizationLog.findFirst({
       where: {
         tradeId: tradeId,
-        signature: dto.signature,
-        userAddress: user.walletAddress,
+        userAddress: getAddress(user.walletAddress),
       },
       orderBy: { createdAt: 'desc' },
       include: { trade: true },
@@ -790,8 +808,10 @@ export class TradesService {
       throw new NotFoundException('Authorization log not found');
 
     if (
-      authorizationLog.trade.bridgerAddress !== user.walletAddress &&
-      authorizationLog.trade.adCreatorAddress !== user.walletAddress
+      getAddress(authorizationLog.trade.bridgerAddress) !==
+        getAddress(user.walletAddress) &&
+      getAddress(authorizationLog.trade.adCreatorAddress) !==
+        getAddress(user.walletAddress)
     ) {
       throw new ForbiddenException('Unauthorized');
     }
@@ -861,21 +881,23 @@ export class TradesService {
       caller === getAddress(authorizationLog.trade.adCreatorAddress);
 
     await this.prisma.trade.update({
-      where: { id: authorizationLog.tradeId },
+      where: { id: authorizationLog.tradeId as string },
       data: {
         adCreatorClaimed: isAdCreator
-          ? true
-          : authorizationLog.trade.adCreatorClaimed,
+          ? (true as boolean)
+          : (authorizationLog.trade.adCreatorClaimed as boolean),
         bridgerClaimed: !isAdCreator
-          ? true
-          : authorizationLog.trade.bridgerClaimed,
+          ? (true as boolean)
+          : (authorizationLog.trade.bridgerClaimed as boolean),
       },
     });
 
     // delete the log entry
     await this.prisma.authorizationLog.delete({
-      where: { id: authorizationLog.id },
+      where: { id: authorizationLog.id as string },
     });
+
+    console.log(dto);
 
     return {
       success: true,

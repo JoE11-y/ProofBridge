@@ -30,11 +30,10 @@ export class AuthorizeTradeDto {
 }
 
 export class ConfirmChainActionDto {
-  @IsOptional()
   @IsString()
-  signature?: string;
+  txHash!: string;
 
   @IsOptional()
   @IsString()
-  txHash?: string;
+  signature?: string;
 }

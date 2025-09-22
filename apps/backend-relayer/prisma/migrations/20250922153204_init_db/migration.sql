@@ -111,7 +111,7 @@ CREATE TABLE "public"."Ad" (
 CREATE TABLE "public"."AdUpdateLog" (
     "id" TEXT NOT NULL,
     "adId" TEXT NOT NULL,
-    "signature" TEXT NOT NULL,
+    "signature" TEXT,
     "reqHash" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -157,7 +157,7 @@ CREATE TABLE "public"."AuthorizationLog" (
     "userAddress" TEXT NOT NULL,
     "origin" "public"."ActionOrigin" NOT NULL,
     "tradeId" TEXT NOT NULL,
-    "signature" TEXT NOT NULL,
+    "signature" TEXT,
     "reqHash" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -170,7 +170,7 @@ CREATE TABLE "public"."TradeUpdateLog" (
     "ctx" "public"."ActionContext" NOT NULL,
     "origin" "public"."ActionOrigin" NOT NULL,
     "tradeId" TEXT NOT NULL,
-    "signature" TEXT NOT NULL,
+    "signature" TEXT,
     "reqHash" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -178,15 +178,25 @@ CREATE TABLE "public"."TradeUpdateLog" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."UpdateLog" (
+CREATE TABLE "public"."AdLog" (
     "id" TEXT NOT NULL,
     "field" TEXT NOT NULL,
     "oldValue" TEXT NOT NULL,
     "newValue" TEXT NOT NULL,
     "adUpdateLogId" TEXT,
+
+    CONSTRAINT "AdLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."TradeLog" (
+    "id" TEXT NOT NULL,
+    "field" TEXT NOT NULL,
+    "oldValue" TEXT NOT NULL,
+    "newValue" TEXT NOT NULL,
     "tradeUpdateLogId" TEXT,
 
-    CONSTRAINT "UpdateLog_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "TradeLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -206,7 +216,7 @@ CREATE TABLE "public"."OrderRecord" (
     "elementIndex" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "mmrId" TEXT,
+    "mmrId" TEXT NOT NULL,
 
     CONSTRAINT "OrderRecord_pkey" PRIMARY KEY ("id")
 );
@@ -279,9 +289,6 @@ CREATE INDEX "Ad_routeId_status_idx" ON "public"."Ad"("routeId", "status");
 CREATE UNIQUE INDEX "AdUpdateLog_adId_key" ON "public"."AdUpdateLog"("adId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "AdUpdateLog_signature_key" ON "public"."AdUpdateLog"("signature");
-
--- CreateIndex
 CREATE UNIQUE INDEX "AdUpdateLog_reqHash_key" ON "public"."AdUpdateLog"("reqHash");
 
 -- CreateIndex
@@ -300,16 +307,10 @@ CREATE INDEX "Trade_adCreatorAddress_idx" ON "public"."Trade"("adCreatorAddress"
 CREATE INDEX "Trade_bridgerAddress_idx" ON "public"."Trade"("bridgerAddress");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "AuthorizationLog_signature_key" ON "public"."AuthorizationLog"("signature");
-
--- CreateIndex
 CREATE UNIQUE INDEX "AuthorizationLog_reqHash_key" ON "public"."AuthorizationLog"("reqHash");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "TradeUpdateLog_tradeId_key" ON "public"."TradeUpdateLog"("tradeId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "TradeUpdateLog_signature_key" ON "public"."TradeUpdateLog"("signature");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "TradeUpdateLog_reqHash_key" ON "public"."TradeUpdateLog"("reqHash");
@@ -321,7 +322,10 @@ CREATE UNIQUE INDEX "MMR_chainId_key" ON "public"."MMR"("chainId");
 CREATE UNIQUE INDEX "OrderRecord_orderHash_key" ON "public"."OrderRecord"("orderHash");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OrderRecord_elementIndex_key" ON "public"."OrderRecord"("elementIndex");
+CREATE UNIQUE INDEX "OrderRecord_mmrId_elementIndex_key" ON "public"."OrderRecord"("mmrId", "elementIndex");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "OrderRecord_orderHash_mmrId_key" ON "public"."OrderRecord"("orderHash", "mmrId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Secret_tradeId_key" ON "public"."Secret"("tradeId");
@@ -372,13 +376,13 @@ ALTER TABLE "public"."AuthorizationLog" ADD CONSTRAINT "AuthorizationLog_tradeId
 ALTER TABLE "public"."TradeUpdateLog" ADD CONSTRAINT "TradeUpdateLog_tradeId_fkey" FOREIGN KEY ("tradeId") REFERENCES "public"."Trade"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."UpdateLog" ADD CONSTRAINT "UpdateLog_adUpdateLogId_fkey" FOREIGN KEY ("adUpdateLogId") REFERENCES "public"."AdUpdateLog"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."AdLog" ADD CONSTRAINT "AdLog_adUpdateLogId_fkey" FOREIGN KEY ("adUpdateLogId") REFERENCES "public"."AdUpdateLog"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."UpdateLog" ADD CONSTRAINT "UpdateLog_tradeUpdateLogId_fkey" FOREIGN KEY ("tradeUpdateLogId") REFERENCES "public"."TradeUpdateLog"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."TradeLog" ADD CONSTRAINT "TradeLog_tradeUpdateLogId_fkey" FOREIGN KEY ("tradeUpdateLogId") REFERENCES "public"."TradeUpdateLog"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."OrderRecord" ADD CONSTRAINT "OrderRecord_mmrId_fkey" FOREIGN KEY ("mmrId") REFERENCES "public"."MMR"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."OrderRecord" ADD CONSTRAINT "OrderRecord_mmrId_fkey" FOREIGN KEY ("mmrId") REFERENCES "public"."MMR"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Secret" ADD CONSTRAINT "Secret_tradeId_fkey" FOREIGN KEY ("tradeId") REFERENCES "public"."Trade"("id") ON DELETE CASCADE ON UPDATE CASCADE;

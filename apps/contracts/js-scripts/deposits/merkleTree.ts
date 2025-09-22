@@ -30,7 +30,9 @@ export class MerkleTree {
 
   getIndex(value: string) {
     const x = this.mod(value);
-    return this.elementIndexMap.get(x.toString())!;
+    const idx = this.elementIndexMap.get(x.toString());
+    if (idx === undefined) throw new Error("Element not found in tree");
+    return idx;
   }
 
   async genProof(elementIndex: number, orderHash: string) {

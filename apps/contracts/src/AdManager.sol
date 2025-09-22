@@ -6,7 +6,6 @@ pragma solidity ^0.8.24;
  * @notice Makers (LPs) post/close liquidity ads, lock funds against EIP-712 orders,
  *         and bridgers unlock on this chain with a proof checked by an external verifier.
  */
-import {console} from "forge-std/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
@@ -325,7 +324,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param _verifier External zk-proof verifier contract.
      */
     constructor(address admin, IVerifier _verifier, IMerkleManager _merkleManager) EIP712(_NAME, _VERSION) {
-        if (admin == address(0) || address(_verifier) == address(0)) {
+        if (admin == address(0) || address(_verifier) == address(0) || address(_merkleManager) == address(0)) {
             revert AdManager__ZeroAddress();
         }
         _grantRole(ADMIN_ROLE, admin);
@@ -527,6 +526,8 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
             revert Admanager__RequestHashedProcessed();
         }
 
+        if (to == address(0)) revert AdManager__RecipientZero();
+
         address signer = preAuthValidations(message, _token, _timeToExpire, _signature);
 
         if (amount == 0) revert AdManager__ZeroAmount();
@@ -558,6 +559,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     {
         Ad storage ad = __getAdOwned(adId, msg.sender);
         if (ad.locked != 0) revert Admanager__ActiveLocks(); // has active locks
+        if (to == address(0)) revert AdManager__RecipientZero();
 
         bytes32 message = closeAdRequestHash(adId, to, _token, _timeToExpire);
 
@@ -730,7 +732,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @return address Signer of the message
      */
     function preAuthValidations(bytes32 _message, bytes32 _token, uint256 _timeToExpire, bytes memory _signature)
-        public
+        internal
         returns (address)
     {
         if (_message == bytes32(0)) {
@@ -790,10 +792,10 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      */
     function hashRequest(bytes32 _token, uint256 _timeToExpire, string memory _action, bytes[] memory _params)
         public
-        pure
+        view
         returns (bytes32)
     {
-        return keccak256(abi.encode(_token, _timeToExpire, _action, _params));
+        return keccak256(abi.encode(_token, _timeToExpire, _action, _params, getChainID(), address(this)));
     }
 
     /**
@@ -890,7 +892,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         address adRecipient,
         bytes32 _token,
         uint256 _timeToExpire
-    ) public pure returns (bytes32 message) {
+    ) public view returns (bytes32 message) {
         string memory action = "createAd";
         bytes[] memory params = new bytes[](4);
         params[0] = abi.encode(adId);
@@ -911,7 +913,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
 
     function fundAdRequestHash(string memory adId, uint256 amount, bytes32 _token, uint256 _timeToExpire)
         public
-        pure
+        view
         returns (bytes32 message)
     {
         string memory action = "fundAd";
@@ -937,7 +939,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         address to,
         bytes32 _token,
         uint256 _timeToExpire
-    ) public pure returns (bytes32 message) {
+    ) public view returns (bytes32 message) {
         string memory action = "withdrawFromAd";
         bytes[] memory params = new bytes[](3);
         params[0] = abi.encode(adId);
@@ -957,7 +959,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      */
     function closeAdRequestHash(string memory adId, address to, bytes32 _token, uint256 _timeToExpire)
         public
-        pure
+        view
         returns (bytes32 message)
     {
         string memory action = "closeAd";
@@ -978,7 +980,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      */
     function lockForOrderRequestHash(string memory adId, bytes32 orderHash, bytes32 _token, uint256 _timeToExpire)
         public
-        pure
+        view
         returns (bytes32 message)
     {
         string memory action = "lockForOrder";
@@ -1004,7 +1006,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         bytes32 _targetRoot,
         bytes32 _token,
         uint256 _timeToExpire
-    ) public pure returns (bytes32 message) {
+    ) public view returns (bytes32 message) {
         string memory action = "unlockOrder";
         bytes[] memory params = new bytes[](3);
         params[0] = abi.encode(adId);

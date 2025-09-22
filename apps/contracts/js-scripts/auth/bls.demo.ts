@@ -45,8 +45,8 @@ async function main() {
   const ctx1 = `BLS-KEY-DERIVE-v1|acct:${await eoa1.getAddress()}|nonce:0`;
   const ctx2 = `BLS-KEY-DERIVE-v1|acct:${await eoa2.getAddress()}|nonce:0`;
 
-  const sig1 = await eoa1.signMessage(BIND_MSG);
-  const sig2 = await eoa2.signMessage(BIND_MSG);
+  const sig1 = await eoa1.signMessage(`${BIND_MSG}|${ctx1}`);
+  const sig2 = await eoa2.signMessage(`${BIND_MSG}|${ctx2}`);
 
   // === 2) Derive BLS secret keys from those EOA signatures ===
   const sk1 = deriveBlsSkFromEoaSig(sig1, ctx1);
