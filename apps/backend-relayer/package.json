@@ -21,6 +21,8 @@
     "prisma:migrate": "prisma migrate deploy"
   },
   "dependencies": {
+    "@aztec/bb.js": "^0.87.0",
+    "@noir-lang/noir_js": "1.0.0-beta.9",
     "@accumulators/core": "^4.2.3",
     "@accumulators/hashers": "^4.2.3",
     "@accumulators/memory": "^4.2.3",
