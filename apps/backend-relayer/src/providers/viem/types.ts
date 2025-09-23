@@ -10,13 +10,13 @@ export type T_CreateAdRequest = {
 export type T_CreateAdRequestContractDetails = {
   contractAddress: string;
   signature: `0x${string}`;
-  token: string;
+  authToken: string;
   timeToExpire: number;
   adId: string;
   adToken: `0x${string}`;
   orderChainId: string;
   adRecipient: `0x${string}`;
-  msgHash: `0x${string}`;
+  reqHash: `0x${string}`;
 };
 
 export type T_CreatFundAdRequest = {
@@ -29,11 +29,11 @@ export type T_CreatFundAdRequest = {
 export type T_CreatFundAdRequestContractDetails = {
   contractAddress: string;
   signature: `0x${string}`;
-  token: string;
+  authToken: string;
   timeToExpire: number;
   adId: string;
   amount: string;
-  msgHash: `0x${string}`;
+  reqHash: `0x${string}`;
 };
 
 export type T_WithdrawFromAdRequest = {
@@ -47,12 +47,12 @@ export type T_WithdrawFromAdRequest = {
 export type T_WithdrawFromAdRequestContractDetails = {
   contractAddress: string;
   signature: `0x${string}`;
-  token: string;
+  authToken: string;
   timeToExpire: number;
   adId: string;
   amount: string;
   to: `0x${string}`;
-  msgHash: `0x${string}`;
+  reqHash: `0x${string}`;
 };
 
 export type T_CloseAdRequest = {
@@ -65,11 +65,11 @@ export type T_CloseAdRequest = {
 export type T_CloseAdRequestContractDetails = {
   contractAddress: string;
   signature: `0x${string}`;
-  token: string;
+  authToken: string;
   timeToExpire: number;
   adId: string;
   to: `0x${string}`;
-  msgHash: `0x${string}`;
+  reqHash: `0x${string}`;
 };
 
 export type T_OrderParams = {
@@ -124,7 +124,7 @@ export type T_LockForOrderRequest = {
 export type T_LockForOrderRequestContractDetails = {
   contractAddress: string;
   signature: `0x${string}`;
-  token: string;
+  authToken: string;
   timeToExpire: number;
   orderParams: T_AdManagerOrderParams;
   reqHash: `0x${string}`;
@@ -149,7 +149,7 @@ export type T_CreateUnlockOrderContractDetails = {
 export type T_UnlockOrderContractDetails = {
   contractAddress: `0x${string}`;
   signature: `0x${string}`;
-  token: string;
+  authToken: string;
   timeToExpire: number;
   orderParams: T_OrderParams;
   nullifierHash: string;
@@ -162,7 +162,7 @@ export type T_UnlockOrderContractDetails = {
 export type T_CreateOrderRequestContractDetails = {
   contractAddress: string;
   signature: `0x${string}`;
-  token: string;
+  authToken: string;
   timeToExpire: number;
   orderParams: T_OrderPortalParams;
   orderHash: `0x${string}`;
@@ -172,7 +172,7 @@ export type T_CreateOrderRequestContractDetails = {
 export type T_RequestValidation = {
   chainId: bigint;
   contractAddress: `0x${string}`;
-  msgHash: `0x${string}`;
+  reqHash: `0x${string}`;
 };
 
 export type T_FetchRoot = {

@@ -276,7 +276,7 @@ export class AdsService {
         data: {
           adId: ad.id,
           signature: reqContractDetails.signature,
-          reqHash: reqContractDetails.msgHash,
+          reqHash: reqContractDetails.reqHash,
           log: {
             create: [
               {
@@ -355,7 +355,7 @@ export class AdsService {
         data: {
           adId: ad.id,
           signature: reqContractDetails.signature,
-          reqHash: reqContractDetails.msgHash,
+          reqHash: reqContractDetails.reqHash,
           log: {
             create: [
               {
@@ -460,7 +460,7 @@ export class AdsService {
         data: {
           adId: ad.id,
           signature: reqContractDetails.signature,
-          reqHash: reqContractDetails.msgHash,
+          reqHash: reqContractDetails.reqHash,
           log: {
             create: [
               {
@@ -590,7 +590,7 @@ export class AdsService {
       throw new BadRequestException('Ad has active locks and cannot be closed');
 
     if (ad.status === 'CLOSED') {
-      return;
+      throw new BadRequestException('Ad is already closed');
     }
 
     const reqContractDetails =
@@ -607,7 +607,7 @@ export class AdsService {
         data: {
           adId: ad.id,
           signature: reqContractDetails.signature,
-          reqHash: reqContractDetails.msgHash,
+          reqHash: reqContractDetails.reqHash,
           log: {
             create: [
               {
@@ -689,7 +689,7 @@ export class AdsService {
       chainId: ad.route.fromToken.chain.chainId,
       contractAddress: ad.route.fromToken.chain
         .adManagerAddress as `0x${string}`,
-      msgHash: adLogUpdate.reqHash as `0x${string}`,
+      reqHash: adLogUpdate.reqHash as `0x${string}`,
     });
 
     if (!isValidated)
