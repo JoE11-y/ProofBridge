@@ -233,6 +233,85 @@ export class ListTradesResponseDto {
   nextCursor!: string | null;
 }
 
+export class AdManagerOrderParamsDto {
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Order chain token address',
+  })
+  @IsString()
+  orderChainToken!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad chain token address',
+  })
+  @IsString()
+  adChainToken!: string;
+
+  @ApiProperty({
+    example: '1000',
+    description: 'Amount of tokens',
+  })
+  @IsString()
+  amount!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Bridger address',
+  })
+  @IsString()
+  bridger!: string;
+
+  @ApiProperty({
+    example: '1',
+    description: 'Order chain ID',
+  })
+  @IsString()
+  orderChainId!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Order portal address',
+  })
+  @IsString()
+  orderPortal!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Order recipient address',
+  })
+  @IsString()
+  orderRecipient!: string;
+
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Advertisement ID',
+  })
+  @IsString()
+  adId!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad creator address',
+  })
+  @IsString()
+  adCreator!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad recipient address',
+  })
+  @IsString()
+  adRecipient!: string;
+
+  @ApiProperty({
+    example: '123456',
+    description: 'Salt value',
+  })
+  @IsString()
+  salt!: string;
+}
+
 export class LockForOrderResponseDto {
   @ApiProperty({
     example: '0x1234567890abcdef',
@@ -263,6 +342,11 @@ export class LockForOrderResponseDto {
   timeToExpire!: number;
 
   @ApiProperty({
+    description: 'AdManager order parameters',
+  })
+  orderParams!: AdManagerOrderParamsDto;
+
+  @ApiProperty({
     example: '0x1234567890abcdef...',
     description: 'Request hash',
   })
@@ -275,6 +359,85 @@ export class LockForOrderResponseDto {
   })
   @IsString()
   orderHash!: string;
+}
+
+export class OrderPortalParamsDto {
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Order chain token address',
+  })
+  @IsString()
+  orderChainToken!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad chain token address',
+  })
+  @IsString()
+  adChainToken!: string;
+
+  @ApiProperty({
+    example: '1000',
+    description: 'Amount of tokens',
+  })
+  @IsString()
+  amount!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Bridger address',
+  })
+  @IsString()
+  bridger!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Order recipient address',
+  })
+  @IsString()
+  orderRecipient!: string;
+
+  @ApiProperty({
+    example: '1',
+    description: 'Ad chain ID',
+  })
+  @IsString()
+  adChainId!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad manager address',
+  })
+  @IsString()
+  adManager!: string;
+
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Advertisement ID',
+  })
+  @IsString()
+  adId!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad creator address',
+  })
+  @IsString()
+  adCreator!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad recipient address',
+  })
+  @IsString()
+  adRecipient!: string;
+
+  @ApiProperty({
+    example: '123456',
+    description: 'Salt value',
+  })
+  @IsString()
+  salt!: string;
 }
 
 export class CreateOrderRequestContractDetailsDto {
@@ -309,7 +472,7 @@ export class CreateOrderRequestContractDetailsDto {
   @ApiProperty({
     description: 'Order portal parameters',
   })
-  orderParams!: any;
+  orderParams!: OrderPortalParamsDto;
 
   @ApiProperty({
     example: '0x1234567890abcdef...',
@@ -371,8 +534,21 @@ export class UnlockOrderResponseDto {
 
   @ApiProperty({
     description: 'Order parameters',
+    example: {
+      orderChainToken: '0x1234567890abcdef',
+      adChainToken: '0x1234567890abcdef',
+      amount: '1000',
+      bridger: '0x1234567890abcdef',
+      orderChainId: '1',
+      orderPortal: '0x1234567890abcdef',
+      orderRecipient: '0x1234567890abcdef',
+      adId: '123e4567-e89b-12d3-a456-426614174000',
+      adCreator: '0x1234567890abcdef',
+      adRecipient: '0x1234567890abcdef',
+      salt: '123456',
+    },
   })
-  orderParams!: any;
+  orderParams!: OrderPortalParamsDto | AdManagerOrderParamsDto;
 
   @ApiProperty({
     example: '0x1234567890abcdef...',

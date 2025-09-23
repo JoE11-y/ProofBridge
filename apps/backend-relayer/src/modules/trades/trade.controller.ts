@@ -26,7 +26,7 @@ import {
 } from './dto/trade.dto';
 import type { Request } from 'express';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Trades')
 @Controller('v1/trades')
@@ -35,12 +35,22 @@ export class TradesController {
 
   @Get('all')
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns a list of trades based on query parameters',
+    type: ListTradesResponseDto,
+  })
   list(@Query() query: QueryTradesDto): Promise<ListTradesResponseDto> {
     return this.trades.list(query);
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns trade details by trade ID',
+    type: TradeResponseDto,
+  })
   get(@Param('id', new ParseUUIDPipe()) id: string): Promise<TradeResponseDto> {
     return this.trades.getById(id);
   }
@@ -49,6 +59,12 @@ export class TradesController {
   @Post(':id/lock')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Locks a trade for order and returns the transaction data for blockchain execution',
+    type: LockForOrderResponseDto,
+  })
   lock(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -60,6 +76,12 @@ export class TradesController {
   @Post('create')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.CREATED)
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description:
+      'Creates a new trade and returns the transaction data for blockchain execution',
+    type: CreateTradeRequestContractResponseDto,
+  })
   async create(
     @Req() req: Request,
     @Body() dto: CreateTradeDto,
@@ -71,6 +93,12 @@ export class TradesController {
   @Post(':id/unlock')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Unlocks a trade and returns the transaction data for blockchain execution',
+    type: UnlockOrderResponseDto,
+  })
   unlock(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -83,6 +111,12 @@ export class TradesController {
   @Post(':id/unlock/confirm')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Confirms the unlock action on a trade and returns the transaction data for blockchain execution',
+    type: ConfirmChainActionResponseDto,
+  })
   confirmUnlockChainAction(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -95,6 +129,11 @@ export class TradesController {
   @Post(':id/confirm')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Confirms a chain action for a trade',
+    type: ConfirmChainActionResponseDto,
+  })
   confirmChainAction(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,

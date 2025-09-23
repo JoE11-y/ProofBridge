@@ -13,7 +13,7 @@ import {
   QueryChainsDto,
 } from './dto/chain.dto';
 import { ParseChainIdPipe } from '../../common/pipes/parse-chain-id.pipe';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Chains')
 @Controller('v1/chains')
@@ -23,6 +23,11 @@ export class ChainController {
   // GET /v1/chains?name=&chainId=&limit=&cursor=
   @Get()
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns a list of supported chains based on query parameters',
+    type: ListChainsResponseDto,
+  })
   listChains(@Query() query: QueryChainsDto): Promise<ListChainsResponseDto> {
     return this.chains.listChainsPublic(query);
   }
@@ -30,6 +35,11 @@ export class ChainController {
   // GET /v1/chains/:chainId
   @Get(':chainId')
   @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns chain details by chain ID',
+    type: ChainResponseDto,
+  })
   getChain(
     @Param('chainId', ParseChainIdPipe) chainId: string,
   ): Promise<ChainResponseDto> {
