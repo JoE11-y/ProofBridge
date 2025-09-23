@@ -136,7 +136,7 @@ export const SellAd = ({ ...props }: propsI) => {
                     width={20}
                     className="rounded-full"
                   />
-                  <input className="w-full border-0 outline-0 text-lg font-semibold tracking-wider" />
+                  <input className="w-full !border-0 outline-0 text-lg font-semibold tracking-wider" />
                   <p className="text-[11px] space-x-2">
                     <span>{token}</span> <span className="text-[10px]">|</span>{" "}
                     <span className="cursor-pointer text-primary" role="button">
@@ -155,7 +155,7 @@ export const SellAd = ({ ...props }: propsI) => {
                     width={20}
                     className="rounded-full"
                   />
-                  <input className="w-full border-0 outline-0 text-lg font-semibold tracking-wider" />
+                  <input className="w-full !border-0 outline-0 text-lg font-semibold tracking-wider" />
                   <p className="text-[11px] space-x-2">
                     <span>{token}</span> <span className="text-[10px]">|</span>{" "}
                     <span className="cursor-pointer text-primary" role="button">
