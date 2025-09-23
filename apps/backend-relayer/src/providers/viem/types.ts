@@ -151,7 +151,7 @@ export type T_UnlockOrderContractDetails = {
   signature: `0x${string}`;
   authToken: string;
   timeToExpire: number;
-  orderParams: T_OrderParams;
+  orderParams: T_AdManagerOrderParams | T_OrderPortalParams;
   nullifierHash: string;
   targetRoot: string;
   proof: string;

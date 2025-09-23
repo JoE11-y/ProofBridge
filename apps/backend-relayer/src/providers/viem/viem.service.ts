@@ -14,6 +14,7 @@ import { randomUUID } from 'crypto';
 import { getTime } from 'date-fns';
 import { sepolia, hederaTestnet } from 'viem/chains';
 import {
+  T_AdManagerOrderParams,
   T_CloseAdRequest,
   T_CloseAdRequestContractDetails,
   T_CreatFundAdRequest,
@@ -27,6 +28,7 @@ import {
   T_LockForOrderRequest,
   T_LockForOrderRequestContractDetails,
   T_OrderParams,
+  T_OrderPortalParams,
   T_RequestValidation,
   T_UnlockOrderContractDetails,
   T_WithdrawFromAdRequest,
@@ -429,12 +431,16 @@ export class ViemService {
       message: { raw: message },
     });
 
+    const orderParamsFinal = isAdCreator
+      ? (orderParams as T_OrderPortalParams)
+      : (orderParams as T_AdManagerOrderParams);
+
     return {
       contractAddress,
       signature,
       authToken: token,
       timeToExpire: Number(timeToExpire),
-      orderParams,
+      orderParams: orderParamsFinal,
       nullifierHash,
       targetRoot,
       proof,
