@@ -10,6 +10,7 @@ import { UserService } from './user.service';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
 import type { Request } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { UserResponseDto } from './dto/user.dto';
 
 @ApiTags('User')
 @Controller('v1/user')
@@ -20,7 +21,7 @@ export class UserController {
   @Get('me')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
-  getUser(@Req() req: Request) {
+  getUser(@Req() req: Request): Promise<UserResponseDto> {
     return this.users.getUser(req);
   }
 }

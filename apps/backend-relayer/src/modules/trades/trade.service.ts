@@ -7,10 +7,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
 import {
-  AuthorizeTradeDto,
   ConfirmTradeActionDto,
   CreateTradeDto,
   QueryTradesDto,
+  UnlockTradeDto,
 } from './dto/trade.dto';
 import { getAddress, isAddress } from 'ethers';
 import { Request } from 'express';
@@ -74,7 +74,10 @@ export class TradesService {
     });
     if (!row) throw new NotFoundException('Trade not found');
 
-    return row;
+    return {
+      ...row,
+      amount: row.amount.toString(),
+    };
   }
 
   async list(q: QueryTradesDto) {
@@ -98,8 +101,8 @@ export class TradesService {
 
     if (q.minAmount || q.maxAmount) {
       where.amount = {
-        ...(q.minAmount ? { gte: q.minAmount } : {}),
-        ...(q.maxAmount ? { lte: q.maxAmount } : {}),
+        ...(q.minAmount ? { gte: BigInt(q.minAmount) } : {}),
+        ...(q.maxAmount ? { lte: BigInt(q.maxAmount) } : {}),
       } as Prisma.DecimalFilter;
     }
 
@@ -149,7 +152,13 @@ export class TradesService {
       nextCursor = next.id;
     }
 
-    return { data: rows, nextCursor };
+    const cleanedRows = rows.map((row) => ({
+      ...row,
+      status: row.status as string,
+      amount: row.amount.toString(),
+    }));
+
+    return { data: cleanedRows, nextCursor };
   }
 
   // creates a new trade along with ad lock
@@ -249,6 +258,7 @@ export class TradesService {
 
     const secret = this.proofService.generateSecret();
     const tradeId = randomUUID();
+
     const reqContractDetails =
       await this.viemService.getCreateOrderRequestContractDetails({
         orderChainId: ad.route.toToken.chain.chainId,
@@ -395,7 +405,7 @@ export class TradesService {
     }
 
     if (trade.adLock && trade.adLock.authorized) {
-      return { authorized: true };
+      throw new BadRequestException('Trade is already locked');
     }
 
     if (trade.adLock && trade.adLock.amount !== toBI(trade.amount.toString())) {
@@ -450,7 +460,7 @@ export class TradesService {
     return reqContractDetails;
   }
 
-  async authorize(req: Request, id: string, dto: AuthorizeTradeDto) {
+  async unlock(req: Request, id: string, dto: UnlockTradeDto) {
     const reqUser = req.user;
     if (!reqUser) throw new UnauthorizedException('Not authenticated');
 
@@ -553,9 +563,9 @@ export class TradesService {
 
     let mmrId: string;
     if (isAdCreator) {
-      mmrId = trade.route.toToken.chain.mmrId as string;
+      mmrId = trade.route.toToken.chain.mmrId;
     } else {
-      mmrId = trade.route.fromToken.chain.mmrId as string;
+      mmrId = trade.route.fromToken.chain.mmrId;
     }
 
     // get merkle proof
@@ -568,8 +578,8 @@ export class TradesService {
 
     const onChainRoot = await this.viemService.fetchOnChainRoot(isAdCreator, {
       chainId: isAdCreator
-        ? (trade.route.toToken.chain.chainId as bigint)
-        : (trade.route.fromToken.chain.chainId as bigint),
+        ? trade.route.toToken.chain.chainId
+        : trade.route.fromToken.chain.chainId,
       contractAddress: isAdCreator
         ? (trade.route.toToken.chain.mmrId as `0x${string}`)
         : (trade.route.fromToken.chain.mmrId as `0x${string}`),
@@ -582,14 +592,14 @@ export class TradesService {
     }
 
     const secret = this.encryptionService.decryptSecret({
-      iv: tradeSecret.iv as string,
-      ciphertext: tradeSecret.secretCipherText as string,
-      authTag: tradeSecret.authTag as string,
+      iv: tradeSecret.iv,
+      ciphertext: tradeSecret.secretCipherText,
+      authTag: tradeSecret.authTag,
     });
 
     const { proof } = await this.proofService.generateProof({
       merkleProof,
-      orderHash: trade.orderHash as string,
+      orderHash: trade.orderHash,
       secret: secret,
       isAdCreator,
       targetRoot: onChainRoot,
@@ -604,8 +614,8 @@ export class TradesService {
     const requestContractDetails =
       await this.viemService.getUnlockOrderContractDetails({
         chainId: isAdCreator
-          ? (trade.route.toToken.chain.chainId as bigint)
-          : (trade.route.fromToken.chain.chainId as bigint),
+          ? trade.route.toToken.chain.chainId
+          : trade.route.fromToken.chain.chainId,
         contractAddress: isAdCreator
           ? (trade.route.toToken.chain.orderPortalAddress as `0x${string}`)
           : (trade.route.fromToken.chain.adManagerAddress as `0x${string}`),
@@ -615,11 +625,11 @@ export class TradesService {
           adChainToken: trade.route.fromToken.address as `0x${string}`,
           amount: trade.amount.toString(),
           bridger: getAddress(trade.bridgerAddress),
-          orderChainId: trade.route.toToken.chain.chainId.toString() as string,
+          orderChainId: trade.route.toToken.chain.chainId.toString(),
           orderPortal: trade.route.toToken.chain
             .orderPortalAddress as `0x${string}`,
           orderRecipient: getAddress(trade.bridgerDstAddress),
-          adChainId: trade.route.fromToken.chain.chainId.toString() as string,
+          adChainId: trade.route.fromToken.chain.chainId.toString(),
           adManager: trade.route.fromToken.chain
             .adManagerAddress as `0x${string}`,
           adId: trade.adId,
@@ -719,7 +729,7 @@ export class TradesService {
         chainId: trade.route.fromToken.chain.chainId,
         contractAddress: trade.route.fromToken.chain
           .adManagerAddress as `0x${string}`,
-        msgHash: tradeLogUpdate.reqHash as `0x${string}`,
+        reqHash: tradeLogUpdate.reqHash as `0x${string}`,
       });
 
       if (!isValidated) {
@@ -731,7 +741,7 @@ export class TradesService {
         chainId: trade.route.toToken.chain.chainId,
         contractAddress: trade.route.toToken.chain
           .orderPortalAddress as `0x${string}`,
-        msgHash: tradeLogUpdate.reqHash as `0x${string}`,
+        reqHash: tradeLogUpdate.reqHash as `0x${string}`,
       });
 
       if (!isValidated) {
@@ -782,7 +792,7 @@ export class TradesService {
     };
   }
 
-  async confirmAuthorizeAction(
+  async confirmUnlockChainAction(
     req: Request,
     tradeId: string,
     dto: ConfirmTradeActionDto,
@@ -797,7 +807,6 @@ export class TradesService {
 
     if (!user) throw new ForbiddenException('Unauthorized');
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const authorizationLog = await this.prisma.authorizationLog.findFirst({
       where: {
         tradeId: tradeId,
@@ -858,7 +867,7 @@ export class TradesService {
         chainId: trade.route.fromToken.chain.chainId,
         contractAddress: trade.route.fromToken.chain
           .adManagerAddress as `0x${string}`,
-        msgHash: authorizationLog.reqHash as `0x${string}`,
+        reqHash: authorizationLog.reqHash as `0x${string}`,
       });
 
       if (!isValidated) {
@@ -870,7 +879,7 @@ export class TradesService {
         chainId: trade.route.toToken.chain.chainId,
         contractAddress: trade.route.toToken.chain
           .orderPortalAddress as `0x${string}`,
-        msgHash: authorizationLog.reqHash as `0x${string}`,
+        reqHash: authorizationLog.reqHash as `0x${string}`,
       });
 
       if (!isValidated) {
@@ -884,20 +893,20 @@ export class TradesService {
       caller === getAddress(authorizationLog.trade.adCreatorAddress);
 
     await this.prisma.trade.update({
-      where: { id: authorizationLog.tradeId as string },
+      where: { id: authorizationLog.tradeId },
       data: {
         adCreatorClaimed: isAdCreator
           ? (true as boolean)
-          : (authorizationLog.trade.adCreatorClaimed as boolean),
+          : authorizationLog.trade.adCreatorClaimed,
         bridgerClaimed: !isAdCreator
           ? (true as boolean)
-          : (authorizationLog.trade.bridgerClaimed as boolean),
+          : authorizationLog.trade.bridgerClaimed,
       },
     });
 
     // delete the log entry
     await this.prisma.authorizationLog.delete({
-      where: { id: authorizationLog.id as string },
+      where: { id: authorizationLog.id },
     });
 
     console.log(dto);

@@ -13,10 +13,16 @@ import {
 } from '@nestjs/common';
 import { TradesService } from './trade.service';
 import {
-  AuthorizeTradeDto,
+  ConfirmChainActionResponseDto,
   ConfirmTradeActionDto,
   CreateTradeDto,
+  CreateTradeRequestContractResponseDto,
+  ListTradesResponseDto,
+  LockForOrderResponseDto,
   QueryTradesDto,
+  TradeResponseDto,
+  UnlockOrderResponseDto,
+  UnlockTradeDto,
 } from './dto/trade.dto';
 import type { Request } from 'express';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
@@ -27,15 +33,15 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 export class TradesController {
   constructor(private readonly trades: TradesService) {}
 
-  @Get()
+  @Get('all')
   @HttpCode(HttpStatus.OK)
-  list(@Query() query: QueryTradesDto) {
+  list(@Query() query: QueryTradesDto): Promise<ListTradesResponseDto> {
     return this.trades.list(query);
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  get(@Param('id', new ParseUUIDPipe()) id: string) {
+  get(@Param('id', new ParseUUIDPipe()) id: string): Promise<TradeResponseDto> {
     return this.trades.getById(id);
   }
 
@@ -43,40 +49,46 @@ export class TradesController {
   @Post(':id/lock')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
-  lock(@Param('id', new ParseUUIDPipe()) id: string, @Req() req: Request) {
+  lock(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<LockForOrderResponseDto> {
     return this.trades.lockTrade(req, id);
   }
 
   @ApiBearerAuth()
-  @Post()
+  @Post('create')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.CREATED)
-  async create(@Req() req: Request, @Body() dto: CreateTradeDto) {
+  async create(
+    @Req() req: Request,
+    @Body() dto: CreateTradeDto,
+  ): Promise<CreateTradeRequestContractResponseDto> {
     return this.trades.create(req, dto);
   }
 
   @ApiBearerAuth()
-  @Post(':id/authorize')
+  @Post(':id/unlock')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
-  authorize(
+  unlock(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() dto: AuthorizeTradeDto,
-  ) {
-    return this.trades.authorize(req, id, dto);
+    @Body() dto: UnlockTradeDto,
+  ): Promise<UnlockOrderResponseDto> {
+    return this.trades.unlock(req, id, dto);
   }
 
   @ApiBearerAuth()
-  @Post(':id/authorize/confirm')
+  @Post(':id/unlock/confirm')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
-  confirmAuthorization(
+  confirmUnlockChainAction(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ConfirmTradeActionDto,
-  ) {
-    return this.trades.confirmAuthorizeAction(req, id, dto);
+  ): Promise<ConfirmChainActionResponseDto> {
+    return this.trades.confirmUnlockChainAction(req, id, dto);
   }
 
   @ApiBearerAuth()
@@ -87,7 +99,7 @@ export class TradesController {
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ConfirmTradeActionDto,
-  ) {
+  ): Promise<ConfirmChainActionResponseDto> {
     return this.trades.confirmChainAction(req, id, dto);
   }
 }

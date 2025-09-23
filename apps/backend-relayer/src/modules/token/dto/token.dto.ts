@@ -189,3 +189,94 @@ export class UpdateTokenDto {
   })
   kind?: TokenKind;
 }
+
+export class TokenChainDto {
+  @ApiProperty({
+    description: 'Chain ID',
+    type: 'string',
+  })
+  id!: string;
+
+  @ApiProperty({
+    description: 'Chain name',
+    type: 'string',
+  })
+  name!: string;
+
+  @ApiProperty({
+    description: 'EVM chain ID',
+    type: 'string',
+  })
+  chainId!: string;
+}
+
+export class TokenDataResponseDto {
+  @ApiProperty({
+    description: 'Token ID',
+    type: 'string',
+  })
+  id!: string;
+
+  @ApiProperty({
+    description: 'Token symbol',
+    type: 'string',
+  })
+  symbol!: string;
+
+  @ApiProperty({
+    description: 'Token name',
+    type: 'string',
+  })
+  name!: string;
+
+  @ApiProperty({
+    description: 'Token address',
+    type: 'string',
+  })
+  address!: string;
+
+  @ApiProperty({
+    description: 'Token decimals',
+    type: 'number',
+  })
+  decimals!: number;
+
+  @ApiProperty({
+    description: 'Token kind',
+    type: 'string',
+  })
+  kind!: string;
+
+  @ApiProperty({
+    description: 'Creation timestamp',
+    type: 'string',
+  })
+  createdAt!: string;
+
+  @ApiProperty({
+    description: 'Last update timestamp',
+    type: 'string',
+  })
+  updatedAt!: string;
+
+  @ApiProperty({
+    description: 'Chain information',
+    type: TokenChainDto,
+  })
+  chain!: TokenChainDto;
+}
+
+export class ListTokenResponseDto {
+  @ApiProperty({
+    description: 'Array of token data',
+    type: [TokenDataResponseDto],
+  })
+  data!: TokenDataResponseDto[];
+
+  @ApiProperty({
+    description: 'Cursor for the next page of results',
+    type: 'string',
+    nullable: true,
+  })
+  nextCursor!: string | null;
+}

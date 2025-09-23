@@ -116,16 +116,17 @@ export class ViemService {
     const signature = await wallet.signMessage({
       message: { raw: message },
     });
+
     return {
       contractAddress: adContractAddress,
       signature,
-      token,
+      authToken: token,
       timeToExpire: Number(timeToExpire),
       adId,
       adToken,
       orderChainId: orderChainId.toString(),
       adRecipient,
-      msgHash: message,
+      reqHash: message,
     };
   }
 
@@ -156,11 +157,11 @@ export class ViemService {
     return {
       contractAddress: adContractAddress,
       signature,
-      token,
+      authToken: token,
       timeToExpire: Number(timeToExpire),
       adId,
       amount,
-      msgHash: message,
+      reqHash: message,
     };
   }
 
@@ -191,12 +192,12 @@ export class ViemService {
     return {
       contractAddress: adContractAddress,
       signature,
-      token,
+      authToken: token,
       timeToExpire: Number(timeToExpire),
       adId,
       amount,
       to,
-      msgHash: message,
+      reqHash: message,
     };
   }
 
@@ -228,11 +229,11 @@ export class ViemService {
     return {
       contractAddress: adContractAddress,
       signature,
-      token,
+      authToken: token,
       timeToExpire: Number(timeToExpire),
       adId,
       to,
-      msgHash: message,
+      reqHash: message,
     };
   }
 
@@ -265,7 +266,7 @@ export class ViemService {
     return {
       contractAddress: orderParams.adManager,
       signature,
-      token,
+      authToken: token,
       timeToExpire: Number(timeToExpire),
       orderParams,
       reqHash: message,
@@ -303,7 +304,7 @@ export class ViemService {
     return {
       contractAddress: orderParams.orderPortal,
       signature,
-      token,
+      authToken: token,
       timeToExpire: Number(timeToExpire),
       orderParams,
       reqHash: message,
@@ -312,7 +313,7 @@ export class ViemService {
   }
 
   async validateAdManagerRequest(data: T_RequestValidation): Promise<boolean> {
-    const { chainId, contractAddress, msgHash } = data;
+    const { chainId, contractAddress, reqHash } = data;
 
     const { client } = this.getClient(chainId.toString());
 
@@ -320,7 +321,7 @@ export class ViemService {
       address: contractAddress,
       abi: AD_MANAGER_ABI,
       functionName: 'checkRequestHashExists',
-      args: [msgHash],
+      args: [reqHash],
     });
 
     if (recorded) {
@@ -333,7 +334,7 @@ export class ViemService {
   async validateOrderPortalRequest(
     data: T_RequestValidation,
   ): Promise<boolean> {
-    const { chainId, contractAddress, msgHash } = data;
+    const { chainId, contractAddress, reqHash } = data;
 
     const { client } = this.getClient(chainId.toString());
 
@@ -341,7 +342,7 @@ export class ViemService {
       address: contractAddress,
       abi: ORDER_PORTAL_ABI,
       functionName: 'checkRequestHashExists',
-      args: [msgHash],
+      args: [reqHash],
     });
 
     if (recorded) {
@@ -431,7 +432,7 @@ export class ViemService {
     return {
       contractAddress,
       signature,
-      token,
+      authToken: token,
       timeToExpire: Number(timeToExpire),
       orderParams,
       nullifierHash,

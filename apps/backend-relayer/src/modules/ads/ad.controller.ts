@@ -21,6 +21,14 @@ import {
   WithdrawalAdDto,
   ConfirmAdActionDto,
   CloseAdDto,
+  ListAdResponseDto,
+  AdResponseDto,
+  CreateAdResponseDto,
+  FundAdResponseDto,
+  WithdrawAdResponseDto,
+  ConfirmChainActionResponseDto,
+  AdUpdateResponseDto,
+  CloseAdResponseDto,
 } from '../ads/dto/ad.dto';
 import type { Request } from 'express';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
@@ -31,20 +39,24 @@ export class AdsController {
   constructor(private readonly ads: AdsService) {}
   @Get()
   @HttpCode(HttpStatus.OK)
-  list(@Query() query: QueryAdsDto) {
+  list(@Query() query: QueryAdsDto): Promise<ListAdResponseDto> {
     return this.ads.list(query);
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  get(@Param('id', new ParseUUIDPipe()) id: string) {
+  get(@Param('id', new ParseUUIDPipe()) id: string): Promise<AdResponseDto> {
     return this.ads.getById(id);
   }
+
   @ApiBearerAuth()
   @Post('create')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.CREATED)
-  create(@Req() req: Request, @Body() dto: CreateAdDto) {
+  create(
+    @Req() req: Request,
+    @Body() dto: CreateAdDto,
+  ): Promise<CreateAdResponseDto> {
     return this.ads.create(req, dto);
   }
 
@@ -56,7 +68,7 @@ export class AdsController {
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: FundAdDto,
-  ) {
+  ): Promise<FundAdResponseDto> {
     return this.ads.fund(req, id, dto);
   }
 
@@ -68,7 +80,7 @@ export class AdsController {
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: WithdrawalAdDto,
-  ) {
+  ): Promise<WithdrawAdResponseDto> {
     return this.ads.withdraw(req, id, dto);
   }
 
@@ -80,31 +92,31 @@ export class AdsController {
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ConfirmAdActionDto,
-  ) {
+  ): Promise<ConfirmChainActionResponseDto> {
     return this.ads.confirmChainAction(req, id, dto);
   }
 
   @ApiBearerAuth()
-  @Patch(':id')
+  @Patch(':id/update')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
   update(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateAdDto,
-  ) {
+  ): Promise<AdUpdateResponseDto> {
     return this.ads.update(req, id, dto);
   }
 
   @ApiBearerAuth()
-  @Post(':id')
+  @Post(':id/close')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.OK)
   async close(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: CloseAdDto,
-  ) {
-    await this.ads.close(req, id, dto);
+  ): Promise<CloseAdResponseDto> {
+    return this.ads.close(req, id, dto);
   }
 }

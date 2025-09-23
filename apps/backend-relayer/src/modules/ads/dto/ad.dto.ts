@@ -1,6 +1,7 @@
 import { IsIn, IsOptional, IsString, IsUUID, Matches } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { JsonObject, JsonArray } from '@prisma/client/runtime/library';
 
 export class QueryAdsDto {
   @ApiPropertyOptional({
@@ -166,4 +167,325 @@ export class ConfirmAdActionDto {
   @IsOptional()
   @IsString()
   signature?: string;
+}
+
+export class AdResponseDto {
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    description: 'Unique identifier of the ad entry',
+  })
+  id!: string;
+
+  @ApiProperty({ description: 'EVM address of the ad creator' })
+  creatorAddress!: string;
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    description: 'Associated route identifier',
+  })
+  routeId!: string;
+
+  @ApiProperty({ description: 'Token ID for the source/input token' })
+  fromTokenId!: string;
+
+  @ApiProperty({ description: 'Token ID for the target/output token' })
+  toTokenId!: string;
+
+  @ApiProperty({
+    pattern: '^d+$',
+    description: 'Total amount allocated to the pool (in smallest token units)',
+  })
+  poolAmount!: string;
+
+  @ApiProperty({
+    pattern: '^d+$',
+    description:
+      'Current available amount in the pool (in smallest token units)',
+  })
+  availableAmount!: string;
+
+  @ApiProperty({
+    pattern: '^d+$',
+    nullable: true,
+    description: 'Minimum transaction amount allowed (in smallest token units)',
+  })
+  minAmount!: string | null;
+
+  @ApiProperty({
+    pattern: '^d+$',
+    nullable: true,
+    description: 'Maximum transaction amount allowed (in smallest token units)',
+  })
+  maxAmount!: string | null;
+
+  @ApiProperty({
+    enum: ['ACTIVE', 'PAUSED', 'EXHAUSTED', 'CLOSED'],
+    description: 'Current status of the advertisement',
+  })
+  status!: string;
+
+  @ApiProperty({
+    nullable: true,
+    description: 'Additional custom metadata associated with the ad',
+  })
+  metadata!: string | number | boolean | JsonObject | JsonArray | null;
+
+  @ApiProperty({ description: 'Timestamp when the ad entry was created' })
+  createdAt!: string;
+
+  @ApiProperty({ description: 'Timestamp of the last update to the ad entry' })
+  updatedAt!: string;
+}
+
+export class ListAdResponseDto {
+  @ApiProperty({ type: [AdResponseDto] })
+  data!: AdResponseDto[];
+
+  @ApiProperty({ type: String, nullable: true })
+  nextCursor: string | null;
+}
+
+export class CreateAdResponseDto {
+  @ApiProperty({
+    description: 'Contract address for the advertisement',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  contractAddress!: string;
+
+  @ApiProperty({
+    description: 'Signature for the transaction request',
+    example:
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  })
+  signature!: `0x${string}`;
+
+  @ApiProperty({
+    description: 'Request auth token',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  authToken!: string;
+
+  @ApiProperty({
+    description: 'Time until the request expires',
+    example: 3600,
+  })
+  timeToExpire!: number;
+
+  @ApiProperty({
+    description: 'Unique identifier for the advertisement',
+    example: 'ad123',
+  })
+  adId!: string;
+
+  @ApiProperty({
+    description: 'Token address for the advertisement',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  adToken!: `0x${string}`;
+
+  @ApiProperty({
+    description: 'Chain ID for the order',
+    example: '1',
+  })
+  orderChainId!: string;
+
+  @ApiProperty({
+    description: 'Recipient address for the advertisement',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  adRecipient!: `0x${string}`;
+
+  @ApiProperty({
+    description: 'Request hash',
+    example:
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  })
+  reqHash!: `0x${string}`;
+}
+export class FundAdResponseDto {
+  @ApiProperty({
+    description: 'Contract address for the advertisement',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  contractAddress!: string;
+
+  @ApiProperty({
+    description: 'Signature for the transaction request',
+    example:
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  })
+  signature!: `0x${string}`;
+
+  @ApiProperty({
+    description: 'Request auth token',
+    example: '0xd35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  authToken!: string;
+
+  @ApiProperty({
+    description: 'Time until the request expires',
+    example: 3600,
+  })
+  timeToExpire!: number;
+
+  @ApiProperty({
+    description: 'Unique identifier for the advertisement',
+    example: 'ad123',
+  })
+  adId!: string;
+
+  @ApiProperty({
+    description: 'Amount to fund',
+    example: '1000000000000000000',
+  })
+  amount!: string;
+
+  @ApiProperty({
+    description: 'Request hash',
+    example:
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  })
+  reqHash!: `0x${string}`;
+}
+
+export class WithdrawAdResponseDto {
+  @ApiProperty({
+    description: 'Contract address for the advertisement',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  contractAddress!: string;
+
+  @ApiProperty({
+    description: 'Signature for the transaction request',
+    example:
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  })
+  signature!: `0x${string}`;
+
+  @ApiProperty({
+    description: 'Request auth token',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  authToken!: string;
+
+  @ApiProperty({
+    description: 'Time until the request expires',
+    example: 3600,
+  })
+  timeToExpire!: number;
+
+  @ApiProperty({
+    description: 'Unique identifier for the advertisement',
+    example: 'ad123',
+  })
+  adId!: string;
+
+  @ApiProperty({
+    description: 'Amount to withdraw',
+    example: '1000000000000000000',
+  })
+  amount!: string;
+
+  @ApiProperty({
+    description: 'Destination address for withdrawal',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  to!: `0x${string}`;
+
+  @ApiProperty({
+    description: 'Request hash',
+    example:
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  })
+  reqHash!: `0x${string}`;
+}
+
+export class ConfirmChainActionResponseDto {
+  @ApiProperty({
+    description: 'Whether the chain action was confirmed successfully',
+    example: true,
+  })
+  success!: boolean;
+}
+
+export class AdUpdateResponseDto {
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    description: 'Unique identifier of the ad entry',
+  })
+  id!: string;
+
+  @ApiProperty({
+    description: 'EVM address of the ad creator',
+  })
+  creatorAddress!: string;
+
+  @ApiProperty({
+    pattern: '^d+$',
+    nullable: true,
+    description: 'Minimum transaction amount allowed (in smallest token units)',
+  })
+  minAmount!: string | null;
+
+  @ApiProperty({
+    pattern: '^d+$',
+    nullable: true,
+    description: 'Maximum transaction amount allowed (in smallest token units)',
+  })
+  maxAmount!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    description: 'Additional custom metadata associated with the ad',
+  })
+  metadata!: string | number | boolean | JsonObject | JsonArray | null;
+}
+
+export class CloseAdResponseDto {
+  @ApiProperty({
+    description: 'Contract address for the advertisement',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  contractAddress!: string;
+
+  @ApiProperty({
+    description: 'Signature for the transaction request',
+    example:
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  })
+  signature!: `0x${string}`;
+
+  @ApiProperty({
+    description: 'Request auth token',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  authToken!: string;
+
+  @ApiProperty({
+    description: 'Time until the request expires',
+    example: 3600,
+  })
+  timeToExpire!: number;
+
+  @ApiProperty({
+    description: 'Unique identifier for the advertisement',
+    example: 'ad123',
+  })
+  adId!: string;
+
+  @ApiProperty({
+    description: 'Destination address for withdrawal',
+    example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+  })
+  to!: `0x${string}`;
+
+  @ApiProperty({
+    description: 'Request hash',
+    example:
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  })
+  reqHash!: `0x${string}`;
 }

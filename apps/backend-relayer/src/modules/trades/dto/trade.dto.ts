@@ -126,7 +126,7 @@ export class CreateTradeDto {
   bridgerDstAddress!: string;
 }
 
-export class AuthorizeTradeDto {
+export class UnlockTradeDto {
   @ApiProperty({
     example: '0x1234567890...',
     description: 'Signature for trade authorization',
@@ -150,4 +150,270 @@ export class ConfirmTradeActionDto {
   @IsOptional()
   @IsString()
   signature?: string;
+}
+
+export class ChainDto {
+  @ApiProperty({ example: 'Ethereum' })
+  name!: string;
+}
+
+export class TokenDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id!: string;
+
+  @ApiProperty({ example: 'ETH' })
+  symbol!: string;
+
+  @ApiProperty()
+  chain!: ChainDto;
+}
+
+export class RouteDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id!: string;
+
+  @ApiProperty()
+  fromToken!: TokenDto;
+
+  @ApiProperty()
+  toToken!: TokenDto;
+}
+
+export class AdDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id!: string;
+
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  routeId!: string;
+
+  @ApiProperty({ example: '0x1234567890abcdef' })
+  creatorAddress!: string;
+}
+
+export class TradeResponseDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id!: string;
+
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  routeId!: string;
+
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  adId!: string;
+
+  @ApiProperty({ example: '0x1234567890abcdef' })
+  adCreatorAddress!: string;
+
+  @ApiProperty({ example: '0x1234567890abcdef' })
+  bridgerAddress!: string;
+
+  @ApiProperty({ example: '1000' })
+  amount!: string;
+
+  @ApiProperty({ example: 'PENDING' })
+  status!: string;
+
+  @ApiProperty()
+  createdAt!: Date;
+
+  @ApiProperty()
+  updatedAt!: Date;
+
+  @ApiProperty()
+  ad!: AdDto;
+
+  @ApiProperty()
+  route!: RouteDto;
+}
+
+export class ListTradesResponseDto {
+  @ApiProperty({ type: [TradeResponseDto] })
+  data!: TradeResponseDto[];
+
+  @ApiProperty({ example: 'nextPageToken', nullable: true })
+  nextCursor!: string | null;
+}
+
+export class LockForOrderResponseDto {
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Contract address',
+  })
+  @IsString()
+  contractAddress!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Signature value',
+  })
+  @IsString()
+  signature!: string;
+
+  @ApiProperty({
+    example: 'token123',
+    description: 'Authentication token',
+  })
+  @IsString()
+  authToken!: string;
+
+  @ApiProperty({
+    example: 3600,
+    description: 'Time until request expires in seconds',
+  })
+  @IsInt()
+  timeToExpire!: number;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Request hash',
+  })
+  @IsString()
+  reqHash!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Order hash',
+  })
+  @IsString()
+  orderHash!: string;
+}
+
+export class CreateOrderRequestContractDetailsDto {
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Contract address',
+  })
+  @IsString()
+  contractAddress!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Signature value',
+  })
+  @IsString()
+  signature!: `0x${string}`;
+
+  @ApiProperty({
+    example: 'token123',
+    description: 'Authentication token',
+  })
+  @IsString()
+  authToken!: string;
+
+  @ApiProperty({
+    example: 3600,
+    description: 'Time until expiration in seconds',
+  })
+  @IsInt()
+  timeToExpire!: number;
+
+  @ApiProperty({
+    description: 'Order portal parameters',
+  })
+  orderParams!: any;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Order hash',
+  })
+  @IsString()
+  orderHash!: `0x${string}`;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Request hash',
+  })
+  @IsString()
+  reqHash!: `0x${string}`;
+}
+
+export class CreateTradeRequestContractResponseDto {
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Trade ID',
+  })
+  @IsUUID()
+  tradeId!: string;
+
+  @ApiProperty({
+    description: 'Contract request details',
+  })
+  reqContractDetails!: CreateOrderRequestContractDetailsDto;
+}
+
+export class UnlockOrderResponseDto {
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Contract address',
+  })
+  @IsString()
+  contractAddress!: `0x${string}`;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Signature value',
+  })
+  @IsString()
+  signature!: `0x${string}`;
+
+  @ApiProperty({
+    example: 'token123',
+    description: 'Authentication token',
+  })
+  @IsString()
+  authToken!: string;
+
+  @ApiProperty({
+    example: 3600,
+    description: 'Time until expiration in seconds',
+  })
+  @IsInt()
+  timeToExpire!: number;
+
+  @ApiProperty({
+    description: 'Order parameters',
+  })
+  orderParams!: any;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Nullifier hash',
+  })
+  @IsString()
+  nullifierHash!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Target root',
+  })
+  @IsString()
+  targetRoot!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Proof value',
+  })
+  @IsString()
+  proof!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Order hash',
+  })
+  @IsString()
+  orderHash!: `0x${string}`;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef...',
+    description: 'Request hash',
+  })
+  @IsString()
+  reqHash!: `0x${string}`;
+}
+
+export class ConfirmChainActionResponseDto {
+  @ApiProperty({
+    description: 'Whether the chain action was confirmed successfully',
+    example: true,
+  })
+  success!: boolean;
 }

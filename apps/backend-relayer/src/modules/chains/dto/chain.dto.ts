@@ -116,3 +116,47 @@ export class UpdateChainDto {
   @IsString()
   orderPortalAddress?: string;
 }
+
+export class ChainResponseDto {
+  @ApiProperty({ description: 'Chain name', example: 'Ethereum Mainnet' })
+  name!: string;
+
+  @ApiProperty({ description: 'Chain ID', example: '1' })
+  chainId!: string;
+
+  @ApiProperty({
+    description: 'Ad Manager contract address',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  adManagerAddress!: string;
+
+  @ApiProperty({
+    description: 'Order Portal contract address',
+    example: '0xabcdef1234567890abcdef1234567890abcdef12',
+  })
+  orderPortalAddress!: string;
+
+  @ApiProperty({
+    description: 'Creation timestamp',
+    example: '2023-01-01T00:00:00Z',
+  })
+  createdAt!: string;
+
+  @ApiProperty({
+    description: 'Last update timestamp',
+    example: '2023-01-01T00:00:00Z',
+  })
+  updatedAt!: string;
+}
+
+export class ListChainsResponseDto {
+  @ApiProperty({ type: [ChainResponseDto] })
+  rows!: ChainResponseDto[];
+
+  @ApiProperty({
+    description: 'Next pagination cursor',
+    example: 'xyz123',
+    nullable: true,
+  })
+  nextCursor!: string | null;
+}

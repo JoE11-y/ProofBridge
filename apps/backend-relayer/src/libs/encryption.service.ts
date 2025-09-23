@@ -29,8 +29,8 @@ export class EncryptionService {
     secretHash: string;
     authTag: string;
   }> {
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv('aes-256-gcm', env.secretKey, iv);
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', this.getAesKey(), iv);
 
     const ciphertext = Buffer.concat([
       cipher.update(secret, 'utf8'),
@@ -56,7 +56,11 @@ export class EncryptionService {
     const ciphertext = Buffer.from(encrypted.ciphertext, 'hex');
     const authTag = Buffer.from(encrypted.authTag, 'hex');
 
-    const decipher = crypto.createDecipheriv('aes-256-gcm', env.secretKey, iv);
+    const decipher = crypto.createDecipheriv(
+      'aes-256-gcm',
+      this.getAesKey(),
+      iv,
+    );
     decipher.setAuthTag(authTag);
 
     const decrypted = Buffer.concat([
@@ -65,5 +69,20 @@ export class EncryptionService {
     ]);
 
     return decrypted.toString('utf8');
+  }
+
+  private getAesKey(): Buffer {
+    const k = env.secretKey;
+    if (!k) throw new Error('SECRET_KEY is required');
+    const isHex = /^([0-9a-fA-F]{64})$/.test(k.replace(/^0x/, ''));
+    const isB64 = /^(?:[A-Za-z0-9+/]{43}|[A-Za-z0-9+/]{44})=?$/.test(k);
+    const buf = isHex
+      ? Buffer.from(k.replace(/^0x/, ''), 'hex')
+      : isB64
+        ? Buffer.from(k, 'base64')
+        : crypto.createHash('sha256').update(k, 'utf8').digest();
+    if (buf.length !== 32)
+      throw new Error('SECRET_KEY must resolve to 32 bytes');
+    return buf;
   }
 }

@@ -18,7 +18,7 @@ describe('TradesController (unit)', () => {
             list: jest.fn(),
             getById: jest.fn(),
             create: jest.fn(),
-            authorize: jest.fn(),
+            unlock: jest.fn(),
           },
         },
         PrismaService,
@@ -77,10 +77,10 @@ describe('TradesController (unit)', () => {
     const req: any = { user: { sub: '0xB' } };
 
     const spy = jest
-      .spyOn(service, 'authorize')
+      .spyOn(service, 'unlock')
       .mockResolvedValueOnce({ status: 'PROOF_READY' } as any);
 
-    const res = await controller.authorize(req, 'tr-1', {
+    const res = await controller.unlock(req, 'tr-1', {
       signature: '0x01',
     });
 
