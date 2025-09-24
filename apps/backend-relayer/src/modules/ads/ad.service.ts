@@ -14,18 +14,10 @@ import {
   ConfirmAdActionDto,
   CloseAdDto,
 } from './dto/ad.dto';
-import { getAddress, isAddress } from 'ethers';
+import { getAddress } from 'viem';
 import { AdStatus, Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { ViemService } from '../../providers/viem/viem.service';
-
-function toBI(s?: string): bigint | undefined {
-  return typeof s === 'string' ? BigInt(s) : undefined;
-}
-
-function sameSymbol(a: string, b: string) {
-  return a.trim().toLowerCase() === b.trim().toLowerCase();
-}
 
 type AdQueryInput = {
   routeId?: string;
@@ -34,14 +26,14 @@ type AdQueryInput = {
 };
 
 type AdUpdateInput = {
-  minAmount?: bigint | undefined;
-  maxAmount?: bigint | undefined;
+  minAmount?: Prisma.Decimal | undefined;
+  maxAmount?: Prisma.Decimal | undefined;
   metadata?: any;
   status?: AdStatus;
 };
 
 type AdUpdateLogInput = {
-  poolAmount?: bigint;
+  poolAmount?: string;
   status?: AdStatus;
 };
 
@@ -94,10 +86,10 @@ export class AdsService {
         })
       : [];
 
-    const sumMap = new Map<string, bigint>();
-    lockSums.forEach((row) => {
-      sumMap.set(row.adId, row._sum.amount ?? 0n);
-    });
+    const sumMap = new Map<string, Prisma.Decimal>();
+    lockSums.forEach((row) =>
+      sumMap.set(row.adId, row._sum.amount ?? new Prisma.Decimal(0)),
+    );
 
     let nextCursor: string | null = null;
     if (items.length > take) {
@@ -106,12 +98,16 @@ export class AdsService {
     }
 
     const data = items.map((i) => {
-      const locked = sumMap.get(i.id) ?? 0n;
-      const available = i.poolAmount - locked;
+      const pool = i.poolAmount ?? new Prisma.Decimal(0); // if nullable
+      const locked = sumMap.get(i.id) ?? new Prisma.Decimal(0);
+
+      // Decimal math:
+      const available = pool.sub(locked);
+
       const effectiveStatus =
         i.status === 'CLOSED'
           ? 'CLOSED'
-          : available === 0n
+          : available.eq(0) // or: available.cmp(0) <= 0
             ? 'EXHAUSTED'
             : i.status;
 
@@ -125,7 +121,7 @@ export class AdsService {
         availableAmount: available.toString(),
         minAmount: i.minAmount ? i.minAmount.toString() : null,
         maxAmount: i.maxAmount ? i.maxAmount.toString() : null,
-        status: effectiveStatus,
+        status: i.status != 'INACTIVE' ? effectiveStatus : i.status,
         metadata: i.metadata ?? null,
         createdAt: i.createdAt.toISOString(),
         updatedAt: i.updatedAt.toISOString(),
@@ -160,12 +156,14 @@ export class AdsService {
       _sum: { amount: true },
     });
 
-    const locked = lockSum._sum.amount ?? 0n;
-    const available = ad.poolAmount - locked;
+    const locked = lockSum._sum.amount ?? new Prisma.Decimal(0);
+
+    const available = ad.poolAmount.sub(locked);
+
     const effectiveStatus =
       ad.status === 'CLOSED'
         ? 'CLOSED'
-        : available === 0n
+        : available.eq(0)
           ? 'EXHAUSTED'
           : ad.status;
 
@@ -179,7 +177,7 @@ export class AdsService {
       availableAmount: available.toString(),
       minAmount: ad.minAmount ? ad.minAmount.toString() : null,
       maxAmount: ad.maxAmount ? ad.maxAmount.toString() : null,
-      status: effectiveStatus,
+      status: ad.status != 'INACTIVE' ? effectiveStatus : ad.status,
       metadata: ad.metadata ?? null,
       createdAt: ad.createdAt.toISOString(),
       updatedAt: ad.updatedAt.toISOString(),
@@ -198,10 +196,6 @@ export class AdsService {
     });
 
     if (!user) throw new ForbiddenException('Unauthorized');
-
-    if (isAddress(dto.creatorDstAddress)) {
-      throw new BadRequestException('Invalid address');
-    }
 
     // Pull route + tokens to validate same-symbol & cross-chain
     const route = await this.prisma.route.findUnique({
@@ -235,10 +229,6 @@ export class AdsService {
       throw new BadRequestException('Route must be cross-chain');
     }
 
-    if (sameSymbol(route.fromToken.symbol, route.toToken.symbol)) {
-      throw new BadRequestException('Route tokens must have different symbols');
-    }
-
     const jsonData: Prisma.JsonObject = JSON.parse(
       JSON.stringify(dto.metadata || {}),
     ) as Prisma.JsonObject;
@@ -253,6 +243,7 @@ export class AdsService {
           toTokenId: route.toToken.id,
           metadata: jsonData,
           status: 'INACTIVE',
+          poolAmount: 0,
         },
         select: {
           id: true,
@@ -334,9 +325,9 @@ export class AdsService {
       );
     }
 
-    const poolBI = BigInt(dto.poolAmountTopUp);
+    const poolTopUp = new Prisma.Decimal(dto.poolAmountTopUp);
 
-    if (poolBI <= 0n)
+    if (poolTopUp.lte(0))
       throw new BadRequestException('poolAmountTopUp must be > 0');
 
     const effectiveStatus = ad.status == 'EXHAUSTED' ? 'ACTIVE' : ad.status;
@@ -347,8 +338,10 @@ export class AdsService {
           .adManagerAddress as `0x${string}`,
         adChainId: ad.route.fromToken.chain.chainId,
         adId: ad.id,
-        amount: poolBI.toString(),
+        amount: poolTopUp.toString(),
       });
+
+    const finalValue = ad.poolAmount.add(poolTopUp);
 
     await this.prisma.$transaction(async (prisma) => {
       const entry = await prisma.adUpdateLog.create({
@@ -361,7 +354,7 @@ export class AdsService {
               {
                 field: 'PoolAmount',
                 oldValue: ad.poolAmount.toString(),
-                newValue: (ad.poolAmount + poolBI).toString(),
+                newValue: finalValue.toString(),
               },
               {
                 field: 'Status',
@@ -426,9 +419,9 @@ export class AdsService {
       );
     }
 
-    const poolBI = BigInt(dto.poolAmountWithdraw);
+    const withdrawAmt = new Prisma.Decimal(dto.poolAmountWithdraw);
 
-    if (poolBI <= 0n)
+    if (withdrawAmt.lte(0))
       throw new BadRequestException('poolAmountWithdraw must be > 0');
 
     // get locksum
@@ -437,13 +430,17 @@ export class AdsService {
       _sum: { amount: true },
     });
 
-    const locked = lockSum._sum.amount ?? 0n;
-    const available = ad.poolAmount - locked;
+    const locked = lockSum._sum.amount ?? new Prisma.Decimal(0);
+    const available = ad.poolAmount.sub(locked);
 
-    if (poolBI > available)
+    console.log(available, withdrawAmt);
+
+    if (withdrawAmt.gt(available))
       throw new BadRequestException('Insufficient available balance');
 
-    const effectiveStatus = available - poolBI === 0n ? 'EXHAUSTED' : ad.status;
+    const effectiveStatus = available.sub(withdrawAmt).eq(0)
+      ? 'EXHAUSTED'
+      : ad.status;
 
     const reqContractDetails =
       await this.viemService.getWithdrawFromAdRequestContractDetails({
@@ -451,9 +448,11 @@ export class AdsService {
           .adManagerAddress as `0x${string}`,
         adChainId: ad.route.fromToken.chain.chainId,
         adId: ad.id,
-        amount: poolBI.toString(),
+        amount: withdrawAmt.toString(),
         to: dto.to as `0x${string}`,
       });
+
+    const finalValue = ad.poolAmount.sub(withdrawAmt);
 
     await this.prisma.$transaction(async (prisma) => {
       await prisma.adUpdateLog.create({
@@ -466,7 +465,7 @@ export class AdsService {
               {
                 field: 'PoolAmount',
                 oldValue: ad.poolAmount.toString(),
-                newValue: (ad.poolAmount - poolBI).toString(),
+                newValue: finalValue.toString(),
               },
               {
                 field: 'Status',
@@ -513,8 +512,14 @@ export class AdsService {
 
     const data: AdUpdateInput = {};
 
-    if (dto.minAmount !== undefined) data.minAmount = toBI(dto.minAmount);
-    if (dto.maxAmount !== undefined) data.maxAmount = toBI(dto.maxAmount);
+    if (ad.status === 'INACTIVE' && dto.status) {
+      throw new BadRequestException('Cannot update status when ad is inactive');
+    }
+
+    if (dto.minAmount !== undefined)
+      data.minAmount = new Prisma.Decimal(dto.minAmount);
+    if (dto.maxAmount !== undefined)
+      data.maxAmount = new Prisma.Decimal(dto.maxAmount);
     if (dto.metadata !== undefined) data.metadata = dto.metadata;
     if (dto.status) data.status = dto.status;
 
@@ -533,6 +538,7 @@ export class AdsService {
 
     return {
       id: updated.id,
+      status: updated.status,
       creatorAddress: updated.creatorAddress,
       minAmount: updated.minAmount ? updated.minAmount.toString() : null,
       maxAmount: updated.maxAmount ? updated.maxAmount.toString() : null,
@@ -584,9 +590,9 @@ export class AdsService {
       _sum: { amount: true },
     });
 
-    const locked = lockSum._sum.amount ?? 0n;
+    const locked = lockSum._sum.amount ?? new Prisma.Decimal(0);
 
-    if (locked > 0n)
+    if (locked.gt(0))
       throw new BadRequestException('Ad has active locks and cannot be closed');
 
     if (ad.status === 'CLOSED') {
@@ -670,6 +676,8 @@ export class AdsService {
     const ad = await this.prisma.ad.findUnique({
       where: { id: adId },
       select: {
+        poolAmount: true,
+        status: true,
         route: {
           select: {
             fromToken: {
@@ -696,27 +704,32 @@ export class AdsService {
       throw new BadRequestException('Invalid request; please try again');
 
     // apply the updates
-    const data: AdUpdateLogInput = {};
+    const updates: AdUpdateLogInput = {};
 
     adLogUpdate.log.forEach((entry) => {
       if (entry.field === 'PoolAmount') {
-        data.poolAmount = BigInt(entry.newValue);
+        updates.poolAmount = entry.newValue;
       } else if (entry.field === 'Status') {
-        data.status = entry.newValue as AdStatus;
+        updates.status = entry.newValue as AdStatus;
       }
     });
 
-    await this.prisma.ad.update({
-      where: { id: adLogUpdate.adId },
-      data,
-    });
+    await this.prisma.$transaction([
+      this.prisma.ad.update({
+        where: { id: adLogUpdate.adId },
+        data: {
+          poolAmount: updates.poolAmount ? updates.poolAmount : ad.poolAmount,
+          status: updates.status ? updates.status : ad.status,
+        },
+      }),
 
-    // delete the log entry
-    await this.prisma.adUpdateLog.delete({ where: { id: adLogUpdate.id } });
+      this.prisma.adUpdateLog.delete({ where: { id: adLogUpdate.id } }),
+    ]);
 
     console.log(dto);
 
     return {
+      adId: adId,
       success: true,
     };
   }

@@ -37,7 +37,11 @@ import {
 import { AD_MANAGER_ABI } from './abis/adManager.abi';
 import { ORDER_PORTAL_ABI } from './abis/orderPortal.abi';
 import { env } from '@libs/configs';
-import { getTypedHash, verifyTypedData } from './ethers/typedData';
+import {
+  buildOrderParams,
+  getTypedHash,
+  verifyTypedData,
+} from './ethers/typedData';
 import { ethLocalnet, hederaLocalnet } from '../viem/localnet';
 
 @Injectable()
@@ -45,6 +49,7 @@ export class ViemService {
   private readonly MILLISECOND = 1000;
   static FIVE_MINUTES: number = 300000;
   static TEN_MINUTES: number = 600000;
+  static ONE_HOUR: number = 600000 * 6;
 
   constructor() {}
   getClient(chainId: string): { wallet: any; client: any } {
@@ -102,7 +107,7 @@ export class ViemService {
     const { client, wallet } = this.getClient(adChainId.toString());
     const token: `0x${string}` = keccak256(toHex(randomUUID()));
     const timeToMilliseconds: number =
-      getTime(new Date()) + ViemService.TEN_MINUTES;
+      getTime(new Date()) + ViemService.ONE_HOUR;
 
     const timeToExpire: bigint = BigInt(
       BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
@@ -265,12 +270,17 @@ export class ViemService {
       message: { raw: message },
     });
 
+    const params = buildOrderParams(
+      orderParams,
+      true,
+    ) as T_AdManagerOrderParams;
+
     return {
       contractAddress: orderParams.adManager,
       signature,
       authToken: token,
       timeToExpire: Number(timeToExpire),
-      orderParams,
+      orderParams: params,
       reqHash: message,
       orderHash: orderHash as `0x${string}`,
     };
@@ -303,12 +313,14 @@ export class ViemService {
       message: { raw: message },
     });
 
+    const params = buildOrderParams(orderParams, false) as T_OrderPortalParams;
+
     return {
       contractAddress: orderParams.orderPortal,
       signature,
       authToken: token,
       timeToExpire: Number(timeToExpire),
-      orderParams,
+      orderParams: params,
       reqHash: message,
       orderHash: orderHash as `0x${string}`,
     };
@@ -431,16 +443,14 @@ export class ViemService {
       message: { raw: message },
     });
 
-    const orderParamsFinal = isAdCreator
-      ? (orderParams as T_OrderPortalParams)
-      : (orderParams as T_AdManagerOrderParams);
+    const params = buildOrderParams(orderParams, !isAdCreator);
 
     return {
       contractAddress,
       signature,
       authToken: token,
       timeToExpire: Number(timeToExpire),
-      orderParams: orderParamsFinal,
+      orderParams: params,
       nullifierHash,
       targetRoot,
       proof,

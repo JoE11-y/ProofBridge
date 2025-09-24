@@ -3,8 +3,8 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { createTestingApp } from './setups/create-app';
-import { seedAdmin, seedChain } from './setups/seed';
-import { ethers } from 'ethers';
+import { loginAsAdmin, randomAddress, seedChain } from './setups/utils';
+import { getAddress } from 'ethers';
 
 describe('Tokens E2E', () => {
   let app: INestApplication;
@@ -13,7 +13,6 @@ describe('Tokens E2E', () => {
 
   beforeAll(async () => {
     app = await createTestingApp();
-    await seedAdmin('admin@x.com', 'ChangeMe123!', prisma);
     chain = await seedChain(prisma);
   });
 
@@ -21,15 +20,6 @@ describe('Tokens E2E', () => {
     await app.close();
     await prisma.$disconnect();
   });
-
-  const loginAsAdmin = async () => {
-    const res = await request(app.getHttpServer())
-      .post('/v1/admin/login')
-      .send({ email: 'admin@x.com', password: 'ChangeMe123!' })
-      .expect(200);
-
-    return res.body.tokens.access as string;
-  };
 
   it('POST /v1/admin/tokens/create requires admin auth', async () => {
     await request(app.getHttpServer())
@@ -46,8 +36,8 @@ describe('Tokens E2E', () => {
   });
 
   it('creates a token (POST /v1/tokens)', async () => {
-    const access = await loginAsAdmin();
-    const wallet = ethers.Wallet.createRandom();
+    const access = await loginAsAdmin(app);
+    const address = randomAddress();
     const res = await request(app.getHttpServer())
       .post('/v1/admin/tokens/create')
       .set('Authorization', `Bearer ${access}`)
@@ -55,7 +45,7 @@ describe('Tokens E2E', () => {
         chainUid: chain.id,
         symbol: 'ETH',
         name: 'Ether',
-        address: wallet.address,
+        address: address,
         decimals: 18,
         kind: 'NATIVE',
       })
@@ -67,6 +57,7 @@ describe('Tokens E2E', () => {
       name: 'Ether',
       decimals: 18,
       kind: 'NATIVE',
+      address: getAddress(address),
       chain: {
         id: chain.id,
         name: chain.name,
@@ -76,8 +67,7 @@ describe('Tokens E2E', () => {
   });
 
   it('gets a token by id (GET /v1/tokens/:id)', async () => {
-    const access = await loginAsAdmin();
-    const wallet = ethers.Wallet.createRandom();
+    const access = await loginAsAdmin(app);
     const create = await request(app.getHttpServer())
       .post('/v1/admin/tokens/create')
       .set('Authorization', `Bearer ${access}`)
@@ -85,7 +75,7 @@ describe('Tokens E2E', () => {
         chainUid: chain.id,
         symbol: 'ETH',
         name: 'Ether',
-        address: wallet.address,
+        address: randomAddress(),
         decimals: 18,
         kind: 'NATIVE',
       })
@@ -100,11 +90,10 @@ describe('Tokens E2E', () => {
   });
 
   it('lists by chain ID (GET /v1/tokens?chainId=)', async () => {
-    const access = await loginAsAdmin();
+    const access = await loginAsAdmin(app);
     const ids: string[] = [];
 
     for (let i = 0; i < 2; i++) {
-      const newWallet = ethers.Wallet.createRandom();
       const r = await request(app.getHttpServer())
         .post('/v1/admin/tokens/create')
         .set('Authorization', `Bearer ${access}`)
@@ -112,7 +101,7 @@ describe('Tokens E2E', () => {
           chainUid: chain.id,
           symbol: `ETH${i + 1}`,
           name: `Ether ${i + 1}`,
-          address: newWallet.address,
+          address: randomAddress(),
           decimals: 18,
           kind: 'NATIVE',
         })
@@ -130,8 +119,7 @@ describe('Tokens E2E', () => {
   });
 
   it('lists by symbol (GET /v1/tokens?symbol=)', async () => {
-    const access = await loginAsAdmin();
-    const wallet = ethers.Wallet.createRandom();
+    const access = await loginAsAdmin(app);
     const wanted = await request(app.getHttpServer())
       .post('/v1/admin/tokens/create')
       .set('Authorization', `Bearer ${access}`)
@@ -139,7 +127,7 @@ describe('Tokens E2E', () => {
         chainUid: chain.id,
         symbol: 'ETH',
         name: 'Ether',
-        address: wallet.address,
+        address: randomAddress(),
         decimals: 18,
         kind: 'NATIVE',
       })
@@ -155,8 +143,8 @@ describe('Tokens E2E', () => {
   });
 
   it('lists by address (GET /v1/tokens?address=)', async () => {
-    const access = await loginAsAdmin();
-    const wallet = ethers.Wallet.createRandom();
+    const access = await loginAsAdmin(app);
+    const address = randomAddress();
     const created = await request(app.getHttpServer())
       .post('/v1/admin/tokens/create')
       .set('Authorization', `Bearer ${access}`)
@@ -164,7 +152,7 @@ describe('Tokens E2E', () => {
         chainUid: chain.id,
         symbol: 'ETH',
         name: 'Ether',
-        address: wallet.address,
+        address,
         decimals: 18,
         kind: 'NATIVE',
       })
@@ -172,7 +160,7 @@ describe('Tokens E2E', () => {
 
     const list = await request(app.getHttpServer())
       .get('/v1/tokens')
-      .query({ address: wallet.address })
+      .query({ address })
       .expect(200);
 
     const ids = list.body.data.map((t: any) => t.id);
@@ -180,8 +168,7 @@ describe('Tokens E2E', () => {
   });
 
   it('updates a token (PATCH /v1/admin/tokens/:id)', async () => {
-    const access = await loginAsAdmin();
-    const wallet = ethers.Wallet.createRandom();
+    const access = await loginAsAdmin(app);
     const create = await request(app.getHttpServer())
       .post('/v1/admin/tokens/create')
       .set('Authorization', `Bearer ${access}`)
@@ -189,7 +176,7 @@ describe('Tokens E2E', () => {
         chainUid: chain.id,
         symbol: 'ETH',
         name: 'Ether',
-        address: wallet.address,
+        address: randomAddress(),
         decimals: 18,
         kind: 'NATIVE',
       })
@@ -207,8 +194,7 @@ describe('Tokens E2E', () => {
   });
 
   it('deletes a token (DELETE /v1/admin/tokens/:id) and then 404 on GET', async () => {
-    const access = await loginAsAdmin();
-    const wallet = ethers.Wallet.createRandom();
+    const access = await loginAsAdmin(app);
     const create = await request(app.getHttpServer())
       .post('/v1/admin/tokens/create')
       .set('Authorization', `Bearer ${access}`)
@@ -216,7 +202,7 @@ describe('Tokens E2E', () => {
         chainUid: chain.id,
         symbol: 'ETH',
         name: 'Ether',
-        address: wallet.address,
+        address: randomAddress(),
         decimals: 18,
         kind: 'NATIVE',
       })

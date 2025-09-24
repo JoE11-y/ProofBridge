@@ -338,13 +338,13 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
 
     /**
      * @notice Create and fund an order; tokens are transferred to this contract.
-     * @param _signature Signature over the pre-authorization request hash.
-     * @param _token Unique token for the delegated action (prevents replay).
-     * @param _timeToExpire Expiration time for the token (unix timestamp).
+     * @param signature Signature over the pre-authorization request hash.
+     * @param authToken Unique token for the delegated action (prevents replay).
+     * @param timeToExpire Expiration time for the token (unix timestamp).
      * @param params See {OrderParams}.
      * @return orderHash The EIP-712 hash that identifies the order.
      */
-    function createOrder(bytes memory _signature, bytes32 _token, uint256 _timeToExpire, OrderParams calldata params)
+    function createOrder(bytes memory signature, bytes32 authToken, uint256 timeToExpire, OrderParams calldata params)
         external
         nonReentrant
         returns (bytes32 orderHash)
@@ -353,13 +353,13 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
 
         if (orders[orderHash] != Status.None) revert OrderPortal__OrderExists(orderHash);
 
-        bytes32 message = createOrderRequestHash(params.adId, orderHash, _token, _timeToExpire);
+        bytes32 message = createOrderRequestHash(params.adId, orderHash, authToken, timeToExpire);
 
         if (requestHashes[message]) {
             revert OrderPortal__RequestHashedProcessed();
         }
 
-        address signer = preAuthValidations(message, _token, _timeToExpire, _signature);
+        address signer = preAuthValidations(message, authToken, timeToExpire, signature);
         if (!managers[signer]) {
             revert OrderPortal__InvalidSigner();
         }
@@ -403,9 +403,9 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      * @param proof proof bytes for the verifier.
      */
     function unlock(
-        bytes memory _signature,
-        bytes32 _token,
-        uint256 _timeToExpire,
+        bytes memory signature,
+        bytes32 authToken,
+        uint256 timeToExpire,
         OrderParams calldata params,
         bytes32 nullifierHash,
         bytes32 targetRoot,
@@ -416,13 +416,13 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
         if (nullifierUsed[nullifierHash]) revert OrderPortal__NullifierUsed(nullifierHash);
         if (orders[orderHash] != Status.Open) revert OrderPortal__OrderNotOpen(orderHash);
 
-        bytes32 message = unlockOrderRequestHash(params.adId, orderHash, targetRoot, _token, _timeToExpire);
+        bytes32 message = unlockOrderRequestHash(params.adId, orderHash, targetRoot, authToken, timeToExpire);
 
         if (requestHashes[message]) {
             revert OrderPortal__RequestHashedProcessed();
         }
 
-        address signer = preAuthValidations(message, _token, _timeToExpire, _signature);
+        address signer = preAuthValidations(message, authToken, timeToExpire, signature);
 
         if (!managers[signer]) {
             revert OrderPortal__InvalidSigner();
@@ -481,12 +481,12 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     /**
      * @notice Validates the message and signature
      * @param _message The message that the user signed
-     * @param _token The unique token for the delegated action
-     * @param _timeToExpire The time to expire the token
-     * @param _signature Signature
+     * @param authToken The unique token for the delegated action
+     * @param timeToExpire The time to expire the token
+     * @param signature Signature
      * @return address Signer of the message
      */
-    function preAuthValidations(bytes32 _message, bytes32 _token, uint256 _timeToExpire, bytes memory _signature)
+    function preAuthValidations(bytes32 _message, bytes32 authToken, uint256 timeToExpire, bytes memory signature)
         internal
         returns (address)
     {
@@ -494,21 +494,21 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
             revert OrderPortal__InvalidMessage();
         }
 
-        if (requestTokens[_token]) {
+        if (requestTokens[authToken]) {
             revert OrderPortal__TokenAlreadyUsed();
         }
 
-        if (block.timestamp > _timeToExpire) {
+        if (block.timestamp > timeToExpire) {
             revert OrderPortal__RequestTokenExpired();
         }
 
-        address signer = getSigner(_message, _signature);
+        address signer = getSigner(_message, signature);
 
         if (signer == address(0)) {
             revert OrderPortal__ZeroSigner();
         }
 
-        requestTokens[_token] = true;
+        requestTokens[authToken] = true;
 
         return signer;
     }
@@ -567,18 +567,18 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
 
     /**
      * @notice Hash a request for pre-authorization
-     * @param _token Unique token for the delegated action
-     * @param _timeToExpire The time to expire the token
+     * @param authToken Unique token for the delegated action
+     * @param timeToExpire The time to expire the token
      * @param _action The action to be performed
      * @param _params Encoded parameters for the action
      * @return bytes32 The hash of the request
      */
-    function hashRequest(bytes32 _token, uint256 _timeToExpire, string memory _action, bytes[] memory _params)
+    function hashRequest(bytes32 authToken, uint256 timeToExpire, string memory _action, bytes[] memory _params)
         public
         view
         returns (bytes32)
     {
-        return keccak256(abi.encode(_token, _timeToExpire, _action, _params, getChainID(), address(this)));
+        return keccak256(abi.encode(authToken, timeToExpire, _action, _params, getChainID(), address(this)));
     }
 
     /**
@@ -659,11 +659,11 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      * @dev Generates a unique hash combining ad ID, order hash, token, and expiration time
      * @param adId The identifier of the advertisement
      * @param orderHash The hash of the order details
-     * @param _token The token identifier used for the request
-     * @param _timeToExpire The timestamp when the request expires
+     * @param authToken The token identifier used for the request
+     * @param timeToExpire The timestamp when the request expires
      * @return message The generated hash of the request
      */
-    function createOrderRequestHash(string memory adId, bytes32 orderHash, bytes32 _token, uint256 _timeToExpire)
+    function createOrderRequestHash(string memory adId, bytes32 orderHash, bytes32 authToken, uint256 timeToExpire)
         public
         view
         returns (bytes32 message)
@@ -672,7 +672,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
         bytes[] memory params = new bytes[](2);
         params[0] = abi.encode(adId);
         params[1] = abi.encode(orderHash);
-        message = hashRequest(_token, _timeToExpire, action, params);
+        message = hashRequest(authToken, timeToExpire, action, params);
     }
 
     /**
@@ -681,23 +681,23 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      * @param adId The unique identifier of the advertisement
      * @param orderHash The hash of the order to unlock
      * @param _targetRoot The merkle root for verification
-     * @param _token The token associated with this request
-     * @param _timeToExpire The timestamp when this request will expire
+     * @param authToken The token associated with this request
+     * @param timeToExpire The timestamp when this request will expire
      * @return message The generated hash of the unlock order request
      */
     function unlockOrderRequestHash(
         string memory adId,
         bytes32 orderHash,
         bytes32 _targetRoot,
-        bytes32 _token,
-        uint256 _timeToExpire
+        bytes32 authToken,
+        uint256 timeToExpire
     ) public view returns (bytes32 message) {
         string memory action = "unlockOrder";
         bytes[] memory params = new bytes[](3);
         params[0] = abi.encode(adId);
         params[1] = abi.encode(orderHash);
         params[2] = abi.encode(_targetRoot);
-        message = hashRequest(_token, _timeToExpire, action, params);
+        message = hashRequest(authToken, timeToExpire, action, params);
     }
 
     /*//////////////////////////////////////////////////////////////

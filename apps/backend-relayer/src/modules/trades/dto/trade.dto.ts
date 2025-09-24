@@ -588,8 +588,107 @@ export class UnlockOrderResponseDto {
 
 export class ConfirmChainActionResponseDto {
   @ApiProperty({
+    description: 'trade identifier',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  tradeId!: string;
+
+  @ApiProperty({
     description: 'Whether the chain action was confirmed successfully',
     example: true,
   })
   success!: boolean;
+}
+
+export class OrderParamsResponseDto {
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Order chain token address',
+  })
+  @IsString()
+  orderChainToken!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad chain token address',
+  })
+  @IsString()
+  adChainToken!: string;
+
+  @ApiProperty({
+    example: '1000',
+    description: 'Amount of tokens',
+  })
+  @IsString()
+  amount!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Bridger address',
+  })
+  @IsString()
+  bridger!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Order recipient address',
+  })
+  @IsString()
+  orderRecipient!: string;
+
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Advertisement ID',
+  })
+  @IsString()
+  adId!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad creator address',
+  })
+  @IsString()
+  adCreator!: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad recipient address',
+  })
+  @IsString()
+  adRecipient!: string;
+
+  @ApiProperty({
+    example: '123456',
+    description: 'Salt value',
+  })
+  @IsString()
+  salt!: string;
+
+  @ApiProperty({
+    example: '1',
+    description: 'Order chain ID',
+  })
+  @IsString()
+  orderChainId?: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Order portal address',
+  })
+  @IsString()
+  orderPortal?: string;
+
+  @ApiProperty({
+    example: '1',
+    description: 'Ad chain ID',
+  })
+  @IsString()
+  adChainId?: string;
+
+  @ApiProperty({
+    example: '0x1234567890abcdef',
+    description: 'Ad manager address',
+  })
+  @IsString()
+  adManager?: string;
 }

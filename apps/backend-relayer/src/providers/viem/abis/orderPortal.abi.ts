@@ -65,9 +65,9 @@ export const ORDER_PORTAL_ABI = [
     type: 'function',
     name: 'createOrder',
     inputs: [
-      { name: '_signature', type: 'bytes', internalType: 'bytes' },
-      { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
+      { name: 'signature', type: 'bytes', internalType: 'bytes' },
+      { name: 'authToken', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'timeToExpire', type: 'uint256', internalType: 'uint256' },
       {
         name: 'params',
         type: 'tuple',
@@ -96,11 +96,11 @@ export const ORDER_PORTAL_ABI = [
     inputs: [
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'orderHash', type: 'bytes32', internalType: 'bytes32' },
-      { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
+      { name: 'authToken', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
-    stateMutability: 'pure',
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -184,13 +184,13 @@ export const ORDER_PORTAL_ABI = [
     type: 'function',
     name: 'hashRequest',
     inputs: [
-      { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
+      { name: 'authToken', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'timeToExpire', type: 'uint256', internalType: 'uint256' },
       { name: '_action', type: 'string', internalType: 'string' },
       { name: '_params', type: 'bytes[]', internalType: 'bytes[]' },
     ],
     outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
-    stateMutability: 'pure',
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -232,18 +232,6 @@ export const ORDER_PORTAL_ABI = [
       { name: '', type: 'uint8', internalType: 'enum OrderPortal.Status' },
     ],
     stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'preAuthValidations',
-    inputs: [
-      { name: '_message', type: 'bytes32', internalType: 'bytes32' },
-      { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
-      { name: '_signature', type: 'bytes', internalType: 'bytes' },
-    ],
-    outputs: [{ name: '', type: 'address', internalType: 'address' }],
-    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -349,9 +337,9 @@ export const ORDER_PORTAL_ABI = [
     type: 'function',
     name: 'unlock',
     inputs: [
-      { name: '_signature', type: 'bytes', internalType: 'bytes' },
-      { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
+      { name: 'signature', type: 'bytes', internalType: 'bytes' },
+      { name: 'authToken', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'timeToExpire', type: 'uint256', internalType: 'uint256' },
       {
         name: 'params',
         type: 'tuple',
@@ -384,11 +372,11 @@ export const ORDER_PORTAL_ABI = [
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'orderHash', type: 'bytes32', internalType: 'bytes32' },
       { name: '_targetRoot', type: 'bytes32', internalType: 'bytes32' },
-      { name: '_token', type: 'bytes32', internalType: 'bytes32' },
-      { name: '_timeToExpire', type: 'uint256', internalType: 'uint256' },
+      { name: 'authToken', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
-    stateMutability: 'pure',
+    stateMutability: 'view',
   },
   {
     type: 'event',

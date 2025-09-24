@@ -126,11 +126,11 @@ model Ad {
   toToken     Token  @relation("AdToToken", fields: [toTokenId], references: [id])
 
   // liquidity
-  poolAmount BigInt  @default(0)
-  minAmount  BigInt? @default(0)
-  maxAmount  BigInt? @default(0)
+  poolAmount Decimal  @db.Decimal(78, 0)
+  minAmount  Decimal? @db.Decimal(78, 0)
+  maxAmount  Decimal? @db.Decimal(78, 0)
 
-  status   AdStatus @default(ACTIVE)
+  status   AdStatus @default(INACTIVE)
   metadata Json?
 
   createdAt   DateTime     @default(now())
@@ -167,7 +167,7 @@ model AdLock {
   ad         Ad        @relation(fields: [adId], references: [id], onDelete: Cascade)
   trade      Trade     @relation(fields: [tradeId], references: [id])
   tradeId    String    @unique
-  amount     BigInt
+  amount     Decimal   @db.Decimal(78, 0)
   authorized Boolean   @default(false)
   releasedAt DateTime?
   createdAt  DateTime  @default(now())
@@ -197,8 +197,8 @@ model Trade {
 
   // Order hash
   orderHash String
-  // Amount in smallest unit (e.g., wei for ETH)
-  amount    Decimal @db.Decimal(78, 0)
+
+  amount Decimal @db.Decimal(78, 0)
 
   status TradeStatus @default(INACTIVE)
 
@@ -290,13 +290,14 @@ model MMR {
 
 model OrderRecord {
   id           String   @id @default(uuid())
-  orderHash    String   @unique
+  orderHash    String
   elementIndex Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   mmrId        String
   mmr          MMR      @relation(fields: [mmrId], references: [id])
 
+  @@unique([mmrId, orderHash])
   @@unique([mmrId, elementIndex])
   @@unique([orderHash, mmrId])
 }

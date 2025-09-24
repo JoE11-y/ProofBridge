@@ -1,5 +1,9 @@
-import { TypedDataEncoder, recoverAddress } from 'ethers';
-import { T_OrderParams } from '../types';
+import { TypedDataEncoder, Wallet, recoverAddress } from 'ethers';
+import {
+  T_AdManagerOrderParams,
+  T_OrderParams,
+  T_OrderPortalParams,
+} from '../types';
 
 // ----------------------------
 // OrderPortal typed data
@@ -32,7 +36,11 @@ export const orderTypes: Record<string, { name: string; type: string }[]> = {
 };
 
 export function getTypedHash(data: T_OrderParams) {
-  const orderHash = TypedDataEncoder.hash(domain, orderTypes, data);
+  const params = {
+    ...data,
+    salt: uuidToBigInt(data.salt),
+  };
+  const orderHash = TypedDataEncoder.hash(domain, orderTypes, params);
   return orderHash;
 }
 
@@ -43,4 +51,72 @@ export function verifyTypedData(
 ) {
   const recoveredAddress = recoverAddress(hash, signature);
   return recoveredAddress.toLowerCase() === expectedAddress.toLowerCase();
+}
+
+export function uuidToBigInt(uuid: string): bigint {
+  const hex = uuid.replace(/-/g, '');
+  return BigInt('0x' + hex);
+}
+
+export function buildOrderParams(
+  orderParams: T_OrderParams,
+  isAdChain: boolean,
+) {
+  const {
+    orderChainToken,
+    adChainToken,
+    amount,
+    bridger,
+    orderRecipient,
+    adChainId,
+    orderChainId,
+    orderPortal,
+    adManager,
+    adId,
+    adCreator,
+    adRecipient,
+    salt,
+  } = orderParams;
+
+  if (isAdChain) {
+    const params: T_AdManagerOrderParams = {
+      orderChainToken,
+      adChainToken,
+      amount,
+      bridger,
+      orderRecipient,
+      orderChainId,
+      orderPortal,
+      adId,
+      adCreator,
+      adRecipient,
+      salt: uuidToBigInt(salt).toString(),
+    };
+    return params;
+  } else {
+    const params: T_OrderPortalParams = {
+      orderChainToken,
+      adChainToken,
+      amount,
+      bridger,
+      orderRecipient,
+      adChainId,
+      adManager,
+      adId,
+      adCreator,
+      adRecipient,
+      salt: uuidToBigInt(salt).toString(),
+    };
+    return params;
+  }
+}
+
+export async function signTypedOrder(signer: string, data: T_OrderParams) {
+  const wallet = new Wallet(signer);
+  const params = {
+    ...data,
+    salt: BigInt(data.salt),
+  };
+  const signature = await wallet.signTypedData(domain, orderTypes, params);
+  return signature;
 }

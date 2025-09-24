@@ -2,9 +2,8 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { createTestingApp } from './setups/create-app';
-import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { seedAdmin } from './setups/seed';
+import { loginAsAdmin, randomAddress } from './setups/utils';
 
 interface ChainResponse {
   id: string;
@@ -16,56 +15,47 @@ interface ChainResponse {
 
 describe('Chains E2E', () => {
   let app: INestApplication;
-  const prisma = new PrismaClient();
 
   beforeAll(async () => {
     app = await createTestingApp();
-    await seedAdmin('admin@x.com', 'ChangeMe123!', prisma);
   });
 
   afterAll(async () => {
     await app.close();
-    await prisma.$disconnect();
   });
-
-  const loginAsAdmin = async () => {
-    const res = await request(app.getHttpServer())
-      .post('/v1/admin/login')
-      .send({ email: 'admin@x.com', password: 'ChangeMe123!' })
-      .expect(200);
-    return res.body.tokens.access as string;
-  };
 
   it('POST /v1/chains requires auth', async () => {
     await request(app.getHttpServer())
       .post('/v1/admin/chains/create')
       .send({
-        name: 'Base',
-        chainId: '8453',
-        adManagerAddress: '0xAM',
-        orderPortalAddress: '0xOP',
+        name: 'FireChain',
+        chainId: '10000',
+        adManagerAddress: randomAddress(),
+        orderPortalAddress: randomAddress(),
       })
       .expect(403);
   });
 
   describe('Chain CRUD operations', () => {
     let token: string;
-    const chainId: string = '8453';
+    const chainId: string = '10000';
     let chainUUID: string;
 
     beforeEach(async () => {
-      token = await loginAsAdmin();
+      token = await loginAsAdmin(app);
     });
 
     it('creates a new chain', async () => {
+      const adManagerAddress = randomAddress();
+      const orderPortalAddress = randomAddress();
       const res = await request(app.getHttpServer())
         .post('/v1/admin/chains/create')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          name: 'Base',
-          chainId: '8453',
-          adManagerAddress: '0xAdMgr',
-          orderPortalAddress: '0xOrderPortal',
+          name: 'FireChain',
+          chainId,
+          adManagerAddress,
+          orderPortalAddress,
         })
         .expect(201);
 
@@ -74,10 +64,10 @@ describe('Chains E2E', () => {
 
       expect(created).toMatchObject({
         id: expect.any(String),
-        name: 'Base',
-        chainId: '8453',
-        adManagerAddress: '0xAdMgr',
-        orderPortalAddress: '0xOrderPortal',
+        name: 'FireChain',
+        chainId,
+        adManagerAddress,
+        orderPortalAddress,
       });
     });
 
@@ -85,13 +75,13 @@ describe('Chains E2E', () => {
       const res = await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}`)
         .expect(200);
-      expect(res.body).toMatchObject({ chainId: chainId, name: 'Base' });
+      expect(res.body).toMatchObject({ chainId: chainId, name: 'FireChain' });
     });
 
     it('lists chains with chainId filter', async () => {
       const res = await request(app.getHttpServer())
         .get('/v1/chains')
-        .query({ chainId: '8453' })
+        .query({ chainId: '10000' })
         .expect(200);
       expect(res.body.rows).toEqual(
         expect.arrayContaining([expect.objectContaining({ chainId: chainId })]),

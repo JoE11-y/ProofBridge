@@ -2,7 +2,7 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { createTestingApp } from './setups/create-app';
-import { seedAdmin, seedChain, seedToken } from './setups/seed';
+import { seedChain, seedToken } from './setups/utils';
 import { randomUUID } from 'crypto';
 
 describe('Routes E2E', () => {
@@ -19,7 +19,6 @@ describe('Routes E2E', () => {
 
   beforeAll(async () => {
     app = await createTestingApp();
-    await seedAdmin('admin@x.com', 'ChangeMe123!', prisma);
   });
 
   afterAll(async () => {
@@ -37,19 +36,19 @@ describe('Routes E2E', () => {
   it('creates a route, fetches it, lists by token ids', async () => {
     const access = await loginAsAdmin();
 
-    const base = await seedChain(prisma, { name: 'Base2', chainId: 84532n });
-    const main = await seedChain(prisma, { name: 'Ethereum13', chainId: 13n });
+    const c1 = await seedChain(prisma);
+    const c2 = await seedChain(prisma);
 
-    const tBase = await seedToken(prisma, base.id, 'ETH');
-    const tMain = await seedToken(prisma, main.id, 'ETH');
+    const t1 = await seedToken(prisma, c1.id, 'ETH');
+    const t2 = await seedToken(prisma, c2.id, 'ETH');
 
     // create
     const create = await request(app.getHttpServer())
       .post('/v1/admin/routes/create')
       .set('Authorization', `Bearer ${access}`)
       .send({
-        fromTokenId: tBase.id,
-        toTokenId: tMain.id,
+        fromTokenId: t1.id,
+        toTokenId: t2.id,
       })
       .expect(201);
 
@@ -57,14 +56,14 @@ describe('Routes E2E', () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       id: expect.any(String),
       fromToken: {
-        id: tBase.id,
+        id: t1.id,
         symbol: 'ETH',
-        chain: { chainId: base.chainId.toString() },
+        chain: { chainId: c1.chainId.toString() },
       },
       toToken: {
-        id: tMain.id,
+        id: t2.id,
         symbol: 'ETH',
-        chain: { chainId: main.chainId.toString() },
+        chain: { chainId: c2.chainId.toString() },
       },
     });
 
@@ -79,14 +78,14 @@ describe('Routes E2E', () => {
     // list by direct token ids
     const list = await request(app.getHttpServer())
       .get('/v1/routes')
-      .query({ fromTokenId: tBase.id, toTokenId: tMain.id })
+      .query({ fromTokenId: t1.id, toTokenId: t2.id })
       .expect(200);
     expect(list.body.data.map((r: any) => r.id)).toContain(routeId);
   });
 
   it('lists by chain onchain ids + symbol', async () => {
-    const base = await seedChain(prisma, { name: 'Base2', chainId: 18454n });
-    const main = await seedChain(prisma, { name: 'Ethereum12', chainId: 12n });
+    const base = await seedChain(prisma);
+    const main = await seedChain(prisma);
     const tBase = await seedToken(prisma, base.id, 'ETH');
     const tMain = await seedToken(prisma, main.id, 'ETH');
 
@@ -111,7 +110,7 @@ describe('Routes E2E', () => {
 
   it('rejects creation of self-route (400)', async () => {
     const access = await loginAsAdmin();
-    const ch = await seedChain(prisma, { name: 'ChainX', chainId: 12345n });
+    const ch = await seedChain(prisma);
     const tok = await seedToken(prisma, ch.id, 'ETH');
 
     await request(app.getHttpServer())
@@ -123,8 +122,8 @@ describe('Routes E2E', () => {
 
   it('rejects duplicate route (409)', async () => {
     const access = await loginAsAdmin();
-    const c1 = await seedChain(prisma, { name: 'C1', chainId: 7000n });
-    const c2 = await seedChain(prisma, { name: 'C2', chainId: 7001n });
+    const c1 = await seedChain(prisma);
+    const c2 = await seedChain(prisma);
     const t1 = await seedToken(prisma, c1.id, 'ETH');
     const t2 = await seedToken(prisma, c2.id, 'ETH');
 
@@ -150,8 +149,8 @@ describe('Routes E2E', () => {
 
   it('deletes a route then 404 on get', async () => {
     const access = await loginAsAdmin();
-    const c1 = await seedChain(prisma, { name: 'D1', chainId: 8100n });
-    const c2 = await seedChain(prisma, { name: 'D2', chainId: 8101n });
+    const c1 = await seedChain(prisma);
+    const c2 = await seedChain(prisma);
     const t1 = await seedToken(prisma, c1.id, 'ETH');
     const t2 = await seedToken(prisma, c2.id, 'ETH');
 

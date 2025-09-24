@@ -34,6 +34,7 @@ export class ProofService {
       ad_contract: isAdCreator ? false : true,
       secret,
       target_index: merkleProof.elementIndex.toString(),
+      target_elements_count: merkleProof.elementsCount.toString(),
       target_sibling_hashes_len: merkleProof.siblingsHashes.length.toString(),
       target_sibling_hashes: this.padArray(
         merkleProof.siblingsHashes.map((i) => i.toString()),

@@ -1,90 +1,67 @@
 import { PrismaClient } from '@prisma/client';
-import { ethers } from 'ethers';
-import * as argon2 from '@node-rs/argon2';
+import { ChainData, seedAdmin, seedChain, seedToken } from './utils';
 
-export const seedRoute = async (
-  prisma: PrismaClient,
-  fromTokenId: string,
-  toTokenId: string,
+export const seedDB = async (
+  ethContracts: ChainData,
+  hederaContracts: ChainData,
 ) => {
-  return prisma.route.create({
-    data: { fromTokenId, toTokenId },
-    select: { id: true },
-  });
-};
+  const prisma = new PrismaClient();
 
-export const seedToken = async (
-  prisma: PrismaClient,
-  chainUuid: string,
-  symbol = 'ETH',
-) => {
-  const wallet = ethers.Wallet.createRandom();
-  return prisma.token.create({
-    data: {
-      chainUid: chainUuid,
-      symbol,
-      name: symbol === 'ETH' ? 'Ether' : symbol,
-      address: wallet.address,
-      decimals: 18,
-      kind: 'NATIVE',
-    },
-    select: { id: true, symbol: true, chain: true },
-  });
-};
+  try {
+    await prisma.$connect();
 
-export const seedChain = async (
-  prisma: PrismaClient,
-  params?: Partial<{
-    name: string;
-    chainId: bigint;
-    ad: string;
-    op: string;
-  }>,
-) => {
-  const name = params?.name ?? 'Hedera';
-  const chainId = params?.chainId ?? 246n;
-  const ad = params?.ad ?? '0xAdManager000000000000000000000000001234';
-  const op = params?.op ?? '0xOrderPortal00000000000000000000000001234';
-  return prisma.chain.create({
-    data: {
-      name,
-      chainId: chainId,
-      adManagerAddress: ad,
-      orderPortalAddress: op,
-    },
-    select: { id: true, name: true, chainId: true },
-  });
-};
+    await seedAdmin(prisma, 'admin@x.com', 'ChangeMe123!');
 
-export const seedAdmin = async (
-  email: string,
-  password: string,
-  prisma: PrismaClient,
-) => {
-  const passwordHash = await argon2.hash(password);
-  return prisma.admin.upsert({
-    where: { email },
-    update: { passwordHash },
-    create: { email, passwordHash },
-  });
-};
+    const chain1 = await seedChain(prisma, {
+      name: ethContracts.name,
+      chainId: BigInt(ethContracts.chainId),
+      ad: ethContracts.adManagerAddress,
+      op: ethContracts.orderPortalAddress,
+    });
 
-export const seedAd = async (
-  prisma: PrismaClient,
-  creator: string,
-  routeId: string,
-  fromTokenId: string,
-  toTokenId: string,
-  pool = 1_000_000n,
-) =>
-  prisma.ad.create({
-    data: {
-      creatorAddress: creator,
-      routeId,
-      fromTokenId,
-      toTokenId,
-      poolAmount: pool,
-      status: 'ACTIVE',
-    },
-    select: { id: true, creatorAddress: true, routeId: true },
-  });
+    const chain2 = await seedChain(prisma, {
+      name: hederaContracts.name,
+      chainId: BigInt(hederaContracts.chainId),
+      ad: hederaContracts.adManagerAddress,
+      op: hederaContracts.orderPortalAddress,
+    });
+
+    const token1 = await seedToken(
+      prisma,
+      chain1.id,
+      ethContracts.tokenName,
+      ethContracts.tokenSymbol,
+      ethContracts.tokenAddress,
+    );
+
+    const token2 = await seedToken(
+      prisma,
+      chain2.id,
+      hederaContracts.tokenName,
+      hederaContracts.tokenSymbol,
+      hederaContracts.tokenAddress,
+    );
+
+    // Create route in both directions
+    await prisma.route.createMany({
+      data: [
+        {
+          fromTokenId: token1.id,
+          toTokenId: token2.id,
+        },
+        {
+          fromTokenId: token2.id,
+          toTokenId: token1.id,
+        },
+      ],
+    });
+
+    await prisma.$disconnect();
+
+    console.log('Seeding completed.');
+  } catch (error) {
+    console.error('Error seeding db:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
+};
