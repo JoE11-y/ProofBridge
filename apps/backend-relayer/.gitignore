@@ -11,4 +11,4 @@ build/
 
 # environment variables
 .env
-
+.env.test

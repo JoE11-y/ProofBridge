@@ -404,6 +404,14 @@ export class WithdrawAdResponseDto {
 
 export class ConfirmChainActionResponseDto {
   @ApiProperty({
+    type: String,
+    format: 'uuid',
+    description: 'Ad identifier',
+    example: 'b693ab22-5e73-47e8-9937-1d4459b8c081',
+  })
+  adId!: string;
+
+  @ApiProperty({
     description: 'Whether the chain action was confirmed successfully',
     example: true,
   })

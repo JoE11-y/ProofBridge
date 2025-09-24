@@ -1,14 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   StartedPostgreSqlContainer,
   PostgreSqlContainer,
 } from '@testcontainers/postgresql';
 import * as dotenv from 'dotenv';
 import { execa } from 'execa';
+import path from 'path';
+import { setupContracts } from './contract-setup';
+import { seedDB } from './seed';
 
 // Load .env (optional)
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 
 let container: StartedPostgreSqlContainer;
 
@@ -37,5 +38,11 @@ export default async () => {
 
   await migrate(databaseUrl);
 
+  const { ethContracts, hederaContracts } = await setupContracts();
+
+  await seedDB(ethContracts, hederaContracts);
+
+  (global as any).__ETH_CONTRACTS__ = ethContracts;
+  (global as any).__HEDERA_CONTRACTS__ = hederaContracts;
   (global as any).__PG_CONTAINER__ = container;
 };

@@ -1,7 +1,7 @@
 import { Chain, defineChain } from 'viem';
 
 export const ethLocalnet: Chain = defineChain({
-  id: 1337,
+  id: 31337,
   name: 'ETH LOCALNET',
   nativeCurrency: {
     decimals: 18,
@@ -10,13 +10,13 @@ export const ethLocalnet: Chain = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['http://localhost:8545'],
+      http: ['http://localhost:9545'],
     },
   },
 });
 
 export const hederaLocalnet: Chain = defineChain({
-  id: 196,
+  id: 298,
   name: 'HEDERA LOCALNET',
   nativeCurrency: {
     decimals: 18,
@@ -25,7 +25,7 @@ export const hederaLocalnet: Chain = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['http://localhost:5600'],
+      http: ['http://localhost:7546'],
     },
   },
 });

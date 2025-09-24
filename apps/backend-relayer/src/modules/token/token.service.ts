@@ -10,6 +10,7 @@ import {
   UpdateTokenDto,
 } from './dto/token.dto';
 import { TokenRow } from '../../types';
+import { getAddress } from 'ethers';
 
 @Injectable()
 export class TokenService {
@@ -180,7 +181,7 @@ export class TokenService {
       id: row.id,
       symbol: row.symbol,
       name: row.name,
-      address: row.address,
+      address: getAddress(row.address),
       decimals: row.decimals,
       kind: row.kind,
       createdAt: row.createdAt.toISOString(),

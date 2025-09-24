@@ -1,0 +1,11 @@
+{
+  "adManagerAddress": "0x8280374213b61192c579b93646a79ef23d3f16ad",
+  "orderPortalAddress": "0xb767c1e601512a7734796336645a634db6405424",
+  "chainId": "31337",
+  "name": "ETH LOCALNET",
+  "tokenName": "ERC20Mock",
+  "tokenSymbol": "E20M",
+  "tokenAddress": "0x1379cbdb5d1d866fcba63f597c419fcf1967de1b",
+  "merkleManagerAddress": "0xca48917bc48d4ca7b94538bc595ce48a9121381b",
+  "verifierAddress": "0xae32af86a76abaddad1ddc942df635109c6f6b60"
+}

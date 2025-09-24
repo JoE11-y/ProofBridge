@@ -271,6 +271,18 @@ contract ProofBridge is Test {
         sig = ethSign(message, adminPk);
     }
 
+    function generateOrderChainUnlockOrderRequestHash(string memory adId, bytes32 orderHash, bytes32 targetRoot)
+        internal
+        view
+        returns (bytes32 token, uint256 ttl, bytes memory sig)
+    {
+        token = bytes32(vm.randomBytes(32));
+        ttl = block.timestamp + 1 hours;
+
+        bytes32 message = orderPortal.unlockOrderRequestHash(adId, orderHash, targetRoot, token, ttl);
+        sig = ethSign(message, adminPk);
+    }
+
     /*//////////////////////////////////////////////////////////////
             check that order hashes matches for same data
     //////////////////////////////////////////////////////////////*/
@@ -516,7 +528,7 @@ contract ProofBridge is Test {
         uint256 recipientBalBefore = orderToken.balanceOf(adRecipient);
 
         // Execute unlock
-        (authToken, timeToLive, signature) = generateUnlockOrderRequestHash(adId, orderHash, adChainRoot);
+        (authToken, timeToLive, signature) = generateOrderChainUnlockOrderRequestHash(adId, orderHash, adChainRoot);
 
         vm.prank(maker);
         orderPortal.unlock(signature, authToken, timeToLive, orderChainParams, makerNullifierHash, adChainRoot, proof);
@@ -766,14 +778,14 @@ contract ProofBridge is Test {
         vm.chainId(orderChainId);
 
         // get auth
-        (authToken, timeToLive, signature) = generateUnlockOrderRequestHash(adId, orderHash, adChainRoot);
+        (authToken, timeToLive, signature) = generateOrderChainUnlockOrderRequestHash(adId, orderHash, adChainRoot);
 
         // verify and fulfill order
         vm.prank(maker);
         orderPortal.unlock(signature, authToken, timeToLive, orderChainParams, makerNullifierHash, adChainRoot, proof);
 
         // get another auth
-        (authToken, timeToLive, signature) = generateUnlockOrderRequestHash(adId, orderHash, adChainRoot);
+        (authToken, timeToLive, signature) = generateOrderChainUnlockOrderRequestHash(adId, orderHash, adChainRoot);
 
         vm.prank(maker);
         vm.expectRevert();

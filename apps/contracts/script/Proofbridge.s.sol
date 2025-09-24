@@ -44,9 +44,11 @@ contract Proofbridge is Script {
             console2.log("Reusing Verifier     :", address(verifier));
         }
 
-        // --- MerkleManager: reuse or deploy ---
+        // // --- MerkleManager: reuse or deploy ---
         address merkleManagerMaybe = _envOrAddress("MERKLE_MANAGER", address(0));
+
         IMerkleManager merkleManager;
+
         if (merkleManagerMaybe == address(0)) {
             merkleManager = new MerkleManager(admin);
             console2.log("Deployed MerkleManager    :", address(merkleManager));
@@ -56,19 +58,32 @@ contract Proofbridge is Script {
         }
 
         // --- Deploy AdManager & OrderPortal ---
-        AdManager adManager = new AdManager(admin, verifier, merkleManager);
-        console2.log("Deployed AdManager   :", address(adManager));
+        address adManagerMaybe = _envOrAddress("ADMANAGER", address(0));
+        if (adManagerMaybe != address(0)) {
+            console2.log("Reusing AdManager     :", adManagerMaybe);
+        } else {
+            AdManager adManager = new AdManager(admin, verifier, merkleManager);
+            console2.log("Deployed AdManager    :", address(adManager));
+            adManagerMaybe = address(adManager);
+        }
 
-        OrderPortal orderPortal = new OrderPortal(admin, verifier, merkleManager);
-        console2.log("Deployed OrderPortal :", address(orderPortal));
+        address orderPortalMaybe = _envOrAddress("ORDER_PORTAL", address(0));
+        if (orderPortalMaybe != address(0)) {
+            console2.log("Reusing OrderPortal     :", orderPortalMaybe);
+        } else {
+            OrderPortal orderPortal = new OrderPortal(admin, verifier, merkleManager);
+            console2.log("Deployed OrderPortal :", address(orderPortal));
+            orderPortalMaybe = address(orderPortal);
+        }
 
         // --- Assign Manager role to deployed contrats ---
 
         IAccessControl merkleManagerAsAccessControl = IAccessControl(address(merkleManager));
         bytes32 DEFAULT_ADMIN_ROLE = 0x00;
         if (merkleManagerAsAccessControl.hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
-            merkleManagerAsAccessControl.grantRole(MANAGER_ROLE, address(adManager));
-            merkleManagerAsAccessControl.grantRole(MANAGER_ROLE, address(orderPortal));
+            console2.log("Granting MANAGER_ROLE to AdManager and OrderPortal");
+            merkleManagerAsAccessControl.grantRole(MANAGER_ROLE, adManagerMaybe);
+            merkleManagerAsAccessControl.grantRole(MANAGER_ROLE, orderPortalMaybe);
         } else {
             console2.log("WARN: Skipping grantRole: sender lacks DEFAULT_ADMIN_ROLE");
         }

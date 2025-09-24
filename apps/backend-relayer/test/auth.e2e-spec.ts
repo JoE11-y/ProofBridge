@@ -5,6 +5,7 @@ import { createTestingApp } from './setups/create-app';
 import { Wallet } from 'ethers';
 import { SiweMessage } from 'siwe';
 import { env } from '@libs/configs';
+import { LoginResponseDto } from '../src/modules/auth/dto/auth.dto';
 
 interface ChallengeResponse {
   nonce: string;
@@ -232,7 +233,7 @@ describe('SIWE E2E', () => {
       .send({ message, signature })
       .expect(201);
 
-    const { tokens } = verifyResponse.body;
+    const { tokens } = verifyResponse.body as LoginResponseDto;
 
     const res = await request(app.getHttpServer())
       .post('/v1/auth/refresh')
@@ -240,7 +241,7 @@ describe('SIWE E2E', () => {
       .expect(200);
 
     expect(res.body.tokens).toMatchObject({ access: expect.any(String) });
-    const newAccess = res.body.tokens.access;
+    const newAccess = res.body.tokens.access as string;
     expect(newAccess).not.toEqual(tokens.access);
   });
 

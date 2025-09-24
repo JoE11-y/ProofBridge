@@ -12,7 +12,7 @@ import {
   QueryTradesDto,
   UnlockTradeDto,
 } from './dto/trade.dto';
-import { getAddress, isAddress } from 'ethers';
+import { getAddress, isAddress } from 'viem';
 import { Request } from 'express';
 import { ViemService } from '../../providers/viem/viem.service';
 import { MMRService } from '../mmr/mmr.service';
@@ -20,10 +20,7 @@ import { ProofService } from '../../providers/noir/proof.service';
 import { randomUUID } from 'crypto';
 import { Prisma, TradeStatus } from '@prisma/client';
 import { EncryptionService } from '@libs/encryption.service';
-
-function toBI(s: string) {
-  return BigInt(s);
-}
+import { uuidToBigInt } from '../../providers/viem/ethers/typedData';
 
 @Injectable()
 export class TradesService {
@@ -238,11 +235,11 @@ export class TradesService {
       );
     }
 
-    const amount = toBI(dto.amount);
-    if (ad.minAmount && amount < ad.minAmount) {
+    const amount = new Prisma.Decimal(dto.amount);
+    if (ad.minAmount && amount.lt(ad.minAmount)) {
       throw new BadRequestException('Amount below minAmount');
     }
-    if (ad.maxAmount && amount > ad.maxAmount) {
+    if (ad.maxAmount && amount.gt(ad.maxAmount)) {
       throw new BadRequestException('Amount above maxAmount');
     }
 
@@ -251,9 +248,9 @@ export class TradesService {
       where: { adId: ad.id, releasedAt: null },
       _sum: { amount: true },
     });
-    const locked = lockSum._sum.amount ?? 0n;
-    const available = ad.poolAmount - locked;
-    if (amount > available)
+    const locked = lockSum._sum.amount ?? new Prisma.Decimal(0);
+    const available = ad.poolAmount.sub(locked) as Prisma.Decimal;
+    if (amount.gt(available))
       throw new BadRequestException('Insufficient liquidity');
 
     const secret = this.proofService.generateSecret();
@@ -338,6 +335,85 @@ export class TradesService {
     return result;
   }
 
+  async params(req: Request, tradeId: string) {
+    const reqUser = req.user;
+    if (!reqUser) throw new UnauthorizedException('Not authenticated');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: reqUser.sub },
+    });
+
+    if (!user) throw new UnauthorizedException('Unauthorized');
+
+    const trade = await this.prisma.trade.findFirst({
+      where: { id: tradeId },
+      select: {
+        id: true,
+        adId: true,
+        amount: true,
+        adLock: true,
+        status: true,
+        tradeUpdateLog: true,
+        bridgerAddress: true,
+        bridgerDstAddress: true,
+        adCreatorDstAddress: true,
+        adCreatorAddress: true,
+        route: {
+          select: {
+            fromToken: {
+              select: {
+                address: true,
+                chain: {
+                  select: {
+                    chainId: true,
+                    adManagerAddress: true,
+                    mmrId: true,
+                  },
+                },
+              },
+            },
+            toToken: {
+              select: {
+                address: true,
+                chain: {
+                  select: {
+                    chainId: true,
+                    orderPortalAddress: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!trade) throw new NotFoundException('Trade not found');
+
+    if (
+      getAddress(trade.bridgerAddress) !== getAddress(user.walletAddress) &&
+      getAddress(trade.adCreatorAddress) !== getAddress(user.walletAddress)
+    ) {
+      throw new ForbiddenException('Unauthorized');
+    }
+
+    return {
+      orderChainToken: getAddress(trade.route.toToken.address),
+      adChainToken: getAddress(trade.route.fromToken.address),
+      amount: trade.amount.toString(),
+      bridger: getAddress(trade.bridgerAddress),
+      orderChainId: trade.route.toToken.chain.chainId.toString(),
+      orderPortal: getAddress(trade.route.toToken.chain.orderPortalAddress),
+      orderRecipient: getAddress(trade.bridgerDstAddress),
+      adChainId: trade.route.fromToken.chain.chainId.toString(),
+      adManager: getAddress(trade.route.fromToken.chain.adManagerAddress),
+      adId: trade.adId,
+      adCreator: getAddress(trade.adCreatorAddress),
+      adRecipient: getAddress(trade.adCreatorDstAddress),
+      salt: uuidToBigInt(trade.id).toString(),
+    };
+  }
+
   async lockTrade(req: Request, tradeId: string) {
     const reqUser = req.user;
     if (!reqUser) throw new UnauthorizedException('Not authenticated');
@@ -408,7 +484,7 @@ export class TradesService {
       throw new BadRequestException('Trade is already locked');
     }
 
-    if (trade.adLock && trade.adLock.amount !== toBI(trade.amount.toString())) {
+    if (trade.adLock && !trade.adLock.amount.eq(trade.amount)) {
       throw new BadRequestException('AdLock amount mismatch');
     }
 
@@ -416,15 +492,15 @@ export class TradesService {
       await this.viemService.getLockForOrderRequestContractDetails({
         adChainId: trade.route.fromToken.chain.chainId,
         orderParams: {
-          orderChainToken: trade.route.toToken.address,
-          adChainToken: trade.route.fromToken.address,
+          orderChainToken: getAddress(trade.route.toToken.address),
+          adChainToken: getAddress(trade.route.fromToken.address),
           amount: trade.amount.toString(),
           bridger: getAddress(trade.bridgerAddress),
           orderChainId: trade.route.toToken.chain.chainId.toString(),
-          orderPortal: trade.route.toToken.chain.orderPortalAddress,
+          orderPortal: getAddress(trade.route.toToken.chain.orderPortalAddress),
           orderRecipient: getAddress(trade.bridgerDstAddress),
           adChainId: trade.route.fromToken.chain.chainId.toString(),
-          adManager: trade.route.fromToken.chain.adManagerAddress,
+          adManager: getAddress(trade.route.fromToken.chain.adManagerAddress),
           adId: trade.adId,
           adCreator: getAddress(trade.adCreatorAddress),
           adRecipient: getAddress(trade.adCreatorDstAddress),
@@ -533,7 +609,7 @@ export class TradesService {
     }
 
     const isAuthorized = this.viemService.verifyOrderSignature(
-      caller as `0x${string}`,
+      caller,
       trade.orderHash as `0x${string}`,
       dto.signature as `0x${string}`,
     );
@@ -575,14 +651,15 @@ export class TradesService {
     );
 
     const localRoot = await this.merkleService.getRoot(mmrId);
+    console.log(localRoot);
 
     const onChainRoot = await this.viemService.fetchOnChainRoot(isAdCreator, {
       chainId: isAdCreator
         ? trade.route.toToken.chain.chainId
         : trade.route.fromToken.chain.chainId,
       contractAddress: isAdCreator
-        ? (trade.route.toToken.chain.mmrId as `0x${string}`)
-        : (trade.route.fromToken.chain.mmrId as `0x${string}`),
+        ? (trade.route.toToken.chain.orderPortalAddress as `0x${string}`)
+        : (trade.route.fromToken.chain.adManagerAddress as `0x${string}`),
     });
 
     if (onChainRoot.toLowerCase() !== localRoot.toLowerCase()) {
@@ -752,12 +829,12 @@ export class TradesService {
     if (tradeLogUpdate.ctx == 'LOCKORDER') {
       await this.merkleService.append(
         trade.route.fromToken.chain.mmrId,
-        tradeLogUpdate.reqHash,
+        tradeLogUpdate.trade.orderHash,
       );
     } else if (tradeLogUpdate.ctx == 'CREATEORDER') {
       await this.merkleService.append(
         trade.route.toToken.chain.mmrId,
-        tradeLogUpdate.reqHash,
+        tradeLogUpdate.trade.orderHash,
       );
     }
 
@@ -788,6 +865,7 @@ export class TradesService {
     });
 
     return {
+      tradeId,
       success: true,
     };
   }
@@ -892,7 +970,7 @@ export class TradesService {
     const isAdCreator =
       caller === getAddress(authorizationLog.trade.adCreatorAddress);
 
-    await this.prisma.trade.update({
+    const updatedTrade = await this.prisma.trade.update({
       where: { id: authorizationLog.tradeId },
       data: {
         adCreatorClaimed: isAdCreator
@@ -901,6 +979,11 @@ export class TradesService {
         bridgerClaimed: !isAdCreator
           ? (true as boolean)
           : authorizationLog.trade.bridgerClaimed,
+        status:
+          (isAdCreator && authorizationLog.trade.bridgerClaimed) ||
+          (!isAdCreator && authorizationLog.trade.adCreatorClaimed)
+            ? ('COMPLETED' as const)
+            : undefined,
       },
     });
 
@@ -912,6 +995,7 @@ export class TradesService {
     console.log(dto);
 
     return {
+      tradeId: updatedTrade.id,
       success: true,
     };
   }

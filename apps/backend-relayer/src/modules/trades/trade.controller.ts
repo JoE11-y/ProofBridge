@@ -19,6 +19,7 @@ import {
   CreateTradeRequestContractResponseDto,
   ListTradesResponseDto,
   LockForOrderResponseDto,
+  OrderParamsResponseDto,
   QueryTradesDto,
   TradeResponseDto,
   UnlockOrderResponseDto,
@@ -56,23 +57,6 @@ export class TradesController {
   }
 
   @ApiBearerAuth()
-  @Post(':id/lock')
-  @UseGuards(UserJwtGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description:
-      'Locks a trade for order and returns the transaction data for blockchain execution',
-    type: LockForOrderResponseDto,
-  })
-  lock(
-    @Req() req: Request,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<LockForOrderResponseDto> {
-    return this.trades.lockTrade(req, id);
-  }
-
-  @ApiBearerAuth()
   @Post('create')
   @UseGuards(UserJwtGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -87,6 +71,38 @@ export class TradesController {
     @Body() dto: CreateTradeDto,
   ): Promise<CreateTradeRequestContractResponseDto> {
     return this.trades.create(req, dto);
+  }
+
+  @ApiBearerAuth()
+  @Get(':id/params')
+  @UseGuards(UserJwtGuard)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Trade parameters',
+    type: OrderParamsResponseDto,
+  })
+  params(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<OrderParamsResponseDto> {
+    return this.trades.params(req, id);
+  }
+
+  @ApiBearerAuth()
+  @Post(':id/lock')
+  @UseGuards(UserJwtGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Locks a trade for order and returns the transaction data for blockchain execution',
+    type: LockForOrderResponseDto,
+  })
+  lock(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<LockForOrderResponseDto> {
+    return this.trades.lockTrade(req, id);
   }
 
   @ApiBearerAuth()

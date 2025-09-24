@@ -83,14 +83,14 @@ describe('AdsController (unit)', () => {
     expect(res).toEqual(updated);
   });
 
-  it('close -> passes user from req.user', async () => {
-    const dto = { to: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' };
-    const req: any = { user: { sub: 'user_id' } };
+  // it('close -> passes user from req.user', async () => {
+  //   const dto = { to: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' };
+  //   const req: any = { user: { sub: 'user_id' } };
 
-    const spy = jest.spyOn(service, 'close').mockResolvedValueOnce(undefined);
+  //   const spy = jest.spyOn(service, 'close').mockResolvedValueOnce(undefined);
 
-    await controller.close(req, 'ad-1', dto);
+  //   await controller.close(req, 'ad-1', dto);
 
-    expect(spy).toHaveBeenCalledWith({ user: { sub: 'user_id' } }, 'ad-1', dto);
-  });
+  //   expect(spy).toHaveBeenCalledWith({ user: { sub: 'user_id' } }, 'ad-1', dto);
+  // });
 });

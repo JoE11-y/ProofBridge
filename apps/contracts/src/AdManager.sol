@@ -411,18 +411,18 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     /**
      * @notice Create a new liquidity ad to serve orders from `orderChainId`.
      * @dev Requires an existing token route for `(adToken, orderChainId)`.
-     * @param _signature Signature over the request hash.
-     * @param _token Unique token for the delegated action (prevents replay).
-     *  @param _timeToExpire Expiration time for the token (unix timestamp).
+     * @param signature Signature over the request hash.
+     * @param authToken Unique token for the delegated action (prevents replay).
+     *  @param timeToExpire Expiration time for the token (unix timestamp).
      *  @param adId Returned ad id (sequential).
      * @param adToken ERC20 token to escrow for payouts on this chain.
      * @param orderChainId Source chain id this ad intends to serve.
      * @param adRecipient Maker-defined recipient on the order chain (checked in {lockForOrder}).
      */
     function createAd(
-        bytes memory _signature,
-        bytes32 _token,
-        uint256 _timeToExpire,
+        bytes memory signature,
+        bytes32 authToken,
+        uint256 timeToExpire,
         string memory adId,
         address adToken,
         uint256 orderChainId,
@@ -439,13 +439,13 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
             revert AdManager__UsedAdId();
         }
 
-        bytes32 message = createAdRequestHash(adId, adToken, orderChainId, adRecipient, _token, _timeToExpire);
+        bytes32 message = createAdRequestHash(adId, adToken, orderChainId, adRecipient, authToken, timeToExpire);
 
         if (requestHashes[message]) {
             revert Admanager__RequestHashedProcessed();
         }
 
-        address signer = preAuthValidations(message, _token, _timeToExpire, _signature);
+        address signer = preAuthValidations(message, authToken, timeToExpire, signature);
 
         if (!managers[signer]) {
             revert Admanager__InvalidSigner();
@@ -461,6 +461,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
             open: true
         });
 
+        adIds[adId] = true;
         requestHashes[message] = true;
         emit AdCreated(adId, msg.sender, adToken, orderChainId);
     }
@@ -468,13 +469,13 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     /**
      * @notice Fund an existing ad with `amount` of its ERC20 token.
      * @dev Caller must be the ad's maker/owner.
-     * @param _signature Signature over the request hash.
-     * @param _token Unique token for the delegated action (prevents replay).
-     * @param _timeToExpire Expiration time for the token (unix timestamp).
+     * @param signature Signature over the request hash.
+     * @param authToken Unique token for the delegated action (prevents replay).
+     * @param timeToExpire Expiration time for the token (unix timestamp).
      * @param adId Ad id to fund.
      * @param amount Amount to deposit.
      */
-    function fundAd(bytes memory _signature, bytes32 _token, uint256 _timeToExpire, string memory adId, uint256 amount)
+    function fundAd(bytes memory signature, bytes32 authToken, uint256 timeToExpire, string memory adId, uint256 amount)
         external
         nonReentrant
     {
@@ -482,13 +483,13 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         if (!ad.open) revert AdManager__AdClosed();
         if (amount == 0) revert AdManager__ZeroAmount();
 
-        bytes32 message = fundAdRequestHash(adId, amount, _token, _timeToExpire);
+        bytes32 message = fundAdRequestHash(adId, amount, authToken, timeToExpire);
 
         if (requestHashes[message]) {
             revert Admanager__RequestHashedProcessed();
         }
 
-        address signer = preAuthValidations(message, _token, _timeToExpire, _signature);
+        address signer = preAuthValidations(message, authToken, timeToExpire, signature);
 
         if (!managers[signer]) {
             revert Admanager__InvalidSigner();
@@ -503,24 +504,24 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     /**
      * @notice Withdraw unfrozen liquidity from an ad.
      * @dev Caller must be the ad's maker/owner.
-     * @param _signature Signature over the request hash.
-     * @param _token Unique token for the delegated action (prevents replay).
-     * @param _timeToExpire Expiration time for the token (unix timestamp).
+     * @param signature Signature over the request hash.
+     * @param authToken Unique token for the delegated action (prevents replay).
+     * @param timeToExpire Expiration time for the token (unix timestamp).
      * @param adId Ad id to withdraw from.
      * @param amount Amount to withdraw.
      * @param to Recipient address for the withdrawn tokens.
      */
     function withdrawFromAd(
-        bytes memory _signature,
-        bytes32 _token,
-        uint256 _timeToExpire,
+        bytes memory signature,
+        bytes32 authToken,
+        uint256 timeToExpire,
         string memory adId,
         uint256 amount,
         address to
     ) external nonReentrant {
         Ad storage ad = __getAdOwned(adId, msg.sender);
 
-        bytes32 message = withdrawFromAdRequestHash(adId, amount, to, _token, _timeToExpire);
+        bytes32 message = withdrawFromAdRequestHash(adId, amount, to, authToken, timeToExpire);
 
         if (requestHashes[message]) {
             revert Admanager__RequestHashedProcessed();
@@ -528,7 +529,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
 
         if (to == address(0)) revert AdManager__RecipientZero();
 
-        address signer = preAuthValidations(message, _token, _timeToExpire, _signature);
+        address signer = preAuthValidations(message, authToken, timeToExpire, signature);
 
         if (amount == 0) revert AdManager__ZeroAmount();
 
@@ -553,7 +554,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param adId Ad id to close.
      * @param to Recipient of the remaining tokens.
      */
-    function closeAd(bytes memory _signature, bytes32 _token, uint256 _timeToExpire, string memory adId, address to)
+    function closeAd(bytes memory signature, bytes32 authToken, uint256 timeToExpire, string memory adId, address to)
         external
         nonReentrant
     {
@@ -561,13 +562,13 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         if (ad.locked != 0) revert Admanager__ActiveLocks(); // has active locks
         if (to == address(0)) revert AdManager__RecipientZero();
 
-        bytes32 message = closeAdRequestHash(adId, to, _token, _timeToExpire);
+        bytes32 message = closeAdRequestHash(adId, to, authToken, timeToExpire);
 
         if (requestHashes[message]) {
             revert Admanager__RequestHashedProcessed();
         }
 
-        address signer = preAuthValidations(message, _token, _timeToExpire, _signature);
+        address signer = preAuthValidations(message, authToken, timeToExpire, signature);
 
         if (!managers[signer]) {
             revert Admanager__InvalidSigner();
@@ -590,7 +591,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param params Order parameters (see {OrderParams}).
      * @return orderHash The EIP-712 order hash that identifies this reservation.
      */
-    function lockForOrder(bytes memory _signature, bytes32 _token, uint256 _timeToExpire, OrderParams calldata params)
+    function lockForOrder(bytes memory signature, bytes32 authToken, uint256 timeToExpire, OrderParams calldata params)
         external
         nonReentrant
         returns (bytes32 orderHash)
@@ -606,12 +607,12 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
 
         if (orders[orderHash] != Status.None) revert AdManager__OrderExists(orderHash);
 
-        bytes32 message = lockForOrderRequestHash(params.adId, orderHash, _token, _timeToExpire);
+        bytes32 message = lockForOrderRequestHash(params.adId, orderHash, authToken, timeToExpire);
 
         if (requestHashes[message]) {
             revert Admanager__RequestHashedProcessed();
         }
-        address signer = preAuthValidations(message, _token, _timeToExpire, _signature);
+        address signer = preAuthValidations(message, authToken, timeToExpire, signature);
 
         if (!managers[signer]) {
             revert Admanager__InvalidSigner();
@@ -645,9 +646,9 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param proof zk-proof bytes for the external verifier.
      */
     function unlock(
-        bytes memory _signature,
-        bytes32 _token,
-        uint256 _timeToExpire,
+        bytes memory signature,
+        bytes32 authToken,
+        uint256 timeToExpire,
         OrderParams calldata params,
         bytes32 nullifierHash,
         bytes32 targetRoot,
@@ -658,13 +659,13 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         if (orders[orderHash] != Status.Open) revert AdManager__OrderNotOpen(orderHash);
         if (nullifierUsed[nullifierHash]) revert AdManager__NullifierUsed(nullifierHash);
 
-        bytes32 message = unlockOrderRequestHash(params.adId, orderHash, targetRoot, _token, _timeToExpire);
+        bytes32 message = unlockOrderRequestHash(params.adId, orderHash, targetRoot, authToken, timeToExpire);
 
         if (requestHashes[message]) {
             revert Admanager__RequestHashedProcessed();
         }
 
-        address signer = preAuthValidations(message, _token, _timeToExpire, _signature);
+        address signer = preAuthValidations(message, authToken, timeToExpire, signature);
 
         if (!managers[signer]) {
             revert Admanager__InvalidSigner();
@@ -726,12 +727,12 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     /**
      * @notice Validates the message and signature
      * @param _message The message that the user signed
-     * @param _token The unique token for the delegated action
-     * @param _timeToExpire The time to expire the token
-     * @param _signature Signature
+     * @param authToken The unique token for the delegated action
+     * @param timeToExpire The time to expire the token
+     * @param signature Signature
      * @return address Signer of the message
      */
-    function preAuthValidations(bytes32 _message, bytes32 _token, uint256 _timeToExpire, bytes memory _signature)
+    function preAuthValidations(bytes32 _message, bytes32 authToken, uint256 timeToExpire, bytes memory signature)
         internal
         returns (address)
     {
@@ -739,21 +740,21 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
             revert AdManager__InvalidMessage();
         }
 
-        if (requestTokens[_token]) {
+        if (requestTokens[authToken]) {
             revert AdManager__TokenAlreadyUsed();
         }
 
-        if (block.timestamp > _timeToExpire) {
+        if (block.timestamp > timeToExpire) {
             revert AdManager__RequestTokenExpired();
         }
 
-        address signer = getSigner(_message, _signature);
+        address signer = getSigner(_message, signature);
 
         if (signer == address(0)) {
             revert Admanage__ZeroSigner();
         }
 
-        requestTokens[_token] = true;
+        requestTokens[authToken] = true;
 
         return signer;
     }
@@ -784,18 +785,18 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
 
     /**
      * @notice Hash a request for pre-authorization
-     * @param _token Unique token for the delegated action
-     * @param _timeToExpire The time to expire the token
+     * @param authToken Unique token for the delegated action
+     * @param timeToExpire The time to expire the token
      * @param _action The action to be performed
      * @param _params Encoded parameters for the action
      * @return bytes32 The hash of the request
      */
-    function hashRequest(bytes32 _token, uint256 _timeToExpire, string memory _action, bytes[] memory _params)
+    function hashRequest(bytes32 authToken, uint256 timeToExpire, string memory _action, bytes[] memory _params)
         public
         view
         returns (bytes32)
     {
-        return keccak256(abi.encode(_token, _timeToExpire, _action, _params, getChainID(), address(this)));
+        return keccak256(abi.encode(authToken, timeToExpire, _action, _params, getChainID(), address(this)));
     }
 
     /**
@@ -881,8 +882,8 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param adToken The token address associated with the advertisement
      * @param orderChainId The chain ID where the order exists
      * @param adRecipient Address that will receive the advertisement
-     * @param _token Token identifier used in hash generation
-     * @param _timeToExpire Expiration timestamp for the request
+     * @param authToken Token identifier used in hash generation
+     * @param timeToExpire Expiration timestamp for the request
      * @return message The generated hash of the ad request
      */
     function createAdRequestHash(
@@ -890,8 +891,8 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         address adToken,
         uint256 orderChainId,
         address adRecipient,
-        bytes32 _token,
-        uint256 _timeToExpire
+        bytes32 authToken,
+        uint256 timeToExpire
     ) public view returns (bytes32 message) {
         string memory action = "createAd";
         bytes[] memory params = new bytes[](4);
@@ -899,19 +900,19 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         params[1] = abi.encode(adToken);
         params[2] = abi.encode(orderChainId);
         params[3] = abi.encode(adRecipient);
-        message = hashRequest(_token, _timeToExpire, action, params);
+        message = hashRequest(authToken, timeToExpire, action, params);
     }
     /**
      * @notice Creates a hash of a fund ad request
      * @dev Uses hashRequest function to create a unique hash for funding an ad
      * @param adId The unique identifier of the advertisement
      * @param amount The funding amount for the advertisement
-     * @param _token The token hash identifier
-     * @param _timeToExpire The expiration time for the funding request
+     * @param authToken The token hash identifier
+     * @param timeToExpire The expiration time for the funding request
      * @return message The keccak256 hash of the request parameters
      */
 
-    function fundAdRequestHash(string memory adId, uint256 amount, bytes32 _token, uint256 _timeToExpire)
+    function fundAdRequestHash(string memory adId, uint256 amount, bytes32 authToken, uint256 timeToExpire)
         public
         view
         returns (bytes32 message)
@@ -920,7 +921,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         bytes[] memory params = new bytes[](2);
         params[0] = abi.encode(adId);
         params[1] = abi.encode(amount);
-        message = hashRequest(_token, _timeToExpire, action, params);
+        message = hashRequest(authToken, timeToExpire, action, params);
     }
 
     /**
@@ -929,23 +930,23 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param adId The unique identifier of the advertisement
      * @param amount The amount to withdraw
      * @param to The address that will receive the withdrawn funds
-     * @param _token The token address hash being used for the withdrawal
-     * @param _timeToExpire The timestamp when this request will expire
+     * @param authToken The token address hash being used for the withdrawal
+     * @param timeToExpire The timestamp when this request will expire
      * @return message The keccak256 hash of the encoded withdrawal request
      */
     function withdrawFromAdRequestHash(
         string memory adId,
         uint256 amount,
         address to,
-        bytes32 _token,
-        uint256 _timeToExpire
+        bytes32 authToken,
+        uint256 timeToExpire
     ) public view returns (bytes32 message) {
         string memory action = "withdrawFromAd";
         bytes[] memory params = new bytes[](3);
         params[0] = abi.encode(adId);
         params[1] = abi.encode(amount);
         params[2] = abi.encode(to);
-        message = hashRequest(_token, _timeToExpire, action, params);
+        message = hashRequest(authToken, timeToExpire, action, params);
     }
 
     /**
@@ -953,11 +954,11 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @dev Combines the ad ID, recipient address, token and expiry time into a standardized hash format
      * @param adId The unique identifier of the advertisement
      * @param to The address that will receive the advertisement closure confirmation
-     * @param _token The token associated with this request
-     * @param _timeToExpire The timestamp when this request will expire
+     * @param authToken The token associated with this request
+     * @param timeToExpire The timestamp when this request will expire
      * @return message The generated hash of the close advertisement request
      */
-    function closeAdRequestHash(string memory adId, address to, bytes32 _token, uint256 _timeToExpire)
+    function closeAdRequestHash(string memory adId, address to, bytes32 authToken, uint256 timeToExpire)
         public
         view
         returns (bytes32 message)
@@ -966,7 +967,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         bytes[] memory params = new bytes[](2);
         params[0] = abi.encode(adId);
         params[1] = abi.encode(to);
-        message = hashRequest(_token, _timeToExpire, action, params);
+        message = hashRequest(authToken, timeToExpire, action, params);
     }
 
     /**
@@ -974,11 +975,11 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @dev Creates a hash combining the ad ID, order hash, token and expiry time
      * @param adId The unique identifier of the advertisement
      * @param orderHash The hash of the order for which the ad should be locked
-     * @param _token The token associated with this request
-     * @param _timeToExpire The timestamp when this request will expire
+     * @param authToken The token associated with this request
+     * @param timeToExpire The timestamp when this request will expire
      * @return message The generated hash of the lock advertisement request
      */
-    function lockForOrderRequestHash(string memory adId, bytes32 orderHash, bytes32 _token, uint256 _timeToExpire)
+    function lockForOrderRequestHash(string memory adId, bytes32 orderHash, bytes32 authToken, uint256 timeToExpire)
         public
         view
         returns (bytes32 message)
@@ -987,7 +988,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         bytes[] memory params = new bytes[](2);
         params[0] = abi.encode(adId);
         params[1] = abi.encode(orderHash);
-        message = hashRequest(_token, _timeToExpire, action, params);
+        message = hashRequest(authToken, timeToExpire, action, params);
     }
 
     /**
@@ -996,23 +997,23 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param adId The unique identifier of the advertisement
      * @param orderHash The hash of the order to unlock
      * @param _targetRoot The merkle root for verification
-     * @param _token The token associated with this request
-     * @param _timeToExpire The timestamp when this request will expire
+     * @param authToken The token associated with this request
+     * @param timeToExpire The timestamp when this request will expire
      * @return message The generated hash of the unlock order request
      */
     function unlockOrderRequestHash(
         string memory adId,
         bytes32 orderHash,
         bytes32 _targetRoot,
-        bytes32 _token,
-        uint256 _timeToExpire
+        bytes32 authToken,
+        uint256 timeToExpire
     ) public view returns (bytes32 message) {
         string memory action = "unlockOrder";
         bytes[] memory params = new bytes[](3);
         params[0] = abi.encode(adId);
         params[1] = abi.encode(orderHash);
         params[2] = abi.encode(_targetRoot);
-        message = hashRequest(_token, _timeToExpire, action, params);
+        message = hashRequest(authToken, timeToExpire, action, params);
     }
 
     /*//////////////////////////////////////////////////////////////

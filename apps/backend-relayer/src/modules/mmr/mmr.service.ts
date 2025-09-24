@@ -6,6 +6,7 @@ import { PrismaService } from '@prisma/prisma.service';
 import path from 'path';
 import fs from 'fs';
 import LevelDB from './store/LevelDB';
+import { TREE_METADATA_KEYS } from '@accumulators/merkle-mountain-range';
 
 type MmrId = string;
 
@@ -30,9 +31,11 @@ export class MMRService implements OnModuleDestroy {
     await this.ensureMmrExists(mmrId);
     await this.ensureStoreReady();
     await this.ensureOrderNotExists(mmrId, valueHex);
+    await this.seedMMRCounters(mmrId);
 
     const mmr = this.getMmr(mmrId);
     const x = this.hashToField(valueHex);
+
     const { elementIndex } = await mmr.append(x.toString());
 
     await this.prisma.orderRecord.create({
@@ -50,7 +53,12 @@ export class MMRService implements OnModuleDestroy {
     await this.ensureMmrExists(mmrId);
     await this.ensureStoreReady();
     const exists = await this.prisma.orderRecord.findUnique({
-      where: { orderHash, mmrId },
+      where: {
+        mmrId_orderHash: {
+          mmrId,
+          orderHash,
+        },
+      },
       select: { elementIndex: true },
     });
     if (!exists) {
@@ -130,8 +138,13 @@ export class MMRService implements OnModuleDestroy {
 
   private async ensureOrderNotExists(mmrId: MmrId, orderHashHex: string) {
     const existing = await this.prisma.orderRecord.findUnique({
-      where: { orderHash: orderHashHex, mmrId },
-      select: { orderHash: true },
+      where: {
+        mmrId_orderHash: {
+          mmrId,
+          orderHash: orderHashHex,
+        },
+      },
+      select: { elementIndex: true },
     });
     if (existing) {
       throw new Error(`Order ${orderHashHex} already exists in MMR ${mmrId}`);
@@ -142,5 +155,19 @@ export class MMRService implements OnModuleDestroy {
     const hex = valueHex.startsWith('0x') ? valueHex.slice(2) : valueHex;
     const buff = Buffer.from(hex, 'hex');
     return Fr.fromBufferReduce(buff);
+  }
+
+  private async seedMMRCounters(mmrId: MmrId): Promise<void> {
+    if (!this.store) throw new Error('Store not initialized');
+    const store = this.store;
+
+    const keys = [
+      `${mmrId}:${TREE_METADATA_KEYS.LEAF_COUNT}`,
+      `${mmrId}:${TREE_METADATA_KEYS.ELEMENT_COUNT}`,
+    ];
+
+    for (const k of keys) {
+      await store.set(k, '0');
+    }
   }
 }
