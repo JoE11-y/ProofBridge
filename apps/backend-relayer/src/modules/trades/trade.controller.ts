@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { TradesService } from './trade.service';
 import {
-  ConfirmChainActionResponseDto,
+  ConfirmChainActionTradeResponseDto,
   ConfirmTradeActionDto,
   CreateTradeDto,
   CreateTradeRequestContractResponseDto,
@@ -131,13 +131,13 @@ export class TradesController {
     status: HttpStatus.OK,
     description:
       'Confirms the unlock action on a trade and returns the transaction data for blockchain execution',
-    type: ConfirmChainActionResponseDto,
+    type: ConfirmChainActionTradeResponseDto,
   })
   confirmUnlockChainAction(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ConfirmTradeActionDto,
-  ): Promise<ConfirmChainActionResponseDto> {
+  ): Promise<ConfirmChainActionTradeResponseDto> {
     return this.trades.confirmUnlockChainAction(req, id, dto);
   }
 
@@ -148,13 +148,13 @@ export class TradesController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Confirms a chain action for a trade',
-    type: ConfirmChainActionResponseDto,
+    type: ConfirmChainActionTradeResponseDto,
   })
   confirmChainAction(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ConfirmTradeActionDto,
-  ): Promise<ConfirmChainActionResponseDto> {
+  ): Promise<ConfirmChainActionTradeResponseDto> {
     return this.trades.confirmChainAction(req, id, dto);
   }
 }

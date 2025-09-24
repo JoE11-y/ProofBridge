@@ -26,7 +26,7 @@ import {
   CreateAdResponseDto,
   FundAdResponseDto,
   WithdrawAdResponseDto,
-  ConfirmChainActionResponseDto,
+  ConfirmChainActionADResponseDto,
   AdUpdateResponseDto,
   CloseAdResponseDto,
 } from '../ads/dto/ad.dto';
@@ -118,13 +118,13 @@ export class AdsController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Confirms a chain action for an ad',
-    type: ConfirmChainActionResponseDto,
+    type: ConfirmChainActionADResponseDto,
   })
   confirmUpdate(
     @Req() req: Request,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ConfirmAdActionDto,
-  ): Promise<ConfirmChainActionResponseDto> {
+  ): Promise<ConfirmChainActionADResponseDto> {
     return this.ads.confirmChainAction(req, id, dto);
   }
 
