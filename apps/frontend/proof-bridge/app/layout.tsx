@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
 import localFont from "next/font/local"
 import "./globals.css"
 import "@rainbow-me/rainbowkit/styles.css"
@@ -8,6 +7,7 @@ import { SmoothScroll } from "@/components/shared/SmoothScroller"
 import { TanstackQueryProvider } from "@/components/providers/TanstackProvider"
 import { Wagmi } from "@/components/providers/Wagmi"
 import { RainbowKit } from "@/components/providers/RainbowKit"
+import { Toaster } from "@/components/ui/sonner"
 
 const perfectlyNineties = localFont({
   src: [
@@ -52,6 +52,7 @@ export default function RootLayout({
               <AntConfigProvider>
                 <SmoothScroll>{children}</SmoothScroll>
               </AntConfigProvider>
+              <Toaster />
             </RainbowKit>
           </TanstackQueryProvider>
         </Wagmi>
