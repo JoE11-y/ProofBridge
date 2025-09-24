@@ -402,7 +402,7 @@ export class WithdrawAdResponseDto {
   reqHash!: `0x${string}`;
 }
 
-export class ConfirmChainActionResponseDto {
+export class ConfirmChainActionADResponseDto {
   @ApiProperty({
     type: String,
     format: 'uuid',
