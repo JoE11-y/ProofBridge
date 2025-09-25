@@ -125,6 +125,7 @@ export class ViemService {
     });
 
     return {
+      chainId: adChainId.toString(),
       contractAddress: adContractAddress,
       signature,
       authToken: token,
@@ -162,6 +163,7 @@ export class ViemService {
       message: { raw: message },
     });
     return {
+      chainId: adChainId.toString(),
       contractAddress: adContractAddress,
       signature,
       authToken: token,
@@ -197,6 +199,7 @@ export class ViemService {
       message: { raw: message },
     });
     return {
+      chainId: adChainId.toString(),
       contractAddress: adContractAddress,
       signature,
       authToken: token,
@@ -234,6 +237,7 @@ export class ViemService {
     });
 
     return {
+      chainId: adChainId.toString(),
       contractAddress: adContractAddress,
       signature,
       authToken: token,
@@ -276,6 +280,7 @@ export class ViemService {
     ) as T_AdManagerOrderParams;
 
     return {
+      chainId: adChainId.toString(),
       contractAddress: orderParams.adManager,
       signature,
       authToken: token,
@@ -316,6 +321,7 @@ export class ViemService {
     const params = buildOrderParams(orderParams, false) as T_OrderPortalParams;
 
     return {
+      chainId: orderChainId.toString(),
       contractAddress: orderParams.orderPortal,
       signature,
       authToken: token,
@@ -446,6 +452,7 @@ export class ViemService {
     const params = buildOrderParams(orderParams, !isAdCreator);
 
     return {
+      chainId: chainId.toString(),
       contractAddress,
       signature,
       authToken: token,

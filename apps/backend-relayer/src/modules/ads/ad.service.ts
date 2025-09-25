@@ -233,6 +233,18 @@ export class AdsService {
       JSON.stringify(dto.metadata || {}),
     ) as Prisma.JsonObject;
 
+    const minAmount = dto.minAmount
+      ? new Prisma.Decimal(dto.minAmount)
+      : new Prisma.Decimal(0);
+
+    const maxAmount = dto.maxAmount
+      ? new Prisma.Decimal(dto.maxAmount)
+      : new Prisma.Decimal(0);
+
+    if (minAmount && maxAmount && maxAmount.lt(minAmount)) {
+      throw new BadRequestException('maxAmount must be greater than minAmount');
+    }
+
     const requestDetails = await this.prisma.$transaction(async (prisma) => {
       const ad = await prisma.ad.create({
         data: {
@@ -244,6 +256,8 @@ export class AdsService {
           metadata: jsonData,
           status: 'INACTIVE',
           poolAmount: 0,
+          minAmount: minAmount.gt(0) ? minAmount : null,
+          maxAmount: maxAmount.gt(0) ? maxAmount : null,
         },
         select: {
           id: true,

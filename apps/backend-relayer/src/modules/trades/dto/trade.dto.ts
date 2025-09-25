@@ -314,6 +314,12 @@ export class AdManagerOrderParamsDto {
 
 export class LockForOrderResponseDto {
   @ApiProperty({
+    description: 'Blockchain chain ID where the order contract is deployed',
+    example: '1',
+  })
+  chainId!: string;
+
+  @ApiProperty({
     example: '0x1234567890abcdef',
     description: 'Contract address',
   })
@@ -442,6 +448,12 @@ export class OrderPortalParamsDto {
 
 export class CreateOrderRequestContractDetailsDto {
   @ApiProperty({
+    description: 'Blockchain chain ID where the order contract is deployed',
+    example: '1',
+  })
+  chainId!: string;
+
+  @ApiProperty({
     example: '0x1234567890abcdef',
     description: 'Contract address',
   })
@@ -504,6 +516,12 @@ export class CreateTradeRequestContractResponseDto {
 }
 
 export class UnlockOrderResponseDto {
+  @ApiProperty({
+    description: 'Blockchain chain ID where the order/ad contract is deployed',
+    example: '1',
+  })
+  chainId!: string;
+
   @ApiProperty({
     example: '0x1234567890abcdef',
     description: 'Contract address',

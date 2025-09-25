@@ -69,6 +69,24 @@ export class CreateAdDto {
   creatorDstAddress!: string;
 
   @ApiPropertyOptional({
+    pattern: '^d+$',
+    description: 'Minimum amount for the ad (in smallest unit)',
+    example: '100000000000000000',
+  })
+  @IsOptional()
+  @Matches(/^\d+$/)
+  minAmount?: string;
+
+  @ApiPropertyOptional({
+    pattern: '^d+$',
+    description: 'Maximum amount for the ad (in smallest unit)',
+    example: '5000000000000000000',
+  })
+  @IsOptional()
+  @Matches(/^\d+$/)
+  maxAmount?: string;
+
+  @ApiPropertyOptional({
     type: Object,
     description: 'Additional metadata for the ad',
     example: { title: 'My Ad', description: 'Ad description' },
@@ -249,6 +267,12 @@ export class ListAdResponseDto {
 
 export class CreateAdResponseDto {
   @ApiProperty({
+    description: 'Blockchain chain ID where the ad contract is deployed',
+    example: '1',
+  })
+  chainId!: string;
+
+  @ApiProperty({
     description: 'Contract address for the advertisement',
     example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
   })
@@ -306,6 +330,12 @@ export class CreateAdResponseDto {
 }
 export class FundAdResponseDto {
   @ApiProperty({
+    description: 'Blockchain chain ID where the ad contract is deployed',
+    example: '1',
+  })
+  chainId!: string;
+
+  @ApiProperty({
     description: 'Contract address for the advertisement',
     example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
   })
@@ -351,6 +381,12 @@ export class FundAdResponseDto {
 }
 
 export class WithdrawAdResponseDto {
+  @ApiProperty({
+    description: 'Blockchain chain ID where the ad contract is deployed',
+    example: '1',
+  })
+  chainId!: string;
+
   @ApiProperty({
     description: 'Contract address for the advertisement',
     example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
@@ -453,6 +489,12 @@ export class AdUpdateResponseDto {
 }
 
 export class CloseAdResponseDto {
+  @ApiProperty({
+    description: 'Blockchain chain ID where the ad contract is deployed',
+    example: '1',
+  })
+  chainId!: string;
+
   @ApiProperty({
     description: 'Contract address for the advertisement',
     example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
