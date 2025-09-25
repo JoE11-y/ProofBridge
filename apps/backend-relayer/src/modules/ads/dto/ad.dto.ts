@@ -206,10 +206,10 @@ export class AdResponseDto {
   routeId!: string;
 
   @ApiProperty({ description: 'Token ID for the source/input token' })
-  fromTokenId!: string;
+  adTokenId!: string;
 
   @ApiProperty({ description: 'Token ID for the target/output token' })
-  toTokenId!: string;
+  orderTokenId!: string;
 
   @ApiProperty({
     pattern: '^d+$',

@@ -20,7 +20,7 @@ import { ApiResponse, ApiTags } from '@nestjs/swagger';
 export class RoutesController {
   constructor(private readonly routes: RoutesService) {}
 
-  // GET /v1/routes?fromTokenId&toTokenId&fromChainId&toChainId&symbol&limit&cursor
+  // GET /v1/routes?adTokenId&orderTokenId&adChainId&orderChainId&symbol&limit&cursor
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiResponse({

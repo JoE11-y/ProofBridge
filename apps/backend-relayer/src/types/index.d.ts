@@ -37,7 +37,7 @@ type RouteRow = {
   metadata: Prisma.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
-  fromToken: {
+  adToken: {
     id: string;
     symbol: string;
     name: string;
@@ -46,7 +46,7 @@ type RouteRow = {
     kind: string;
     chain: { id: string; name: string; chainId: bigint };
   };
-  toToken: {
+  orderToken: {
     id: string;
     symbol: string;
     name: string;

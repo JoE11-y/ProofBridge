@@ -179,8 +179,8 @@ describe('AdminController (unit)', () => {
 
   it('createRoute() -> delegates to service', async () => {
     const dto = {
-      fromTokenId: randomUUID(),
-      toTokenId: randomUUID(),
+      adTokenId: randomUUID(),
+      orderTokenId: randomUUID(),
       metadata: {
         totalTrades: 1000,
         totalVolume: '5000000',
@@ -193,8 +193,8 @@ describe('AdminController (unit)', () => {
       id: randomUUID(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      fromToken: {} as any,
-      toToken: {} as any,
+      adToken: {} as any,
+      orderToken: {} as any,
       ...dto,
     };
 

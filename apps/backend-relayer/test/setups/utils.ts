@@ -92,11 +92,11 @@ export const loginAsAdmin = async (app: INestApplication<any>) => {
 
 export const seedRoute = async (
   prisma: PrismaClient,
-  fromTokenId: string,
-  toTokenId: string,
+  adTokenId: string,
+  orderTokenId: string,
 ) => {
   return prisma.route.create({
-    data: { fromTokenId, toTokenId },
+    data: { adTokenId, orderTokenId },
     select: { id: true },
   });
 };
@@ -166,16 +166,16 @@ export const seedAd = async (
   prisma: PrismaClient,
   creator: string,
   routeId: string,
-  fromTokenId: string,
-  toTokenId: string,
+  adTokenId: string,
+  orderTokenId: string,
   pool = 1_000_000,
 ) =>
   prisma.ad.create({
     data: {
       creatorAddress: creator,
       routeId,
-      fromTokenId,
-      toTokenId,
+      adTokenId,
+      orderTokenId,
       poolAmount: pool,
       status: 'INACTIVE',
       creatorDstAddress: creator,

@@ -46,12 +46,12 @@ export const seedDB = async (
     await prisma.route.createMany({
       data: [
         {
-          fromTokenId: token1.id,
-          toTokenId: token2.id,
+          adTokenId: token1.id,
+          orderTokenId: token2.id,
         },
         {
-          fromTokenId: token2.id,
-          toTokenId: token1.id,
+          adTokenId: token2.id,
+          orderTokenId: token1.id,
         },
       ],
     });

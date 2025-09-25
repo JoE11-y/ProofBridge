@@ -49,7 +49,7 @@ export class QueryTradesDto {
   })
   @IsOptional()
   @IsUUID()
-  fromTokenId?: string;
+  adTokenId?: string;
 
   @ApiPropertyOptional({
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -57,7 +57,7 @@ export class QueryTradesDto {
   })
   @IsOptional()
   @IsUUID()
-  toTokenId?: string;
+  orderTokenId?: string;
 
   @ApiPropertyOptional({
     example: '1000',
@@ -173,10 +173,10 @@ export class RouteDto {
   id!: string;
 
   @ApiProperty()
-  fromToken!: TokenDto;
+  adToken!: TokenDto;
 
   @ApiProperty()
-  toToken!: TokenDto;
+  orderToken!: TokenDto;
 }
 
 export class AdDto {

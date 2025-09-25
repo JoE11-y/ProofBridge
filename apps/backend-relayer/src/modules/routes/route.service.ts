@@ -18,36 +18,36 @@ export class RoutesService {
     const cursor = query.cursor ? { id: query.cursor } : undefined;
 
     const where: {
-      fromTokenId?: string;
-      toTokenId?: string;
-      fromToken?: {
+      adTokenId?: string;
+      orderTokenId?: string;
+      adToken?: {
         chain?: { chainId: bigint };
         symbol?: { equals: string; mode: 'insensitive' };
       };
-      toToken?: {
+      orderToken?: {
         chain?: { chainId: bigint };
         symbol?: { equals: string; mode: 'insensitive' };
       };
       OR?: Array<{
-        fromToken?: { symbol: { equals: string; mode: 'insensitive' } };
-        toToken?: { symbol: { equals: string; mode: 'insensitive' } };
+        adToken?: { symbol: { equals: string; mode: 'insensitive' } };
+        orderToken?: { symbol: { equals: string; mode: 'insensitive' } };
       }>;
     } = {};
 
-    if (query.fromTokenId) where.fromTokenId = query.fromTokenId;
-    if (query.toTokenId) where.toTokenId = query.toTokenId;
+    if (query.adTokenId) where.adTokenId = query.adTokenId;
+    if (query.orderTokenId) where.orderTokenId = query.orderTokenId;
 
-    if (!query.fromTokenId && !query.toTokenId) {
-      const hasChainFilters = query.fromChainId && query.toChainId;
+    if (!query.adTokenId && !query.orderTokenId) {
+      const hasChainFilters = query.adChainId && query.orderChainId;
       if (hasChainFilters) {
-        where.fromToken = {
-          chain: { chainId: BigInt(query.fromChainId!) },
+        where.adToken = {
+          chain: { chainId: BigInt(query.adChainId!) },
           ...(query.symbol
             ? { symbol: { equals: query.symbol, mode: 'insensitive' } }
             : {}),
         };
-        where.toToken = {
-          chain: { chainId: BigInt(query.toChainId!) },
+        where.orderToken = {
+          chain: { chainId: BigInt(query.orderChainId!) },
           ...(query.symbol
             ? { symbol: { equals: query.symbol, mode: 'insensitive' } }
             : {}),
@@ -56,12 +56,14 @@ export class RoutesService {
         // If only symbol supplied, match either side containing symbol
         where.OR = [
           {
-            fromToken: {
+            adToken: {
               symbol: { equals: query.symbol, mode: 'insensitive' },
             },
           },
           {
-            toToken: { symbol: { equals: query.symbol, mode: 'insensitive' } },
+            orderToken: {
+              symbol: { equals: query.symbol, mode: 'insensitive' },
+            },
           },
         ];
       }
@@ -77,7 +79,7 @@ export class RoutesService {
         metadata: true,
         createdAt: true,
         updatedAt: true,
-        fromToken: {
+        adToken: {
           select: {
             id: true,
             symbol: true,
@@ -88,7 +90,7 @@ export class RoutesService {
             chain: { select: { id: true, name: true, chainId: true } },
           },
         },
-        toToken: {
+        orderToken: {
           select: {
             id: true,
             symbol: true,
@@ -119,7 +121,7 @@ export class RoutesService {
         metadata: true,
         createdAt: true,
         updatedAt: true,
-        fromToken: {
+        adToken: {
           select: {
             id: true,
             symbol: true,
@@ -130,7 +132,7 @@ export class RoutesService {
             chain: { select: { id: true, name: true, chainId: true } },
           },
         },
-        toToken: {
+        orderToken: {
           select: {
             id: true,
             symbol: true,
@@ -148,18 +150,18 @@ export class RoutesService {
   }
 
   async create(dto: CreateRouteDto) {
-    if (dto.fromTokenId === dto.toTokenId) {
+    if (dto.adTokenId === dto.orderTokenId) {
       throw new BadRequestException('Self-routes are not allowed');
     }
 
     // Ensure tokens exist
     const [fromExists, toExists] = await Promise.all([
       this.prisma.token.findUnique({
-        where: { id: dto.fromTokenId },
+        where: { id: dto.adTokenId },
         select: { id: true },
       }),
       this.prisma.token.findUnique({
-        where: { id: dto.toTokenId },
+        where: { id: dto.orderTokenId },
         select: { id: true },
       }),
     ]);
@@ -175,8 +177,8 @@ export class RoutesService {
     try {
       const row = await this.prisma.route.create({
         data: {
-          fromTokenId: dto.fromTokenId,
-          toTokenId: dto.toTokenId,
+          adTokenId: dto.adTokenId,
+          orderTokenId: dto.orderTokenId,
           metadata: jsonData,
         },
         select: {
@@ -184,7 +186,7 @@ export class RoutesService {
           metadata: true,
           createdAt: true,
           updatedAt: true,
-          fromToken: {
+          adToken: {
             select: {
               id: true,
               symbol: true,
@@ -195,7 +197,7 @@ export class RoutesService {
               chain: { select: { id: true, name: true, chainId: true } },
             },
           },
-          toToken: {
+          orderToken: {
             select: {
               id: true,
               symbol: true,
@@ -210,7 +212,7 @@ export class RoutesService {
       });
       return this.serialize(row as RouteRow);
     } catch (e: any) {
-      // P2002 = unique (fromTokenId, toTokenId)
+      // P2002 = unique (adTokenId, orderTokenId)
       if (e?.code === 'P2002')
         throw new ConflictException('Route already exists');
       // P2003 = FK failure
@@ -235,30 +237,30 @@ export class RoutesService {
       metadata: payload,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
-      fromToken: {
-        id: row.fromToken.id,
-        symbol: row.fromToken.symbol,
-        name: row.fromToken.name,
-        address: row.fromToken.address,
-        decimals: row.fromToken.decimals,
-        kind: row.fromToken.kind,
+      adToken: {
+        id: row.adToken.id,
+        symbol: row.adToken.symbol,
+        name: row.adToken.name,
+        address: row.adToken.address,
+        decimals: row.adToken.decimals,
+        kind: row.adToken.kind,
         chain: {
-          id: row.fromToken.chain.id,
-          name: row.fromToken.chain.name,
-          chainId: row.fromToken.chain.chainId.toString(),
+          id: row.adToken.chain.id,
+          name: row.adToken.chain.name,
+          chainId: row.adToken.chain.chainId.toString(),
         },
       },
-      toToken: {
-        id: row.toToken.id,
-        symbol: row.toToken.symbol,
-        name: row.toToken.name,
-        address: row.toToken.address,
-        decimals: row.toToken.decimals,
-        kind: row.toToken.kind,
+      orderToken: {
+        id: row.orderToken.id,
+        symbol: row.orderToken.symbol,
+        name: row.orderToken.name,
+        address: row.orderToken.address,
+        decimals: row.orderToken.decimals,
+        kind: row.orderToken.kind,
         chain: {
-          id: row.toToken.chain.id,
-          name: row.toToken.chain.name,
-          chainId: row.toToken.chain.chainId.toString(),
+          id: row.orderToken.chain.id,
+          name: row.orderToken.chain.name,
+          chainId: row.orderToken.chain.chainId.toString(),
         },
       },
     };

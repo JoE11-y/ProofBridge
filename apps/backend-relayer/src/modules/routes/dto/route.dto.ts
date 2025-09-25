@@ -18,7 +18,7 @@ export class QueryRoutesDto {
   })
   @IsOptional()
   @IsUUID()
-  fromTokenId?: string;
+  adTokenId?: string;
 
   @ApiProperty({
     description: 'Destination token UUID',
@@ -27,7 +27,7 @@ export class QueryRoutesDto {
   })
   @IsOptional()
   @IsUUID()
-  toTokenId?: string;
+  orderTokenId?: string;
 
   @ApiProperty({
     description: 'Source chain ID',
@@ -36,7 +36,7 @@ export class QueryRoutesDto {
   })
   @IsOptional()
   @Matches(/^\d+$/)
-  fromChainId?: string;
+  adChainId?: string;
 
   @ApiProperty({
     description: 'Destination chain ID',
@@ -45,7 +45,7 @@ export class QueryRoutesDto {
   })
   @IsOptional()
   @Matches(/^\d+$/)
-  toChainId?: string;
+  orderChainId?: string;
 
   @ApiProperty({
     description: 'Token symbol',
@@ -87,14 +87,14 @@ export class CreateRouteDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsUUID()
-  fromTokenId!: string;
+  adTokenId!: string;
 
   @ApiProperty({
     description: 'Destination token UUID',
     example: '123e4567-e89b-12d3-a456-426614174001',
   })
   @IsUUID()
-  toTokenId!: string;
+  orderTokenId!: string;
 
   @ApiProperty({
     description: 'Additional metadata for the route',
@@ -156,10 +156,10 @@ export class RouteDataResponseDto {
   updatedAt!: string;
 
   @ApiProperty({ description: 'Source token information' })
-  fromToken!: TokenDto;
+  adToken!: TokenDto;
 
   @ApiProperty({ description: 'Destination token information' })
-  toToken!: TokenDto;
+  orderToken!: TokenDto;
 }
 
 export class ListRouteResponseDto {

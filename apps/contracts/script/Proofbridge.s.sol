@@ -9,6 +9,7 @@ import {AdManager} from "src/AdManager.sol";
 import {OrderPortal} from "src/OrderPortal.sol";
 import {IMerkleManager, MerkleManager} from "src/MerkleManager.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 
 contract Proofbridge is Script {
     function _envOrAddress(string memory key, address fallback_) internal view returns (address out) {
@@ -87,6 +88,10 @@ contract Proofbridge is Script {
         } else {
             console2.log("WARN: Skipping grantRole: sender lacks DEFAULT_ADMIN_ROLE");
         }
+
+        ERC20Mock testToken = new ERC20Mock();
+
+        console2.log("Deployed TestTOken : ", address(testToken));
 
         vm.stopBroadcast();
     }
