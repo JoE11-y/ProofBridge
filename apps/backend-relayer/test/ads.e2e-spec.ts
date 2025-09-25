@@ -3,63 +3,14 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { createTestingApp } from './setups/create-app';
-import { HDNodeWallet, Wallet } from 'ethers';
-import { seedChain, seedToken, seedRoute } from './setups/seed';
+import { Wallet } from 'ethers';
+import { seedChain, seedToken, seedRoute, loginUser } from './setups/utils';
 import { randomUUID } from 'crypto';
-import { SiweMessage } from 'siwe';
-
-interface ChallengeResponse {
-  nonce: string;
-  address: string;
-  expiresAt: string;
-  domain: string;
-  uri: string;
-}
 
 describe('Ads E2E', () => {
   let app: INestApplication;
   const prisma = new PrismaClient();
   const userWallet = Wallet.createRandom();
-
-  // login to get access token
-  const loginUser = async (wallet: HDNodeWallet) => {
-    // make challenge request
-    const challenge = await request(app.getHttpServer())
-      .post('/v1/auth/challenge')
-      .send({ address: wallet.address })
-      .expect(200);
-
-    const body = challenge.body as ChallengeResponse;
-
-    const nowIso = new Date().toISOString();
-    const expIso = new Date(Date.now() + 5 * 60_000).toISOString();
-
-    // build SIWE message
-    const msg = new SiweMessage({
-      domain: body.domain,
-      address: wallet.address,
-      statement: 'Sign in to ProofBridge',
-      uri: body.uri,
-      version: '1',
-      chainId: 1,
-      nonce: body.nonce,
-      issuedAt: nowIso,
-      expirationTime: expIso,
-    });
-
-    const message = msg.prepareMessage();
-
-    // sign message with wallet
-    const signature = await wallet.signMessage(message);
-
-    // send to login
-    const res = await request(app.getHttpServer())
-      .post('/v1/auth/login')
-      .send({ message, signature })
-      .expect(201);
-
-    return res.body.tokens.access as string;
-  };
 
   beforeAll(async () => {
     // Secrets for tests (align with your env loader)
@@ -84,14 +35,14 @@ describe('Ads E2E', () => {
 
   it('creates an ad, then fetches it', async () => {
     // seed chains/tokens/route (same symbol, cross-chain)
-    const base = await seedChain(prisma, { name: 'Basers', chainId: 845334n });
-    const eth = await seedChain(prisma, { name: 'Ethereum89', chainId: 165n });
-    const tBase = await seedToken(prisma, base.id, 'ETH');
-    const tEth = await seedToken(prisma, eth.id, 'ETH');
-    const route = await seedRoute(prisma, tBase.id, tEth.id);
+    const c1 = await seedChain(prisma);
+    const c2 = await seedChain(prisma);
+    const t1 = await seedToken(prisma, c1.id, 'ETH');
+    const t2 = await seedToken(prisma, c2.id, 'ETH');
+    const route = await seedRoute(prisma, t1.id, t2.id);
 
     // login
-    const access = await loginUser(userWallet);
+    const access = await loginUser(app, userWallet.privateKey as `0x${string}`);
 
     // create
     const create = await request(app.getHttpServer())
@@ -128,7 +79,7 @@ describe('Ads E2E', () => {
     const route = await seedRoute(prisma, tBase.id, tEth.id);
 
     // login
-    const access = await loginUser(userWallet);
+    const access = await loginUser(app, userWallet.privateKey as `0x${string}`);
 
     // create ad
     const created = await request(app.getHttpServer())
@@ -154,60 +105,81 @@ describe('Ads E2E', () => {
     );
   });
 
-  it('updates (top-up) and pauses an ad', async () => {
-    const base = await seedChain(prisma, { name: 'Base33', chainId: 845532n });
-    const eth = await seedChain(prisma, { name: 'Ethereum32', chainId: 32n });
-    const tBase = await seedToken(prisma, base.id, 'ETH');
-    const tEth = await seedToken(prisma, eth.id, 'ETH');
-    const route = await seedRoute(prisma, tBase.id, tEth.id);
+  it('makes top-up request', async () => {
+    const c1 = await seedChain(prisma);
+    const c2 = await seedChain(prisma);
+    const t1 = await seedToken(prisma, c1.id, 'ETH');
+    const t2 = await seedToken(prisma, c2.id, 'ETH');
+    const route = await seedRoute(prisma, t1.id, t2.id);
 
     // login
-    const access = await loginUser(userWallet);
+    const access = await loginUser(app, userWallet.privateKey as `0x${string}`);
 
     const create = await request(app.getHttpServer())
-      .post('/v1/ads')
+      .post('/v1/ads/create')
       .set('Authorization', `Bearer ${access}`)
-      .send({ routeId: route.id, poolAmount: '1000' })
+      .send({ routeId: route.id, creatorDstAddress: userWallet.address })
       .expect(201);
 
     const adId = create.body.id as string;
 
     // top-up pool
     const topup = await request(app.getHttpServer())
-      .patch(`/v1/ads/${adId}`)
+      .patch(`/v1/ads/${adId}/fund`)
       .set('Authorization', `Bearer ${access}`)
       .send({ poolAmountTopUp: '500' })
       .expect(200);
 
-    expect(topup.body.poolAmount).toBe('1500');
-    expect(topup.body.availableAmount).toBe('1500');
+    // returns a topup request
+    expect(topup.body).toMatchObject({
+      contractAddress: expect.any(String),
+      signature: expect.any(String),
+      authToken: expect.any(String),
+      timeToExpire: expect.any(Number),
+      adId: expect.any(String),
+      amount: expect.any(String),
+      reqHash: expect.any(String),
+    });
+  });
+
+  it('updates minAmount and maxAmount', async () => {
+    const c1 = await seedChain(prisma);
+    const c2 = await seedChain(prisma);
+    const t1 = await seedToken(prisma, c1.id, 'ETH');
+    const t2 = await seedToken(prisma, c2.id, 'ETH');
+    const route = await seedRoute(prisma, t1.id, t2.id);
+
+    // login
+    const access = await loginUser(app, userWallet.privateKey as `0x${string}`);
+
+    const create = await request(app.getHttpServer())
+      .post('/v1/ads/create')
+      .set('Authorization', `Bearer ${access}`)
+      .send({ routeId: route.id, creatorDstAddress: userWallet.address })
+      .expect(201);
+
+    const adId = create.body.id as string;
 
     // pause
-    const paused = await request(app.getHttpServer())
-      .patch(`/v1/ads/${adId}`)
+    const update = await request(app.getHttpServer())
+      .patch(`/v1/ads/${adId}/update`)
       .set('Authorization', `Bearer ${access}`)
-      .send({ status: 'PAUSED' })
+      .send({ minAmount: '1000', maxAmount: '100000' })
       .expect(200);
 
-    expect(paused.body.status).toBe('PAUSED');
-
-    // list by status
-    const listPaused = await request(app.getHttpServer())
-      .get('/v1/ads')
-      .query({ status: 'PAUSED' })
-      .expect(200);
-    expect(listPaused.body.data.map((a: any) => a.id)).toContain(adId);
+    expect(update.body.minAmount).toBe('1000');
+    expect(update.body.maxAmount).toBe('100000');
   });
 
   it('close (DELETE) marks ad CLOSED and GET shows it', async () => {
-    const base = await seedChain(prisma, { name: 'Base43', chainId: 844532n });
-    const eth = await seedChain(prisma, { name: 'Ethereum42', chainId: 432n });
-    const tBase = await seedToken(prisma, base.id, 'ETH');
-    const tEth = await seedToken(prisma, eth.id, 'ETH');
-    const route = await seedRoute(prisma, tBase.id, tEth.id);
+    const c1 = await seedChain(prisma);
+    const c2 = await seedChain(prisma);
+    const t1 = await seedToken(prisma, c1.id, 'ETH');
+    const t2 = await seedToken(prisma, c2.id, 'ETH');
+    const route = await seedRoute(prisma, t1.id, t2.id);
 
     // login
-    const access = await loginUser(userWallet);
+    const access = await loginUser(app, userWallet.privateKey as `0x${string}`);
 
     const create = await request(app.getHttpServer())
       .post('/v1/ads')
@@ -218,9 +190,10 @@ describe('Ads E2E', () => {
     const adId = create.body.id as string;
 
     await request(app.getHttpServer())
-      .delete(`/v1/ads/${adId}`)
+      .post(`/v1/ads/${adId}/close`)
       .set('Authorization', `Bearer ${access}`)
-      .expect(204);
+      .send({ to: userWallet.address })
+      .expect(200);
 
     const byId = await request(app.getHttpServer())
       .get(`/v1/ads/${adId}`)

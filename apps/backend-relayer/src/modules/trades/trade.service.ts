@@ -51,14 +51,14 @@ export class TradesService {
         route: {
           select: {
             id: true,
-            fromToken: {
+            adToken: {
               select: {
                 id: true,
                 symbol: true,
                 chain: { select: { name: true } },
               },
             },
-            toToken: {
+            orderToken: {
               select: {
                 id: true,
                 symbol: true,
@@ -89,10 +89,10 @@ export class TradesService {
       where.adCreatorAddress = getAddress(q.adCreatorAddress);
     if (q.bridgerAddress) where.bridgerAddress = getAddress(q.bridgerAddress);
 
-    if (q.fromTokenId || q.toTokenId) {
+    if (q.adTokenId || q.orderTokenId) {
       where.route = {
-        ...(q.fromTokenId && { fromTokenId: q.fromTokenId }),
-        ...(q.toTokenId && { toTokenId: q.toTokenId }),
+        ...(q.adTokenId && { adTokenId: q.adTokenId }),
+        ...(q.orderTokenId && { orderTokenId: q.orderTokenId }),
       };
     }
 
@@ -122,14 +122,14 @@ export class TradesService {
         route: {
           select: {
             id: true,
-            fromToken: {
+            adToken: {
               select: {
                 id: true,
                 symbol: true,
                 chain: { select: { name: true } },
               },
             },
-            toToken: {
+            orderToken: {
               select: {
                 id: true,
                 symbol: true,
@@ -181,7 +181,7 @@ export class TradesService {
           route: {
             select: {
               id: true,
-              toToken: {
+              orderToken: {
                 select: {
                   address: true,
                   chain: {
@@ -193,7 +193,7 @@ export class TradesService {
                   },
                 },
               },
-              fromToken: {
+              adToken: {
                 select: {
                   address: true,
                   chain: {
@@ -258,17 +258,17 @@ export class TradesService {
 
     const reqContractDetails =
       await this.viemService.getCreateOrderRequestContractDetails({
-        orderChainId: ad.route.toToken.chain.chainId,
+        orderChainId: ad.route.orderToken.chain.chainId,
         orderParams: {
-          orderChainToken: ad.route.toToken.address,
-          adChainToken: ad.route.fromToken.address,
+          orderChainToken: ad.route.orderToken.address,
+          adChainToken: ad.route.adToken.address,
           amount: amount.toString(),
           bridger: getAddress(user.walletAddress),
-          orderChainId: ad.route.toToken.chain.chainId.toString(),
-          orderPortal: ad.route.toToken.chain.orderPortalAddress,
+          orderChainId: ad.route.orderToken.chain.chainId.toString(),
+          orderPortal: ad.route.orderToken.chain.orderPortalAddress,
           orderRecipient: getAddress(dto.bridgerDstAddress),
-          adChainId: ad.route.fromToken.chain.chainId.toString(),
-          adManager: ad.route.fromToken.chain.adManagerAddress,
+          adChainId: ad.route.adToken.chain.chainId.toString(),
+          adManager: ad.route.adToken.chain.adManagerAddress,
           adId: ad.id,
           adCreator: getAddress(ad.creatorAddress),
           adRecipient: getAddress(ad.creatorDstAddress),
@@ -360,7 +360,7 @@ export class TradesService {
         adCreatorAddress: true,
         route: {
           select: {
-            fromToken: {
+            adToken: {
               select: {
                 address: true,
                 chain: {
@@ -372,7 +372,7 @@ export class TradesService {
                 },
               },
             },
-            toToken: {
+            orderToken: {
               select: {
                 address: true,
                 chain: {
@@ -398,15 +398,15 @@ export class TradesService {
     }
 
     return {
-      orderChainToken: getAddress(trade.route.toToken.address),
-      adChainToken: getAddress(trade.route.fromToken.address),
+      orderChainToken: getAddress(trade.route.orderToken.address),
+      adChainToken: getAddress(trade.route.adToken.address),
       amount: trade.amount.toString(),
       bridger: getAddress(trade.bridgerAddress),
-      orderChainId: trade.route.toToken.chain.chainId.toString(),
-      orderPortal: getAddress(trade.route.toToken.chain.orderPortalAddress),
+      orderChainId: trade.route.orderToken.chain.chainId.toString(),
+      orderPortal: getAddress(trade.route.orderToken.chain.orderPortalAddress),
       orderRecipient: getAddress(trade.bridgerDstAddress),
-      adChainId: trade.route.fromToken.chain.chainId.toString(),
-      adManager: getAddress(trade.route.fromToken.chain.adManagerAddress),
+      adChainId: trade.route.adToken.chain.chainId.toString(),
+      adManager: getAddress(trade.route.adToken.chain.adManagerAddress),
       adId: trade.adId,
       adCreator: getAddress(trade.adCreatorAddress),
       adRecipient: getAddress(trade.adCreatorDstAddress),
@@ -439,7 +439,7 @@ export class TradesService {
         adCreatorAddress: true,
         route: {
           select: {
-            fromToken: {
+            adToken: {
               select: {
                 address: true,
                 chain: {
@@ -451,7 +451,7 @@ export class TradesService {
                 },
               },
             },
-            toToken: {
+            orderToken: {
               select: {
                 address: true,
                 chain: {
@@ -490,17 +490,19 @@ export class TradesService {
 
     const reqContractDetails =
       await this.viemService.getLockForOrderRequestContractDetails({
-        adChainId: trade.route.fromToken.chain.chainId,
+        adChainId: trade.route.adToken.chain.chainId,
         orderParams: {
-          orderChainToken: getAddress(trade.route.toToken.address),
-          adChainToken: getAddress(trade.route.fromToken.address),
+          orderChainToken: getAddress(trade.route.orderToken.address),
+          adChainToken: getAddress(trade.route.adToken.address),
           amount: trade.amount.toString(),
           bridger: getAddress(trade.bridgerAddress),
-          orderChainId: trade.route.toToken.chain.chainId.toString(),
-          orderPortal: getAddress(trade.route.toToken.chain.orderPortalAddress),
+          orderChainId: trade.route.orderToken.chain.chainId.toString(),
+          orderPortal: getAddress(
+            trade.route.orderToken.chain.orderPortalAddress,
+          ),
           orderRecipient: getAddress(trade.bridgerDstAddress),
-          adChainId: trade.route.fromToken.chain.chainId.toString(),
-          adManager: getAddress(trade.route.fromToken.chain.adManagerAddress),
+          adChainId: trade.route.adToken.chain.chainId.toString(),
+          adManager: getAddress(trade.route.adToken.chain.adManagerAddress),
           adId: trade.adId,
           adCreator: getAddress(trade.adCreatorAddress),
           adRecipient: getAddress(trade.adCreatorDstAddress),
@@ -562,7 +564,7 @@ export class TradesService {
         bridgerClaimed: true,
         route: {
           select: {
-            fromToken: {
+            adToken: {
               select: {
                 address: true,
                 chain: {
@@ -574,7 +576,7 @@ export class TradesService {
                 },
               },
             },
-            toToken: {
+            orderToken: {
               select: {
                 address: true,
                 chain: {
@@ -639,9 +641,9 @@ export class TradesService {
 
     let mmrId: string;
     if (isAdCreator) {
-      mmrId = trade.route.toToken.chain.mmrId;
+      mmrId = trade.route.orderToken.chain.mmrId;
     } else {
-      mmrId = trade.route.fromToken.chain.mmrId;
+      mmrId = trade.route.adToken.chain.mmrId;
     }
 
     // get merkle proof
@@ -655,11 +657,11 @@ export class TradesService {
 
     const onChainRoot = await this.viemService.fetchOnChainRoot(isAdCreator, {
       chainId: isAdCreator
-        ? trade.route.toToken.chain.chainId
-        : trade.route.fromToken.chain.chainId,
+        ? trade.route.orderToken.chain.chainId
+        : trade.route.adToken.chain.chainId,
       contractAddress: isAdCreator
-        ? (trade.route.toToken.chain.orderPortalAddress as `0x${string}`)
-        : (trade.route.fromToken.chain.adManagerAddress as `0x${string}`),
+        ? (trade.route.orderToken.chain.orderPortalAddress as `0x${string}`)
+        : (trade.route.adToken.chain.adManagerAddress as `0x${string}`),
     });
 
     if (onChainRoot.toLowerCase() !== localRoot.toLowerCase()) {
@@ -691,23 +693,23 @@ export class TradesService {
     const requestContractDetails =
       await this.viemService.getUnlockOrderContractDetails({
         chainId: isAdCreator
-          ? trade.route.toToken.chain.chainId
-          : trade.route.fromToken.chain.chainId,
+          ? trade.route.orderToken.chain.chainId
+          : trade.route.adToken.chain.chainId,
         contractAddress: isAdCreator
-          ? (trade.route.toToken.chain.orderPortalAddress as `0x${string}`)
-          : (trade.route.fromToken.chain.adManagerAddress as `0x${string}`),
+          ? (trade.route.orderToken.chain.orderPortalAddress as `0x${string}`)
+          : (trade.route.adToken.chain.adManagerAddress as `0x${string}`),
         isAdCreator,
         orderParams: {
-          orderChainToken: trade.route.toToken.address as `0x${string}`,
-          adChainToken: trade.route.fromToken.address as `0x${string}`,
+          orderChainToken: trade.route.orderToken.address as `0x${string}`,
+          adChainToken: trade.route.adToken.address as `0x${string}`,
           amount: trade.amount.toString(),
           bridger: getAddress(trade.bridgerAddress),
-          orderChainId: trade.route.toToken.chain.chainId.toString(),
-          orderPortal: trade.route.toToken.chain
+          orderChainId: trade.route.orderToken.chain.chainId.toString(),
+          orderPortal: trade.route.orderToken.chain
             .orderPortalAddress as `0x${string}`,
           orderRecipient: getAddress(trade.bridgerDstAddress),
-          adChainId: trade.route.fromToken.chain.chainId.toString(),
-          adManager: trade.route.fromToken.chain
+          adChainId: trade.route.adToken.chain.chainId.toString(),
+          adManager: trade.route.adToken.chain
             .adManagerAddress as `0x${string}`,
           adId: trade.adId,
           adCreator: getAddress(trade.adCreatorAddress),
@@ -771,7 +773,7 @@ export class TradesService {
       select: {
         route: {
           select: {
-            fromToken: {
+            adToken: {
               select: {
                 chain: {
                   select: {
@@ -782,7 +784,7 @@ export class TradesService {
                 },
               },
             },
-            toToken: {
+            orderToken: {
               select: {
                 chain: {
                   select: {
@@ -803,8 +805,8 @@ export class TradesService {
     if (tradeLogUpdate.origin === 'AD_MANAGER') {
       // verify adLog
       const isValidated = await this.viemService.validateAdManagerRequest({
-        chainId: trade.route.fromToken.chain.chainId,
-        contractAddress: trade.route.fromToken.chain
+        chainId: trade.route.adToken.chain.chainId,
+        contractAddress: trade.route.adToken.chain
           .adManagerAddress as `0x${string}`,
         reqHash: tradeLogUpdate.reqHash as `0x${string}`,
       });
@@ -815,8 +817,8 @@ export class TradesService {
     } else {
       // verify orderPortal
       const isValidated = await this.viemService.validateOrderPortalRequest({
-        chainId: trade.route.toToken.chain.chainId,
-        contractAddress: trade.route.toToken.chain
+        chainId: trade.route.orderToken.chain.chainId,
+        contractAddress: trade.route.orderToken.chain
           .orderPortalAddress as `0x${string}`,
         reqHash: tradeLogUpdate.reqHash as `0x${string}`,
       });
@@ -828,12 +830,12 @@ export class TradesService {
 
     if (tradeLogUpdate.ctx == 'LOCKORDER') {
       await this.merkleService.append(
-        trade.route.fromToken.chain.mmrId,
+        trade.route.adToken.chain.mmrId,
         tradeLogUpdate.trade.orderHash,
       );
     } else if (tradeLogUpdate.ctx == 'CREATEORDER') {
       await this.merkleService.append(
-        trade.route.toToken.chain.mmrId,
+        trade.route.orderToken.chain.mmrId,
         tradeLogUpdate.trade.orderHash,
       );
     }
@@ -912,7 +914,7 @@ export class TradesService {
       select: {
         route: {
           select: {
-            fromToken: {
+            adToken: {
               select: {
                 chain: {
                   select: {
@@ -922,7 +924,7 @@ export class TradesService {
                 },
               },
             },
-            toToken: {
+            orderToken: {
               select: {
                 chain: {
                   select: {
@@ -942,8 +944,8 @@ export class TradesService {
     if (authorizationLog.origin === 'AD_MANAGER') {
       // verify log
       const isValidated = await this.viemService.validateAdManagerRequest({
-        chainId: trade.route.fromToken.chain.chainId,
-        contractAddress: trade.route.fromToken.chain
+        chainId: trade.route.adToken.chain.chainId,
+        contractAddress: trade.route.adToken.chain
           .adManagerAddress as `0x${string}`,
         reqHash: authorizationLog.reqHash as `0x${string}`,
       });
@@ -954,8 +956,8 @@ export class TradesService {
     } else {
       // verify log
       const isValidated = await this.viemService.validateOrderPortalRequest({
-        chainId: trade.route.toToken.chain.chainId,
-        contractAddress: trade.route.toToken.chain
+        chainId: trade.route.orderToken.chain.chainId,
+        contractAddress: trade.route.orderToken.chain
           .orderPortalAddress as `0x${string}`,
         reqHash: authorizationLog.reqHash as `0x${string}`,
       });

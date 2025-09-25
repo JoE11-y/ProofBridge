@@ -9,7 +9,7 @@ export const getRoutes = (
 ) =>
   request(app.getHttpServer())
     .get('/v1/routes')
-    .query({ fromChainId: fromId, toChainId: toId });
+    .query({ adChainId: fromId, orderChainId: toId });
 
 export const apiCreateAd = (
   app: INestApplication,

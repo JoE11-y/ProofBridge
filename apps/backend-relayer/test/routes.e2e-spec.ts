@@ -29,7 +29,7 @@ describe('Routes E2E', () => {
   it('POST /v1/routes requires admin auth', async () => {
     await request(app.getHttpServer())
       .post('/v1/admin/routes/create')
-      .send({ fromTokenId: 't1', toTokenId: 't2' })
+      .send({ adTokenId: 't1', orderTokenId: 't2' })
       .expect(403);
   });
 
@@ -47,20 +47,20 @@ describe('Routes E2E', () => {
       .post('/v1/admin/routes/create')
       .set('Authorization', `Bearer ${access}`)
       .send({
-        fromTokenId: t1.id,
-        toTokenId: t2.id,
+        adTokenId: t1.id,
+        orderTokenId: t2.id,
       })
       .expect(201);
 
     expect(create.body).toMatchObject({
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       id: expect.any(String),
-      fromToken: {
+      adToken: {
         id: t1.id,
         symbol: 'ETH',
         chain: { chainId: c1.chainId.toString() },
       },
-      toToken: {
+      orderToken: {
         id: t2.id,
         symbol: 'ETH',
         chain: { chainId: c2.chainId.toString() },
@@ -78,7 +78,7 @@ describe('Routes E2E', () => {
     // list by direct token ids
     const list = await request(app.getHttpServer())
       .get('/v1/routes')
-      .query({ fromTokenId: t1.id, toTokenId: t2.id })
+      .query({ adTokenId: t1.id, orderTokenId: t2.id })
       .expect(200);
     expect(list.body.data.map((r: any) => r.id)).toContain(routeId);
   });
@@ -93,14 +93,14 @@ describe('Routes E2E', () => {
     const created = await request(app.getHttpServer())
       .post('/v1/admin/routes/create')
       .set('Authorization', `Bearer ${access}`)
-      .send({ fromTokenId: tBase.id, toTokenId: tMain.id })
+      .send({ adTokenId: tBase.id, orderTokenId: tMain.id })
       .expect(201);
 
     const list = await request(app.getHttpServer())
       .get('/v1/routes')
       .query({
-        fromChainId: base.chainId.toString(),
-        toChainId: main.chainId.toString(),
+        adChainId: base.chainId.toString(),
+        orderChainId: main.chainId.toString(),
         symbol: 'ETH',
       })
       .expect(200);
@@ -116,7 +116,7 @@ describe('Routes E2E', () => {
     await request(app.getHttpServer())
       .post('/v1/admin/routes/create')
       .set('Authorization', `Bearer ${access}`)
-      .send({ fromTokenId: tok.id, toTokenId: tok.id })
+      .send({ adTokenId: tok.id, orderTokenId: tok.id })
       .expect(400);
   });
 
@@ -130,13 +130,13 @@ describe('Routes E2E', () => {
     await request(app.getHttpServer())
       .post('/v1/admin/routes/create')
       .set('Authorization', `Bearer ${access}`)
-      .send({ fromTokenId: t1.id, toTokenId: t2.id })
+      .send({ adTokenId: t1.id, orderTokenId: t2.id })
       .expect(201);
 
     await request(app.getHttpServer())
       .post('/v1/admin/routes/create')
       .set('Authorization', `Bearer ${access}`)
-      .send({ fromTokenId: t1.id, toTokenId: t2.id })
+      .send({ adTokenId: t1.id, orderTokenId: t2.id })
       .expect(409);
   });
 
@@ -157,7 +157,7 @@ describe('Routes E2E', () => {
     const created = await request(app.getHttpServer())
       .post('/v1/admin/routes/create')
       .set('Authorization', `Bearer ${access}`)
-      .send({ fromTokenId: t1.id, toTokenId: t2.id })
+      .send({ adTokenId: t1.id, orderTokenId: t2.id })
       .expect(201);
 
     const id = created.body.id as string;

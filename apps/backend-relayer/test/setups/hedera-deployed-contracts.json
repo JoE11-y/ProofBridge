@@ -1,11 +1,11 @@
 {
-  "adManagerAddress": "0x97dbe9e010b9fd2afdd5cbbabbf8ae374e04d04f",
-  "orderPortalAddress": "0xb9d2c71c9532e7f76938ed17cdd0bfaa1e587c88",
+  "adManagerAddress": "0x2e5e7718eb0e1dd1dbcb0804bc2b657bb5249e9f",
+  "orderPortalAddress": "0x1e185f272676627c2aaa11cba27456a262d343ea",
   "chainId": "296",
-  "name": "HEDERA LOCALNET",
+  "name": "HEDERA TESTNET",
   "tokenName": "ERC20Mock",
   "tokenSymbol": "E20M",
-  "tokenAddress": "0x3d46554e6b5bb4a4d718524d8a6e8a20318c93b1",
-  "merkleManagerAddress": "0x93da3423de2a75bf4b001df804652e0b1a235c81",
-  "verifierAddress": "0x59c31da3ea000860982506aff806380271f4abb2"
+  "tokenAddress": "0x569656e4c3721dd8dc1182b166d5701615cfec0e",
+  "merkleManagerAddress": "0xab833d2b9448c68e412e320502e50027c529dac9",
+  "verifierAddress": "0x89b1002d7d5d159bce35c665ef97dc77ad0fd0ab"
 }

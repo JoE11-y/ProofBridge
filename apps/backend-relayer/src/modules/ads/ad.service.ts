@@ -64,8 +64,8 @@ export class AdsService {
         id: true,
         creatorAddress: true,
         routeId: true,
-        fromTokenId: true,
-        toTokenId: true,
+        adTokenId: true,
+        orderTokenId: true,
         poolAmount: true,
         minAmount: true,
         maxAmount: true,
@@ -115,8 +115,8 @@ export class AdsService {
         id: i.id,
         creatorAddress: i.creatorAddress,
         routeId: i.routeId,
-        fromTokenId: i.fromTokenId,
-        toTokenId: i.toTokenId,
+        adTokenId: i.adTokenId,
+        orderTokenId: i.orderTokenId,
         poolAmount: i.poolAmount.toString(),
         availableAmount: available.toString(),
         minAmount: i.minAmount ? i.minAmount.toString() : null,
@@ -138,8 +138,8 @@ export class AdsService {
         id: true,
         creatorAddress: true,
         routeId: true,
-        fromTokenId: true,
-        toTokenId: true,
+        adTokenId: true,
+        orderTokenId: true,
         poolAmount: true,
         minAmount: true,
         maxAmount: true,
@@ -171,8 +171,8 @@ export class AdsService {
       id: ad.id,
       creatorAddress: ad.creatorAddress,
       routeId: ad.routeId,
-      fromTokenId: ad.fromTokenId,
-      toTokenId: ad.toTokenId,
+      adTokenId: ad.adTokenId,
+      orderTokenId: ad.orderTokenId,
       poolAmount: ad.poolAmount.toString(),
       availableAmount: available.toString(),
       minAmount: ad.minAmount ? ad.minAmount.toString() : null,
@@ -202,7 +202,7 @@ export class AdsService {
       where: { id: dto.routeId },
       select: {
         id: true,
-        fromToken: {
+        adToken: {
           select: {
             id: true,
             symbol: true,
@@ -210,7 +210,7 @@ export class AdsService {
             address: true,
           },
         },
-        toToken: {
+        orderToken: {
           select: {
             id: true,
             symbol: true,
@@ -222,10 +222,10 @@ export class AdsService {
 
     if (!route) throw new NotFoundException('Route not found');
 
-    const fromChainId = route.fromToken.chain.chainId;
-    const toChainId = route.toToken.chain.chainId;
+    const adChainId = route.adToken.chain.chainId;
+    const orderChainId = route.orderToken.chain.chainId;
 
-    if (fromChainId === toChainId) {
+    if (adChainId === orderChainId) {
       throw new BadRequestException('Route must be cross-chain');
     }
 
@@ -251,8 +251,8 @@ export class AdsService {
           creatorAddress: getAddress(user.walletAddress),
           creatorDstAddress: getAddress(dto.creatorDstAddress),
           routeId: route.id,
-          fromTokenId: route.fromToken.id,
-          toTokenId: route.toToken.id,
+          adTokenId: route.adToken.id,
+          orderTokenId: route.orderToken.id,
           metadata: jsonData,
           status: 'INACTIVE',
           poolAmount: 0,
@@ -268,12 +268,12 @@ export class AdsService {
 
       const reqContractDetails =
         await this.viemService.getCreateAdRequestContractDetails({
-          adChainId: route.fromToken.chain.chainId,
-          adContractAddress: route.fromToken.chain
+          adChainId: route.adToken.chain.chainId,
+          adContractAddress: route.adToken.chain
             .adManagerAddress as `0x${string}`,
           adId: ad.id,
-          orderChainId: route.toToken.chain.chainId,
-          adToken: route.fromToken.address as `0x${string}`,
+          orderChainId: route.orderToken.chain.chainId,
+          adToken: route.adToken.address as `0x${string}`,
           adRecipient: ad.creatorDstAddress as `0x${string}`,
         });
 
@@ -320,7 +320,7 @@ export class AdsService {
         poolAmount: true,
         route: {
           select: {
-            fromToken: {
+            adToken: {
               select: {
                 chain: { select: { adManagerAddress: true, chainId: true } },
               },
@@ -348,9 +348,9 @@ export class AdsService {
 
     const reqContractDetails =
       await this.viemService.getFundAdRequestContractDetails({
-        adContractAddress: ad.route.fromToken.chain
+        adContractAddress: ad.route.adToken.chain
           .adManagerAddress as `0x${string}`,
-        adChainId: ad.route.fromToken.chain.chainId,
+        adChainId: ad.route.adToken.chain.chainId,
         adId: ad.id,
         amount: poolTopUp.toString(),
       });
@@ -414,7 +414,7 @@ export class AdsService {
         poolAmount: true,
         route: {
           select: {
-            fromToken: {
+            adToken: {
               select: {
                 chain: { select: { adManagerAddress: true, chainId: true } },
               },
@@ -458,9 +458,9 @@ export class AdsService {
 
     const reqContractDetails =
       await this.viemService.getWithdrawFromAdRequestContractDetails({
-        adContractAddress: ad.route.fromToken.chain
+        adContractAddress: ad.route.adToken.chain
           .adManagerAddress as `0x${string}`,
-        adChainId: ad.route.fromToken.chain.chainId,
+        adChainId: ad.route.adToken.chain.chainId,
         adId: ad.id,
         amount: withdrawAmt.toString(),
         to: dto.to as `0x${string}`,
@@ -580,7 +580,7 @@ export class AdsService {
         poolAmount: true,
         route: {
           select: {
-            fromToken: {
+            adToken: {
               select: {
                 chain: { select: { adManagerAddress: true, chainId: true } },
               },
@@ -615,9 +615,9 @@ export class AdsService {
 
     const reqContractDetails =
       await this.viemService.getCloseAdRequestContractDetails({
-        adContractAddress: ad.route.fromToken.chain
+        adContractAddress: ad.route.adToken.chain
           .adManagerAddress as `0x${string}`,
-        adChainId: ad.route.fromToken.chain.chainId,
+        adChainId: ad.route.adToken.chain.chainId,
         adId: ad.id,
         to: dto.to as `0x${string}`,
       });
@@ -694,7 +694,7 @@ export class AdsService {
         status: true,
         route: {
           select: {
-            fromToken: {
+            adToken: {
               select: {
                 chain: { select: { adManagerAddress: true, chainId: true } },
               },
@@ -708,9 +708,8 @@ export class AdsService {
 
     // // verify adLog
     const isValidated = await this.viemService.validateAdManagerRequest({
-      chainId: ad.route.fromToken.chain.chainId,
-      contractAddress: ad.route.fromToken.chain
-        .adManagerAddress as `0x${string}`,
+      chainId: ad.route.adToken.chain.chainId,
+      contractAddress: ad.route.adToken.chain.adManagerAddress as `0x${string}`,
       reqHash: adLogUpdate.reqHash as `0x${string}`,
     });
 

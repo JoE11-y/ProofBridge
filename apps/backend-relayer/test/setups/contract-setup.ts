@@ -156,30 +156,6 @@ export async function setupContracts() {
   const ethContracts = await deployContracts();
   const hederaContracts = await deployContracts(false);
 
-  // const ethContracts = {
-  //   adManagerAddress: '0xc21b39b9a2365d5ca5196d3ffbe88d69df623e6d',
-  //   orderPortalAddress: '0x23ba431f5ba7a2f3fa5b23fe684909f0c92d48c0',
-  //   chainId: '31337',
-  //   name: 'ETH LOCALNET',
-  //   tokenName: 'ERC20Mock',
-  //   tokenSymbol: 'E20M',
-  //   tokenAddress: '0x9521027d1eaf23bf7bc884d3a2ac51746c68ce7d',
-  //   merkleManagerAddress: '0x98e170cfc30e70da1e466600138a7bf9ec540bf2',
-  //   verifierAddress: '0xd19af5219c1a70e88ec83a1920cd5f1825165eb7',
-  // };
-
-  // const hederaContracts = {
-  //   adManagerAddress: '0xf61c50d92a51a95eb64d629f6d01e67ca12cb035',
-  //   orderPortalAddress: '0x6b380f858a3e6afdb5a8c1feb122abb367a5827b',
-  //   chainId: '296',
-  //   name: 'HEDERA LOCALNET',
-  //   tokenName: 'ERC20Mock',
-  //   tokenSymbol: 'E20M',
-  //   tokenAddress: '0x38d99cb3093175c8350ca1abc983fc61611a17dc',
-  //   merkleManagerAddress: '0xc1e29a3a6ab0de704768da78a1f39695346a762c',
-  //   verifierAddress: '0x183d01dd27c0cb316fec6f5f2d023055c65bf01c',
-  // };
-
   console.log('Setting up ETH contracts...');
 
   await setupContract(ethContracts, hederaContracts);

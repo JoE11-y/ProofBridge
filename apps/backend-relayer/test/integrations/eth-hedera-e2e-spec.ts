@@ -284,6 +284,7 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
     const adId = req.adId;
 
     expect(ethChain.adManagerAddress).toEqual(req.contractAddress);
+    expect(ethChain.chainId).toEqual(req.chainId);
 
     // Create advertisement on blockchain
     const txCreate = await createAd(
@@ -303,6 +304,7 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
     // Step 2: Fund the advertisement
     const topup = await apiFundAd(app, adId, access, '50').expect(200);
     expect(ethChain.adManagerAddress).toEqual(topup.body.contractAddress);
+    expect(ethChain.chainId).toEqual(topup.body.chainId);
 
     // Mint and approve tokens for funding
     await mintToken(
@@ -349,7 +351,7 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
     const tradeId = order.body.tradeId as string;
 
     expect(hederaChain.orderPortalAddress).toEqual(orderReq.contractAddress);
-
+    expect(hederaChain.chainId).toEqual(orderReq.chainId);
     const afterCreateOrder = await apiGetTrade(app, tradeId).expect(200);
 
     expectObject(afterCreateOrder.body, {
@@ -406,6 +408,8 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
       getAddress(lockOrderReq.contractAddress),
     );
 
+    expect(ethChain.chainId).toEqual(lockOrderReq.chainId);
+
     // check that it still remains active
     const lockOrderBefore = await apiGetTrade(app, tradeId);
 
@@ -456,6 +460,7 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
     const unlockReq = unlock.body as UnlockOrderResponseDto;
 
     expect(unlockReq.contractAddress).toEqual(hederaChain.orderPortalAddress);
+    expect(unlockReq.chainId).toEqual(hederaChain.chainId);
 
     const unlockOrderChainTx = await unlockOrderChain(
       hederaClient,
@@ -511,11 +516,10 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
       signatureBridger,
     ).expect(200);
 
-    // console.log(unlockBridger.body);
-
     const unlockReqBridger = unlockBridger.body as UnlockOrderResponseDto;
 
     expect(unlockReqBridger.contractAddress).toEqual(ethChain.adManagerAddress);
+    expect(unlockReqBridger.chainId).toEqual(ethChain.chainId);
 
     const unlockOrderChainTxBridger = await unlockAdChain(
       ethClient,

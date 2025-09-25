@@ -79,8 +79,8 @@ CREATE TABLE "public"."Token" (
 -- CreateTable
 CREATE TABLE "public"."Route" (
     "id" TEXT NOT NULL,
-    "fromTokenId" TEXT NOT NULL,
-    "toTokenId" TEXT NOT NULL,
+    "adTokenId" TEXT NOT NULL,
+    "orderTokenId" TEXT NOT NULL,
     "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -94,12 +94,12 @@ CREATE TABLE "public"."Ad" (
     "creatorAddress" TEXT NOT NULL,
     "creatorDstAddress" TEXT NOT NULL,
     "routeId" TEXT NOT NULL,
-    "fromTokenId" TEXT NOT NULL,
-    "toTokenId" TEXT NOT NULL,
-    "poolAmount" BIGINT NOT NULL DEFAULT 0,
-    "minAmount" BIGINT DEFAULT 0,
-    "maxAmount" BIGINT DEFAULT 0,
-    "status" "public"."AdStatus" NOT NULL DEFAULT 'ACTIVE',
+    "adTokenId" TEXT NOT NULL,
+    "orderTokenId" TEXT NOT NULL,
+    "poolAmount" DECIMAL(78,0) NOT NULL,
+    "minAmount" DECIMAL(78,0),
+    "maxAmount" DECIMAL(78,0),
+    "status" "public"."AdStatus" NOT NULL DEFAULT 'INACTIVE',
     "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -123,7 +123,7 @@ CREATE TABLE "public"."AdLock" (
     "id" TEXT NOT NULL,
     "adId" TEXT NOT NULL,
     "tradeId" TEXT NOT NULL,
-    "amount" BIGINT NOT NULL,
+    "amount" DECIMAL(78,0) NOT NULL,
     "authorized" BOOLEAN NOT NULL DEFAULT false,
     "releasedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -274,13 +274,13 @@ CREATE INDEX "Token_address_idx" ON "public"."Token"("address");
 CREATE UNIQUE INDEX "Token_chainUid_address_key" ON "public"."Token"("chainUid", "address");
 
 -- CreateIndex
-CREATE INDEX "Route_fromTokenId_idx" ON "public"."Route"("fromTokenId");
+CREATE INDEX "Route_adTokenId_idx" ON "public"."Route"("adTokenId");
 
 -- CreateIndex
-CREATE INDEX "Route_toTokenId_idx" ON "public"."Route"("toTokenId");
+CREATE INDEX "Route_orderTokenId_idx" ON "public"."Route"("orderTokenId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Route_fromTokenId_toTokenId_key" ON "public"."Route"("fromTokenId", "toTokenId");
+CREATE UNIQUE INDEX "Route_orderTokenId_adTokenId_key" ON "public"."Route"("orderTokenId", "adTokenId");
 
 -- CreateIndex
 CREATE INDEX "Ad_creatorAddress_status_idx" ON "public"."Ad"("creatorAddress", "status");
@@ -325,7 +325,7 @@ CREATE UNIQUE INDEX "MMR_chainId_key" ON "public"."MMR"("chainId");
 CREATE UNIQUE INDEX "MMR_chainId_id_key" ON "public"."MMR"("chainId", "id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OrderRecord_orderHash_key" ON "public"."OrderRecord"("orderHash");
+CREATE UNIQUE INDEX "OrderRecord_mmrId_orderHash_key" ON "public"."OrderRecord"("mmrId", "orderHash");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "OrderRecord_mmrId_elementIndex_key" ON "public"."OrderRecord"("mmrId", "elementIndex");
@@ -346,19 +346,19 @@ ALTER TABLE "public"."Chain" ADD CONSTRAINT "Chain_mmrId_fkey" FOREIGN KEY ("mmr
 ALTER TABLE "public"."Token" ADD CONSTRAINT "Token_chainUid_fkey" FOREIGN KEY ("chainUid") REFERENCES "public"."Chain"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Route" ADD CONSTRAINT "Route_fromTokenId_fkey" FOREIGN KEY ("fromTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Route" ADD CONSTRAINT "Route_adTokenId_fkey" FOREIGN KEY ("adTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Route" ADD CONSTRAINT "Route_toTokenId_fkey" FOREIGN KEY ("toTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Route" ADD CONSTRAINT "Route_orderTokenId_fkey" FOREIGN KEY ("orderTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Ad" ADD CONSTRAINT "Ad_routeId_fkey" FOREIGN KEY ("routeId") REFERENCES "public"."Route"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Ad" ADD CONSTRAINT "Ad_fromTokenId_fkey" FOREIGN KEY ("fromTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Ad" ADD CONSTRAINT "Ad_adTokenId_fkey" FOREIGN KEY ("adTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Ad" ADD CONSTRAINT "Ad_toTokenId_fkey" FOREIGN KEY ("toTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Ad" ADD CONSTRAINT "Ad_orderTokenId_fkey" FOREIGN KEY ("orderTokenId") REFERENCES "public"."Token"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."AdUpdateLog" ADD CONSTRAINT "AdUpdateLog_adId_fkey" FOREIGN KEY ("adId") REFERENCES "public"."Ad"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -2,7 +2,7 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { createTestingApp } from './setups/create-app';
-import { seedAd, seedChain, seedRoute, seedToken } from './setups/seed';
+import { seedAd, seedChain, seedRoute, seedToken } from './setups/utils';
 import { HDNodeWallet, TypedDataDomain, Wallet } from 'ethers';
 import { SiweMessage } from 'siwe';
 
@@ -54,11 +54,11 @@ describe('Trades E2E ', () => {
     return res.body.tokens.access as string;
   };
 
-  const buildTypedData = (fromChainId: bigint) =>
+  const buildTypedData = (adChainId: bigint) =>
     ({
       name: 'ProofBridge',
       version: '1',
-      chainId: Number(fromChainId),
+      chainId: Number(adChainId),
       verifyingContract: '0x0000000000000000000000000000000000000000',
     }) as TypedDataDomain;
 
@@ -67,8 +67,8 @@ describe('Trades E2E ', () => {
       { name: 'routeId', type: 'string' },
       { name: 'adId', type: 'string' },
       { name: 'amount', type: 'uint256' },
-      { name: 'fromChainId', type: 'uint256' },
-      { name: 'toChainId', type: 'uint256' },
+      { name: 'adChainId', type: 'uint256' },
+      { name: 'orderChainId', type: 'uint256' },
       { name: 'symbol', type: 'string' },
       { name: 'bridger', type: 'address' },
       { name: 'creator', type: 'address' },
@@ -98,7 +98,7 @@ describe('Trades E2E ', () => {
       route.id,
       tBase.id,
       tEth.id,
-      10_000n,
+      10_000,
     );
 
     const access = await loginUser(bridgerWallet);
@@ -109,8 +109,8 @@ describe('Trades E2E ', () => {
       routeId: route.id,
       adId: ad.id,
       amount: '1000',
-      fromChainId: base.chainId.toString(),
-      toChainId: eth.chainId.toString(),
+      adChainId: base.chainId.toString(),
+      orderChainId: eth.chainId.toString(),
       symbol: 'ETH',
       bridger: bridgerWallet.address,
       creator: creatorWallet.address,
@@ -200,7 +200,6 @@ describe('Trades E2E ', () => {
     const first = await request(app.getHttpServer())
       .post('/v1/trades')
       .set('Authorization', `Bearer ${f.access}`)
-      .set('Idempotency-Key', f.idem)
       .send({
         adId: f.ad.id,
         routeId: f.route.id,
@@ -215,7 +214,6 @@ describe('Trades E2E ', () => {
     const replay = await request(app.getHttpServer())
       .post('/v1/trades')
       .set('Authorization', `Bearer ${f.access}`)
-      .set('Idempotency-Key', f.idem)
       .send({
         adId: f.ad.id,
         routeId: f.route.id,

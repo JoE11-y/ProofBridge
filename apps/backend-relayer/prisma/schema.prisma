@@ -1,7 +1,7 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Looking for ways order speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
@@ -76,29 +76,29 @@ model Token {
   chainUid String
   chain    Chain  @relation(fields: [chainUid], references: [id], onDelete: Cascade)
 
-  routesFrom Route[] @relation("RouteFrom")
-  routesTo   Route[] @relation("RouteTo")
+  adRoutes    Route[] @relation("adRoutes")
+  orderRoutes Route[] @relation("orderRoutes")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  adToToken  Ad[] @relation("AdToToken")
-  AFromToken Ad[] @relation("AdFromToken")
+  adToToken Ad[] @relation("AdToToken")
+  AadToken  Ad[] @relation("AdadToken")
 
   @@unique([chainUid, address])
   @@index([symbol])
   @@index([address])
 }
 
-/// Uni-directional: fromToken -> toToken
+/// Uni-directional: adToken -> orderToken
 model Route {
   id String @id @default(uuid())
 
-  fromTokenId String
-  fromToken   Token  @relation("RouteFrom", fields: [fromTokenId], references: [id], onDelete: Restrict)
+  adTokenId String
+  adToken   Token  @relation("adRoutes", fields: [adTokenId], references: [id], onDelete: Restrict)
 
-  toTokenId String
-  toToken   Token  @relation("RouteTo", fields: [toTokenId], references: [id], onDelete: Restrict)
+  orderTokenId String
+  orderToken   Token  @relation("orderRoutes", fields: [orderTokenId], references: [id], onDelete: Restrict)
 
   metadata Json?
 
@@ -108,9 +108,9 @@ model Route {
   updatedAt DateTime @updatedAt
   Ad        Ad[]
 
-  @@unique([fromTokenId, toTokenId])
-  @@index([fromTokenId])
-  @@index([toTokenId])
+  @@unique([orderTokenId, adTokenId])
+  @@index([adTokenId])
+  @@index([orderTokenId])
 }
 
 model Ad {
@@ -120,10 +120,10 @@ model Ad {
   routeId           String
   route             Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
 
-  fromTokenId String
-  toTokenId   String
-  fromToken   Token  @relation("AdFromToken", fields: [fromTokenId], references: [id])
-  toToken     Token  @relation("AdToToken", fields: [toTokenId], references: [id])
+  adTokenId    String
+  orderTokenId String
+  adToken      Token  @relation("AdadToken", fields: [adTokenId], references: [id])
+  orderToken   Token  @relation("AdToToken", fields: [orderTokenId], references: [id])
 
   // liquidity
   poolAmount Decimal  @db.Decimal(78, 0)

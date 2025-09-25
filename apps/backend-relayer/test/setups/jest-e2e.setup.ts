@@ -29,7 +29,8 @@ export default async () => {
     .start();
 
   const databaseUrl = container.getConnectionUri();
-  process.env.DATABASE_URL = databaseUrl;
+  process.env.DATABASE_URL =
+    'postgresql://proofbridge:Zh0ybjfhzAPANaJQhCXGQr0wk97THqpi@dpg-d38ou4mmcj7s738h3pmg-a.oregon-postgres.render.com/proofbridge';
   process.env.NODE_ENV = 'test';
   process.env.JWT_ACCESS_SECRET = 'test-access-secret';
   process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
