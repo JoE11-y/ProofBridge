@@ -1,6 +1,14 @@
 import { urls } from "@/utils/urls"
 import { api } from "./api.instance"
-import { ICreateAdRequest } from "@/types/ads"
+import {
+  IConfirmAdTxRequest,
+  ICreateAdRequest,
+  ICreateAdResponse,
+  IFundAdResponse,
+  ITopUpAdRequest,
+  IUpdateAdRequest,
+  IUpdateAdResponse,
+} from "@/types/ads"
 
 const ads_route = (path = "") => {
   return `${urls.API_URL}/v1/ads${path}`
@@ -8,5 +16,26 @@ const ads_route = (path = "") => {
 
 export const createAd = async (data: ICreateAdRequest) => {
   const response = await api.post(ads_route("/create"), data)
-  return response.data
+  return response.data as ICreateAdResponse
+}
+
+export const fundAd = async (data: ITopUpAdRequest) => {
+  const response = await api.post(ads_route(`/${data.adId}/fund`), {
+    poolAmountTopUp: data.poolAmountTopUp,
+  })
+  return response.data as IFundAdResponse
+}
+
+export const updatedAd = async (data: IUpdateAdRequest) => {
+  const { adId, ...rest } = data
+  const response = await api.post(ads_route(`/${adId}/update`), {
+    ...rest,
+  })
+  return response.data as IUpdateAdResponse
+}
+
+export const confirmAdTx = async (data: IConfirmAdTxRequest) => {
+  const { adId, ...rest } = data
+  const response = await api.post(ads_route(`/${adId}/confirm`), { ...rest })
+  return response.data as ICreateAdResponse
 }

@@ -1,12 +1,12 @@
 import { createConfig } from "wagmi"
-import { hedera, sepolia } from "viem/chains"
+import { hederaTestnet, sepolia } from "viem/chains"
 import { http } from "viem"
 
 export const config = createConfig({
-  chains: [hedera, sepolia],
+  chains: [hederaTestnet, sepolia],
 
   transports: {
-    [hedera.id]: http(),
+    [hederaTestnet.id]: http(),
     [sepolia.id]: http(),
   },
 })
