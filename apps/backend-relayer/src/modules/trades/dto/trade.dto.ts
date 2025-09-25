@@ -314,7 +314,7 @@ export class AdManagerOrderParamsDto {
 
 export class LockForOrderResponseDto {
   @ApiProperty({
-    description: 'Blockchain chain ID where the order contract is deployed',
+    description: 'Blockchain chain ID where the ad contract is deployed',
     example: '1',
   })
   chainId!: string;
