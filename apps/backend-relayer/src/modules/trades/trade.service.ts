@@ -249,7 +249,7 @@ export class TradesService {
       _sum: { amount: true },
     });
     const locked = lockSum._sum.amount ?? new Prisma.Decimal(0);
-    const available = ad.poolAmount.sub(locked) as Prisma.Decimal;
+    const available = ad.poolAmount.sub(locked);
     if (amount.gt(available))
       throw new BadRequestException('Insufficient liquidity');
 

@@ -8,6 +8,7 @@ export type T_CreateAdRequest = {
 };
 
 export type T_CreateAdRequestContractDetails = {
+  chainId: string;
   contractAddress: string;
   signature: `0x${string}`;
   authToken: string;
@@ -27,6 +28,7 @@ export type T_CreatFundAdRequest = {
 };
 
 export type T_CreatFundAdRequestContractDetails = {
+  chainId: string;
   contractAddress: string;
   signature: `0x${string}`;
   authToken: string;
@@ -45,6 +47,7 @@ export type T_WithdrawFromAdRequest = {
 };
 
 export type T_WithdrawFromAdRequestContractDetails = {
+  chainId: string;
   contractAddress: string;
   signature: `0x${string}`;
   authToken: string;
@@ -63,6 +66,7 @@ export type T_CloseAdRequest = {
 };
 
 export type T_CloseAdRequestContractDetails = {
+  chainId: string;
   contractAddress: string;
   signature: `0x${string}`;
   authToken: string;
@@ -122,6 +126,7 @@ export type T_LockForOrderRequest = {
 };
 
 export type T_LockForOrderRequestContractDetails = {
+  chainId: string;
   contractAddress: string;
   signature: `0x${string}`;
   authToken: string;
@@ -147,6 +152,7 @@ export type T_CreateUnlockOrderContractDetails = {
 };
 
 export type T_UnlockOrderContractDetails = {
+  chainId: string;
   contractAddress: `0x${string}`;
   signature: `0x${string}`;
   authToken: string;
@@ -160,6 +166,7 @@ export type T_UnlockOrderContractDetails = {
 };
 
 export type T_CreateOrderRequestContractDetails = {
+  chainId: string;
   contractAddress: string;
   signature: `0x${string}`;
   authToken: string;
