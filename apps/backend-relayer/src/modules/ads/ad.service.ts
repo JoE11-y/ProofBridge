@@ -81,10 +81,29 @@ export class AdsService {
         poolAmount: true,
         minAmount: true,
         maxAmount: true,
+        adToken: {
+          select: {
+            chain: { select: { chainId: true } },
+            address: true,
+            symbol: true,
+            name: true,
+            decimals: true,
+          },
+        },
+        orderToken: {
+          select: {
+            chain: { select: { chainId: true } },
+            address: true,
+            symbol: true,
+            name: true,
+            decimals: true,
+          },
+        },
         status: true,
         metadata: true,
         createdAt: true,
         updatedAt: true,
+        route: true,
       },
     });
 
@@ -137,6 +156,20 @@ export class AdsService {
         metadata: i.metadata ?? null,
         createdAt: i.createdAt.toISOString(),
         updatedAt: i.updatedAt.toISOString(),
+        adToken: {
+          name: i.adToken.name,
+          symbol: i.adToken.symbol,
+          address: i.adToken.address,
+          decimals: i.adToken.decimals,
+          chainId: i.adToken.chain.chainId.toString(),
+        },
+        orderToken: {
+          name: i.orderToken.name,
+          symbol: i.orderToken.symbol,
+          address: i.orderToken.address,
+          decimals: i.orderToken.decimals,
+          chainId: i.orderToken.chain.chainId.toString(),
+        },
       };
     });
 
@@ -157,6 +190,24 @@ export class AdsService {
         maxAmount: true,
         status: true,
         metadata: true,
+        adToken: {
+          select: {
+            chain: { select: { chainId: true } },
+            address: true,
+            symbol: true,
+            name: true,
+            decimals: true,
+          },
+        },
+        orderToken: {
+          select: {
+            chain: { select: { chainId: true } },
+            address: true,
+            symbol: true,
+            name: true,
+            decimals: true,
+          },
+        },
         createdAt: true,
         updatedAt: true,
       },
@@ -190,6 +241,20 @@ export class AdsService {
       minAmount: ad.minAmount ? ad.minAmount.toString() : null,
       maxAmount: ad.maxAmount ? ad.maxAmount.toString() : null,
       status: ad.status != 'INACTIVE' ? effectiveStatus : ad.status,
+      adToken: {
+        name: ad.adToken.name,
+        symbol: ad.adToken.symbol,
+        address: ad.adToken.address,
+        decimals: ad.adToken.decimals,
+        chainId: ad.adToken.chain.chainId.toString(),
+      },
+      orderToken: {
+        name: ad.orderToken.name,
+        symbol: ad.orderToken.symbol,
+        address: ad.orderToken.address,
+        decimals: ad.orderToken.decimals,
+        chainId: ad.orderToken.chain.chainId.toString(),
+      },
       metadata: ad.metadata ?? null,
       createdAt: ad.createdAt.toISOString(),
       updatedAt: ad.updatedAt.toISOString(),
