@@ -51,6 +51,15 @@ api.interceptors.response.use(
         error?.response.data.message ||
         error?.response.message
       // await toast.error(error?.message);
+      const refresh_token = Cookies.get("refresh_token")
+      const res = await api.post<any, AxiosResponse<IRefreshTokenResponse>>(
+        "/v1/auth/refresh",
+        { refresh: refresh_token },
+        { withCredentials: true } // Ensure credentials for refresh token request
+      )
+
+      Cookies.set("auth_token", res.data.tokens.access)
+      Cookies.set("refresh_token", res.data.tokens.refresh)
     } else if ([401].includes(error?.response?.status)) {
       error.message =
         (error?.response.data?.errors &&

@@ -1,13 +1,15 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
 import localFont from "next/font/local"
+// @ts-ignore
 import "./globals.css"
+// @ts-ignore
 import "@rainbow-me/rainbowkit/styles.css"
 import { AntConfigProvider } from "@/components/shared/AntConfigProvider"
 import { SmoothScroll } from "@/components/shared/SmoothScroller"
 import { TanstackQueryProvider } from "@/components/providers/TanstackProvider"
 import { Wagmi } from "@/components/providers/Wagmi"
 import { RainbowKit } from "@/components/providers/RainbowKit"
+import { Toaster } from "@/components/ui/sonner"
 
 const perfectlyNineties = localFont({
   src: [
@@ -44,7 +46,7 @@ export default function RootLayout({
     <html lang="en">
       <meta name="theme-color" content="#27330f"></meta>
       <body
-        className={`${pixter.variable} ${sequel.variable} ${sequel.className} ${perfectlyNineties.variable} antialiased`}
+        className={`${pixter.variable} ${sequel.variable} ${sequel.className} ${perfectlyNineties.variable} tracking-wider antialiased`}
       >
         <Wagmi>
           <TanstackQueryProvider>
@@ -52,6 +54,7 @@ export default function RootLayout({
               <AntConfigProvider>
                 <SmoothScroll>{children}</SmoothScroll>
               </AntConfigProvider>
+              <Toaster />
             </RainbowKit>
           </TanstackQueryProvider>
         </Wagmi>
