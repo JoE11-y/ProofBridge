@@ -23,6 +23,8 @@ type AdQueryInput = {
   routeId?: string;
   creatorAddress?: string;
   status?: AdStatus;
+  adChainId?: bigint;
+  orderChainId?: bigint;
 };
 
 type AdUpdateInput = {
@@ -56,7 +58,17 @@ export class AdsService {
     if (query.status) where.status = query.status;
 
     const items = await this.prisma.ad.findMany({
-      where,
+      where: {
+        ...where,
+        adToken: {
+          chain: query.adChainId ? { chainId: query.adChainId } : undefined,
+        },
+        orderToken: {
+          chain: query.orderChainId
+            ? { chainId: query.orderChainId }
+            : undefined,
+        },
+      },
       orderBy: { id: 'asc' },
       take: take + 1,
       ...(cursor ? { cursor, skip: 1 } : {}),
