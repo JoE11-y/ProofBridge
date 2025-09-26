@@ -2,9 +2,9 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { createTestingApp } from './setups/create-app';
+import { createTestingApp } from '../setups/create-app';
 import { Wallet } from 'ethers';
-import { seedChain, seedToken, seedRoute, loginUser } from './setups/utils';
+import { seedChain, seedToken, seedRoute, loginUser } from '../setups/utils';
 import { randomUUID } from 'crypto';
 
 describe('Ads E2E', () => {

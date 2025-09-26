@@ -91,7 +91,7 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
   beforeAll(async () => {
     app = await createTestingApp();
     await fundEthAddress(ethClient, account1.address);
-    await fundHBar(hederaClient, account1.address);
+    // await fundHBar(hederaClient, account1.address);
     await fundHBar(hederaClient, account2.address);
 
     // Fetch available routes between chains

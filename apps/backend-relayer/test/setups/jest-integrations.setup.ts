@@ -5,7 +5,8 @@ import {
 import * as dotenv from 'dotenv';
 import { execa } from 'execa';
 import path from 'path';
-import { seedDBe2e } from './seed';
+import { setupContracts } from './contract-setup';
+import { seedDB } from './seed';
 
 // Load .env (optional)
 dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
@@ -37,7 +38,11 @@ export default async () => {
 
   await migrate(databaseUrl);
 
-  await seedDBe2e();
+  const { ethContracts, hederaContracts } = await setupContracts();
 
+  await seedDB(ethContracts, hederaContracts);
+
+  (global as any).__ETH_CONTRACTS__ = ethContracts;
+  (global as any).__HEDERA_CONTRACTS__ = hederaContracts;
   (global as any).__PG_CONTAINER__ = container;
 };

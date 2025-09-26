@@ -156,7 +156,7 @@ export class ViemService {
       address: adContractAddress,
       abi: AD_MANAGER_ABI,
       functionName: 'fundAdRequestHash',
-      args: [adId, BigInt(amount), token, timeToExpire],
+      args: [adId, amount, token, timeToExpire],
     });
 
     const signature = await wallet.signMessage({
@@ -192,7 +192,7 @@ export class ViemService {
       address: adContractAddress,
       abi: AD_MANAGER_ABI,
       functionName: 'withdrawFromAdRequestHash',
-      args: [adId, BigInt(amount), to, token, timeToExpire],
+      args: [adId, amount, to, token, timeToExpire],
     });
 
     const signature = await wallet.signMessage({
