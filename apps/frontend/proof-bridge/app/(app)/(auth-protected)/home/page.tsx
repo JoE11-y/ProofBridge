@@ -28,7 +28,7 @@ const HomePage = () => {
   })
 
   const { data: all_closed_ads } = useGetAllAds({
-    status: "CLOSE",
+    status: "CLOSED",
     creatorAddress: account.address!,
   })
 

@@ -1,17 +1,21 @@
 import { AD_MANAGER_ABI } from "@/abis/AdManager.abi"
 import { ERC20_ABI } from "@/abis/ERC20.abi"
 import {
+  closeAd,
   confirmAdTx,
   createAd,
   fundAd,
   getAllAds,
   getSingleAd,
+  withdrawFromAd,
 } from "@/services/ads.service"
 import {
+  ICloseAdRequest,
   IConfirmAdTxRequest,
   ICreateAdRequest,
   IGetAdsParams,
   ITopUpAdRequest,
+  IWithdrawFromAdRequest,
 } from "@/types/ads"
 import { config } from "@/utils/wagmi-config"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -127,6 +131,103 @@ export const useFundAd = () => {
     onError: function (error: any, variables, result, ctx) {
       toast.error(
         error.response.data.message || error.message || "Unable to top up ad",
+        {
+          description: "",
+        }
+      )
+    },
+  })
+}
+
+export const useWithdrawFunds = () => {
+  const { writeContractAsync } = useWriteContract()
+
+  return useMutation({
+    mutationKey: ["withdraw-ad"],
+    mutationFn: async (data: IWithdrawFromAdRequest) => {
+      const response = await withdrawFromAd(data)
+
+      const txHash = await writeContractAsync({
+        address: response.contractAddress,
+        abi: AD_MANAGER_ABI,
+        chainId: Number(response.chainId),
+        functionName: "withdrawFromAd",
+        args: [
+          response.signature,
+          response.authToken,
+          BigInt(response.timeToExpire),
+          response.adId,
+          data.amountBigInt,
+          data.to,
+        ],
+      })
+      const receipt = await waitForTransactionReceipt(config, {
+        hash: txHash,
+      })
+
+      if (receipt.status === "success") {
+        await confirmAdTx({
+          txHash: receipt.transactionHash,
+          signature: response.signature,
+          adId: response.adId,
+        })
+      }
+      return response
+    },
+    onSuccess: () => {
+      toast.success("Funds withdrawal was successful")
+    },
+    onError: function (error: any, variables, result, ctx) {
+      toast.error(
+        error.response.data.message || error.message || "Unable to withdraw",
+        {
+          description: "",
+        }
+      )
+    },
+  })
+}
+
+export const useCloseAd = () => {
+  const { writeContractAsync } = useWriteContract()
+
+  return useMutation({
+    mutationKey: ["close-ad"],
+    mutationFn: async (data: ICloseAdRequest) => {
+      const response = await closeAd(data)
+
+      const txHash = await writeContractAsync({
+        address: response.contractAddress,
+        abi: AD_MANAGER_ABI,
+        chainId: Number(response.chainId),
+        functionName: "closeAd",
+        args: [
+          response.signature,
+          response.authToken,
+          BigInt(response.timeToExpire),
+          response.adId,
+          data.to,
+        ],
+      })
+      const receipt = await waitForTransactionReceipt(config, {
+        hash: txHash,
+      })
+
+      if (receipt.status === "success") {
+        await confirmAdTx({
+          txHash: receipt.transactionHash,
+          signature: response.signature,
+          adId: response.adId,
+        })
+      }
+      return response
+    },
+    onSuccess: () => {
+      toast.success("Ad closed successfully")
+    },
+    onError: function (error: any, variables, result, ctx) {
+      toast.error(
+        error.response.data.message || error.message || "Unable to close ad",
         {
           description: "",
         }

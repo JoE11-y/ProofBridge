@@ -2,6 +2,8 @@ import { urls } from "@/utils/urls"
 import { api } from "./api.instance"
 import {
   IAd,
+  ICloseAdRequest,
+  ICloseAdResponse,
   IConfirmAdTxRequest,
   ICreateAdRequest,
   ICreateAdResponse,
@@ -10,8 +12,9 @@ import {
   ITopUpAdRequest,
   IUpdateAdRequest,
   IUpdateAdResponse,
+  IWithdrawFromAdRequest,
+  IWithdrawFromAdResponse,
 } from "@/types/ads"
-import { Address } from "viem"
 import axios from "axios"
 
 const ads_route = (path = "") => {
@@ -28,6 +31,21 @@ export const fundAd = async (data: ITopUpAdRequest) => {
     poolAmountTopUp: data.poolAmountTopUp,
   })
   return response.data as IFundAdResponse
+}
+
+export const withdrawFromAd = async (data: IWithdrawFromAdRequest) => {
+  const response = await api.post(ads_route(`/${data.adId}/withdraw`), {
+    poolAmountWithdraw: data.poolAmountWithdraw,
+    to: data.to,
+  })
+  return response.data as IWithdrawFromAdResponse
+}
+
+export const closeAd = async (data: ICloseAdRequest) => {
+  const response = await api.post(ads_route(`/${data.adId}/close`), {
+    to: data.to,
+  })
+  return response.data as ICloseAdResponse
 }
 
 export const updatedAd = async (data: IUpdateAdRequest) => {
