@@ -198,6 +198,19 @@ export class ConfirmAdActionDto {
   signature?: string;
 }
 
+export class TokenDto {
+  @ApiProperty({ type: String, description: 'Token name' })
+  name!: string;
+  @ApiProperty({ type: String, description: 'Token symbol' })
+  symbol!: string;
+  @ApiProperty({ type: String, description: 'Token contract address' })
+  address!: string;
+  @ApiProperty({ type: String, description: 'Token decimal places' })
+  decimals!: number;
+  @ApiProperty({ type: String, description: 'Blockchain chain ID' })
+  chainId!: string;
+}
+
 export class AdResponseDto {
   @ApiProperty({
     type: String,
@@ -260,6 +273,12 @@ export class AdResponseDto {
     description: 'Additional custom metadata associated with the ad',
   })
   metadata!: string | number | boolean | JsonObject | JsonArray | null;
+
+  @ApiProperty({ type: TokenDto, description: 'Details of the ad token' })
+  adToken!: TokenDto;
+
+  @ApiProperty({ type: TokenDto, description: 'Details of the order token' })
+  orderToken!: TokenDto;
 
   @ApiProperty({ description: 'Timestamp when the ad entry was created' })
   createdAt!: string;
