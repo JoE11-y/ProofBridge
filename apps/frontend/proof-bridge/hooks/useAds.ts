@@ -1,13 +1,20 @@
 import { AD_MANAGER_ABI } from "@/abis/AdManager.abi"
 import { ERC20_ABI } from "@/abis/ERC20.abi"
-import { confirmAdTx, createAd, fundAd } from "@/services/ads.service"
+import {
+  confirmAdTx,
+  createAd,
+  fundAd,
+  getAllAds,
+  getSingleAd,
+} from "@/services/ads.service"
 import {
   IConfirmAdTxRequest,
   ICreateAdRequest,
+  IGetAdsParams,
   ITopUpAdRequest,
 } from "@/types/ads"
 import { config } from "@/utils/wagmi-config"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { parseUnits } from "viem"
 import { useAccount, useWriteContract } from "wagmi"
@@ -145,5 +152,19 @@ export const useConfirmAdTx = () => {
         }
       )
     },
+  })
+}
+
+export const useGetAllAds = (params: IGetAdsParams) => {
+  return useQuery({
+    queryKey: ["get-all-ads", params],
+    queryFn: () => getAllAds(params),
+  })
+}
+
+export const useGetSingleAd = (id: string) => {
+  return useQuery({
+    queryKey: ["get-single-ad", id],
+    queryFn: () => getSingleAd(id),
   })
 }

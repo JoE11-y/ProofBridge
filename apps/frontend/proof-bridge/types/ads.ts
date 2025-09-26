@@ -68,3 +68,41 @@ export interface IConfirmAdTxRequest {
   txHash: Address
   signature: Address
 }
+
+export interface IAd {
+  id: string
+  creatorAddress: string
+  routeId: string
+  adTokenId: string
+  orderTokenId: string
+  poolAmount: string
+  availableAmount: string
+  minAmount: string
+  maxAmount: string
+  status: "ACTIVE" | "PAUSED" | "INACTIVE" | "EXHAUSTED" | "CLOSE"
+  metadata: { title?: string; description?: string }
+  createdAt: string
+  updatedAt: string
+  adToken: {
+    name: string
+    symbol: string
+    address: string
+    decimals: number
+    chainId: string
+  }
+  orderToken: {
+    name: string
+    symbol: string
+    address: string
+    decimals: number
+    chainId: string
+  }
+}
+
+export interface IGetAdsParams {
+  creatorAddress?: Address
+  routeId?: string
+  status?: "ACTIVE" | "PAUSED" | "INACTIVE" | "EXHAUSTED" | "CLOSE"
+  cursor?: string
+  limit?: number
+}

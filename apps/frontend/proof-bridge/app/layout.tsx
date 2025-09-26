@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import localFont from "next/font/local"
+// @ts-ignore
 import "./globals.css"
+// @ts-ignore
 import "@rainbow-me/rainbowkit/styles.css"
 import { AntConfigProvider } from "@/components/shared/AntConfigProvider"
 import { SmoothScroll } from "@/components/shared/SmoothScroller"
@@ -44,7 +46,7 @@ export default function RootLayout({
     <html lang="en">
       <meta name="theme-color" content="#27330f"></meta>
       <body
-        className={`${pixter.variable} ${sequel.variable} ${sequel.className} ${perfectlyNineties.variable} antialiased`}
+        className={`${pixter.variable} ${sequel.variable} ${sequel.className} ${perfectlyNineties.variable} tracking-wider antialiased`}
       >
         <Wagmi>
           <TanstackQueryProvider>

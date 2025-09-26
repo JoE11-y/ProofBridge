@@ -12,10 +12,10 @@ export interface IRoute {
 export interface IGetRoutesParams {
   limit?: string
   cursor?: string
-  fromTokenId?: string
-  toTokenId?: string
-  fromChainId: string
-  toChainId: string
+  orderTokenId?: string
+  adTokenId?: string
+  orderChainId: string
+  adChainId: string
 }
 
 interface IToken {

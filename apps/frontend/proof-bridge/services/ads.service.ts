@@ -1,14 +1,18 @@
 import { urls } from "@/utils/urls"
 import { api } from "./api.instance"
 import {
+  IAd,
   IConfirmAdTxRequest,
   ICreateAdRequest,
   ICreateAdResponse,
   IFundAdResponse,
+  IGetAdsParams,
   ITopUpAdRequest,
   IUpdateAdRequest,
   IUpdateAdResponse,
 } from "@/types/ads"
+import { Address } from "viem"
+import axios from "axios"
 
 const ads_route = (path = "") => {
   return `${urls.API_URL}/v1/ads${path}`
@@ -38,4 +42,17 @@ export const confirmAdTx = async (data: IConfirmAdTxRequest) => {
   const { adId, ...rest } = data
   const response = await api.post(ads_route(`/${adId}/confirm`), { ...rest })
   return response.data as ICreateAdResponse
+}
+
+export const getAllAds = async (params: IGetAdsParams) => {
+  const response = await axios.get(ads_route(), { params })
+  return response.data as {
+    data: IAd[]
+    nextCursor: string
+  }
+}
+
+export const getSingleAd = async (id: string) => {
+  const response = await axios.get(ads_route(`/${id}`))
+  return response.data as IAd
 }

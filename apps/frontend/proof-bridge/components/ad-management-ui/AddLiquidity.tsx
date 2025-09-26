@@ -33,18 +33,10 @@ export const AddLiquidity = ({
   const [isInputError, setIsInputError] = useState(false)
   const [openModal, setOpenModal] = useState(false)
   const toggleModal = () => setOpenModal(!openModal)
-  const {
-    data: routes,
-    isLoading: loadingRoutes,
-    refetch: refetchRoutes,
-  } = useGetBridgeRoutes({
+  const { data: routes, isLoading: loadingRoutes } = useGetBridgeRoutes({
     adChainId: String(liquidity_chain.id),
     orderChainId: String(other_chain.id),
   })
-
-  useEffect(() => {
-    refetchRoutes()
-  }, [liquidity_chain])
 
   const { mutateAsync: confirmTx, isPending: isConfirming } = useConfirmAdTx()
 
