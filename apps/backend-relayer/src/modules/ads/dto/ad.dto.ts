@@ -23,6 +23,18 @@ export class QueryAdsDto {
   creatorAddress?: string;
 
   @ApiPropertyOptional({
+    description: 'Chain ID of the ad token',
+    example: 1,
+  })
+  adChainId?: number;
+
+  @ApiPropertyOptional({
+    description: 'Chain ID of the order token',
+    example: 298,
+  })
+  orderChainId?: number;
+
+  @ApiPropertyOptional({
     enum: ['ACTIVE', 'PAUSED', 'EXHAUSTED', 'CLOSED'],
     description: 'Current status of the ad',
     example: 'ACTIVE',
@@ -34,8 +46,7 @@ export class QueryAdsDto {
 
   @ApiPropertyOptional({
     description: 'Pagination cursor',
-    example:
-      'eyJpZCI6IjEyMyIsImNyZWF0ZWRBdCI6IjIwMjMtMDEtMDFUMDA6MDA6MDAuMDAwWiJ9',
+    example: '5',
   })
   @IsOptional()
   @IsString()
