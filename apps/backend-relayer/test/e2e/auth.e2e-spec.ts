@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { createTestingApp } from './setups/create-app';
+import { createTestingApp } from '../setups/create-app';
 import { Wallet } from 'ethers';
 import { SiweMessage } from 'siwe';
 import { env } from '@libs/configs';
-import { LoginResponseDto } from '../src/modules/auth/dto/auth.dto';
+import { LoginResponseDto } from '../../src/modules/auth/dto/auth.dto';
 
 interface ChallengeResponse {
   nonce: string;

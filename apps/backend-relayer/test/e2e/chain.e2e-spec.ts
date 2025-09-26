@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { createTestingApp } from './setups/create-app';
+import { createTestingApp } from '../setups/create-app';
 import { randomUUID } from 'crypto';
-import { loginAsAdmin, randomAddress } from './setups/utils';
+import { loginAsAdmin, randomAddress } from '../setups/utils';
 
 interface ChainResponse {
   id: string;

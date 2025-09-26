@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { createTestingApp } from './setups/create-app';
-import { seedChain, seedToken } from './setups/utils';
+import { createTestingApp } from '../setups/create-app';
+import { seedChain, seedToken } from '../setups/utils';
 import { randomUUID } from 'crypto';
 
 describe('Routes E2E', () => {

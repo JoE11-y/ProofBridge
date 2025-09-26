@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { createTestingApp } from './setups/create-app';
-import { seedAd, seedChain, seedRoute, seedToken } from './setups/utils';
+import { createTestingApp } from '../setups/create-app';
+import { seedAd, seedChain, seedRoute, seedToken } from '../setups/utils';
 import { HDNodeWallet, TypedDataDomain, Wallet } from 'ethers';
 import { SiweMessage } from 'siwe';
 

@@ -2,8 +2,8 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { createTestingApp } from './setups/create-app';
-import { loginAsAdmin, randomAddress, seedChain } from './setups/utils';
+import { createTestingApp } from '../setups/create-app';
+import { loginAsAdmin, randomAddress, seedChain } from '../setups/utils';
 import { getAddress } from 'ethers';
 
 describe('Tokens E2E', () => {
