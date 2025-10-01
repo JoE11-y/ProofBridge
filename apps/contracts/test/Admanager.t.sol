@@ -46,6 +46,7 @@ contract AdManagerTest is Test {
 
     uint256 internal minted = 1_000 ether;
     uint256 internal fundAmt = 300 ether;
+    uint256 internal initAmt = 100 ether;
 
     string internal lastAdId;
 
@@ -94,7 +95,8 @@ contract AdManagerTest is Test {
     {
         token = bytes32(vm.randomBytes(32));
         ttl = block.timestamp + 1 hours;
-        bytes32 message = adManager.createAdRequestHash(adId, address(adToken), orderChainId, adRecipient, token, ttl);
+        bytes32 message =
+            adManager.createAdRequestHash(adId, address(adToken), initAmt, orderChainId, adRecipient, token, ttl);
 
         sig = sign(message, adminPk);
     }
@@ -310,8 +312,11 @@ contract AdManagerTest is Test {
         (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId);
 
         vm.prank(maker);
+        adToken.approve(address(adManager), initAmt);
+
+        vm.prank(maker);
         vm.expectRevert(AdManager.AdManager__TokenZeroAddress.selector);
-        adManager.createAd(signature, authToken, timeToLive, adId, address(0), orderChainId, address(0xDEAD));
+        adManager.createAd(signature, authToken, timeToLive, adId, address(0), initAmt, orderChainId, address(0xDEAD));
     }
 
     // Test that createAd rejects when no route exists for the chain
@@ -321,8 +326,13 @@ contract AdManagerTest is Test {
         (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId);
 
         vm.prank(maker);
+        adToken.approve(address(adManager), initAmt);
+
+        vm.prank(maker);
         vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__ChainNotSupported.selector, orderChainId));
-        adManager.createAd(signature, authToken, timeToLive, adId, address(adToken), orderChainId, address(0xDEAD));
+        adManager.createAd(
+            signature, authToken, timeToLive, adId, address(adToken), initAmt, orderChainId, address(0xDEAD)
+        );
     }
 
     // Test that createAd succeeds when route exists, emits event, and stores ad data
@@ -337,9 +347,12 @@ contract AdManagerTest is Test {
         (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId);
 
         vm.prank(maker);
+        adToken.approve(address(adManager), initAmt);
+
+        vm.prank(maker);
         vm.expectEmit(true, true, true, true);
-        emit AdManager.AdCreated("1", maker, address(adToken), orderChainId);
-        adManager.createAd(signature, authToken, timeToLive, adId, address(adToken), orderChainId, adRecipient);
+        emit AdManager.AdCreated("1", maker, address(adToken), initAmt, orderChainId);
+        adManager.createAd(signature, authToken, timeToLive, adId, address(adToken), initAmt, orderChainId, adRecipient);
 
         (
             uint256 linkedOrderChainId,
@@ -357,7 +370,7 @@ contract AdManagerTest is Test {
         assertEq(_adRecipient, adRecipient);
         assertEq(owner, maker);
         assertEq(token, address(adToken));
-        assertEq(balance, 0);
+        assertEq(balance, initAmt);
         assertEq(locked, 0);
         assertTrue(open);
     }
@@ -669,7 +682,7 @@ contract AdManagerTest is Test {
         test_fundAd_makerOnly();
         string memory adId = lastAdId;
         AdManager.OrderParams memory p = _defaultParams(adId);
-        p.amount = fundAmt + 1;
+        p.amount = initAmt + fundAmt + 1;
 
         bytes32 orderHash = adManager.hashOrderPublic(p);
 
@@ -773,13 +786,14 @@ contract AdManagerTest is Test {
         test_fundAd_makerOnly();
 
         string memory adId = lastAdId;
+        uint256 available = initAmt + fundAmt;
 
-        (authToken, timeToLive, signature) = generateWithdrawFromAdRequestParams(adId, fundAmt + 1, recipient);
+        (authToken, timeToLive, signature) = generateWithdrawFromAdRequestParams(adId, available + 1, recipient);
 
         vm.startPrank(maker);
         // available = fundAmt, ask for fundAmt + 1
         vm.expectRevert(AdManager.AdManager__InsufficientLiquidity.selector);
-        adManager.withdrawFromAd(signature, authToken, timeToLive, adId, fundAmt + 1, recipient);
+        adManager.withdrawFromAd(signature, authToken, timeToLive, adId, available + 1, recipient);
         vm.stopPrank();
     }
 
@@ -842,7 +856,7 @@ contract AdManagerTest is Test {
 
         // Remaining transferred to recipient
         uint256 balAfter = adToken.balanceOf(recipient);
-        assertEq(balAfter - balBefore, fundAmt, "remaining not transferred");
+        assertEq(balAfter - balBefore, fundAmt + initAmt, "remaining not transferred");
 
         // Ad is closed, balance set to 0
         (,,,, uint256 balance, uint256 locked, bool open) = adManager.ads(adId);
