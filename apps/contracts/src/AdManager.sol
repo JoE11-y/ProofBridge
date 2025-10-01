@@ -182,9 +182,12 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param adId New ad id.
      * @param maker Ad owner.
      * @param token Escrowed token on this chain.
+     * @param initAmount Initial amount deposited.
      * @param orderChainId Source chain this ad serves.
      */
-    event AdCreated(string indexed adId, address indexed maker, address indexed token, uint256 orderChainId);
+    event AdCreated(
+        string indexed adId, address indexed maker, address indexed token, uint256 initAmount, uint256 orderChainId
+    );
 
     /**
      * @notice Emitted when an ad is funded.
@@ -425,11 +428,13 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         uint256 timeToExpire,
         string memory adId,
         address adToken,
+        uint256 initialAmount,
         uint256 orderChainId,
         address adRecipient
     ) external nonReentrant {
         if (adToken == address(0)) revert AdManager__TokenZeroAddress();
         if (adRecipient == address(0)) revert AdManager__RecipientZero();
+        if (initialAmount == 0) revert AdManager__ZeroAmount();
 
         if (tokenRoute[adToken][orderChainId] == address(0)) {
             revert AdManager__ChainNotSupported(orderChainId);
@@ -439,7 +444,8 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
             revert AdManager__UsedAdId();
         }
 
-        bytes32 message = createAdRequestHash(adId, adToken, orderChainId, adRecipient, authToken, timeToExpire);
+        bytes32 message =
+            createAdRequestHash(adId, adToken, initialAmount, orderChainId, adRecipient, authToken, timeToExpire);
 
         if (requestHashes[message]) {
             revert Admanager__RequestHashedProcessed();
@@ -451,19 +457,21 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
             revert Admanager__InvalidSigner();
         }
 
+        IERC20(adToken).safeTransferFrom(msg.sender, address(this), initialAmount);
+
         ads[adId] = Ad({
             orderChainId: orderChainId,
             adRecipient: adRecipient,
             maker: msg.sender,
             token: adToken,
-            balance: 0,
+            balance: initialAmount,
             locked: 0,
             open: true
         });
 
         adIds[adId] = true;
         requestHashes[message] = true;
-        emit AdCreated(adId, msg.sender, adToken, orderChainId);
+        emit AdCreated(adId, msg.sender, adToken, initialAmount, orderChainId);
     }
 
     /**
@@ -889,17 +897,19 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     function createAdRequestHash(
         string memory adId,
         address adToken,
+        uint256 initialAmount,
         uint256 orderChainId,
         address adRecipient,
         bytes32 authToken,
         uint256 timeToExpire
     ) public view returns (bytes32 message) {
         string memory action = "createAd";
-        bytes[] memory params = new bytes[](4);
+        bytes[] memory params = new bytes[](5);
         params[0] = abi.encode(adId);
         params[1] = abi.encode(adToken);
-        params[2] = abi.encode(orderChainId);
-        params[3] = abi.encode(adRecipient);
+        params[2] = abi.encode(initialAmount);
+        params[3] = abi.encode(orderChainId);
+        params[4] = abi.encode(adRecipient);
         message = hashRequest(authToken, timeToExpire, action, params);
     }
     /**

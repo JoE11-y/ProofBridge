@@ -124,6 +124,7 @@ export const AD_MANAGER_ABI = [
       { name: 'timeToExpire', type: 'uint256', internalType: 'uint256' },
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'adToken', type: 'address', internalType: 'address' },
+      { name: 'initialAmount', type: 'uint256', internalType: 'uint256' },
       { name: 'orderChainId', type: 'uint256', internalType: 'uint256' },
       { name: 'adRecipient', type: 'address', internalType: 'address' },
     ],
@@ -136,6 +137,7 @@ export const AD_MANAGER_ABI = [
     inputs: [
       { name: 'adId', type: 'string', internalType: 'string' },
       { name: 'adToken', type: 'address', internalType: 'address' },
+      { name: 'initialAmount', type: 'uint256', internalType: 'uint256' },
       { name: 'orderChainId', type: 'uint256', internalType: 'uint256' },
       { name: 'adRecipient', type: 'address', internalType: 'address' },
       { name: 'authToken', type: 'bytes32', internalType: 'bytes32' },
@@ -533,6 +535,12 @@ export const AD_MANAGER_ABI = [
         type: 'address',
         indexed: true,
         internalType: 'address',
+      },
+      {
+        name: 'initAmount',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
       },
       {
         name: 'orderChainId',

@@ -101,6 +101,7 @@ export class ViemService {
       adContractAddress,
       adId,
       adToken,
+      initialAmount,
       orderChainId,
       adRecipient,
     } = data;
@@ -117,7 +118,15 @@ export class ViemService {
       address: adContractAddress,
       abi: AD_MANAGER_ABI,
       functionName: 'createAdRequestHash',
-      args: [adId, adToken, orderChainId, adRecipient, token, timeToExpire],
+      args: [
+        adId,
+        adToken,
+        initialAmount,
+        orderChainId,
+        adRecipient,
+        token,
+        timeToExpire,
+      ],
     });
 
     const signature = await wallet.signMessage({
@@ -132,6 +141,7 @@ export class ViemService {
       timeToExpire: Number(timeToExpire),
       adId,
       adToken,
+      initialAmount,
       orderChainId: orderChainId.toString(),
       adRecipient,
       reqHash: message,

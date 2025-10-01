@@ -1,6 +1,6 @@
 {
-  "adManagerAddress": "0x53c12451c6e677f103e0087d428a68a927786799",
-  "orderPortalAddress": "0x0eb2f3771fa2ee2ada01a46a7e8f60583efb2d08",
+  "adManagerAddress": "0x39422ddee041debe2c772335b3232e582693861e",
+  "orderPortalAddress": "0x1204d3de87114b8218701a6db23de5fcd1b7e2de",
   "chainId": "11155111",
   "name": "ETH SEPOLIA",
   "tokenName": "ERC20Mock",

@@ -310,6 +310,11 @@ export class AdsService {
       JSON.stringify(dto.metadata || {}),
     ) as Prisma.JsonObject;
 
+    const fundAmount = new Prisma.Decimal(dto.fundAmount);
+
+    if (fundAmount.lte(0))
+      throw new BadRequestException('fundAmount must be > 0');
+
     const minAmount = dto.minAmount
       ? new Prisma.Decimal(dto.minAmount)
       : new Prisma.Decimal(0);
@@ -320,6 +325,12 @@ export class AdsService {
 
     if (minAmount && maxAmount && maxAmount.lt(minAmount)) {
       throw new BadRequestException('maxAmount must be greater than minAmount');
+    }
+
+    if (maxAmount && fundAmount.lt(maxAmount)) {
+      throw new BadRequestException(
+        'fundAmount must be greater than maxAmount',
+      );
     }
 
     const requestDetails = await this.prisma.$transaction(async (prisma) => {
@@ -351,6 +362,7 @@ export class AdsService {
           adId: ad.id,
           orderChainId: route.orderToken.chain.chainId,
           adToken: route.adToken.address as `0x${string}`,
+          initialAmount: fundAmount.toString(),
           adRecipient: ad.creatorDstAddress as `0x${string}`,
         });
 
@@ -365,6 +377,11 @@ export class AdsService {
                 field: 'Status',
                 oldValue: ad.status,
                 newValue: 'ACTIVE',
+              },
+              {
+                field: 'PoolAmount',
+                oldValue: '0',
+                newValue: fundAmount.toString(),
               },
             ],
           },

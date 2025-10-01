@@ -64,6 +64,7 @@ contract ProofBridge is Test {
     uint256 internal unsupportedChainId = 25_000_000;
 
     uint256 internal minted = 2_000 ether;
+    uint256 internal initAmt = 5_00 ether;
     uint256 internal fundAmt = 1_000 ether;
     uint256 internal orderAmt = 100 ether;
 
@@ -136,8 +137,10 @@ contract ProofBridge is Test {
         string memory adId = "1";
         // Generate request params
         (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId);
+        // Approve with initial tokens
+        adToken.approve(address(adManager), initAmt);
         // Create the ad
-        adManager.createAd(signature, authToken, timeToLive, adId, address(adToken), orderChainId, adRecipient);
+        adManager.createAd(signature, authToken, timeToLive, adId, address(adToken), initAmt, orderChainId, adRecipient);
         // Set last id to the created ad
         adManager.setLastId(adId);
         // Approve the ad with tokens
@@ -220,7 +223,8 @@ contract ProofBridge is Test {
     {
         token = bytes32(vm.randomBytes(32));
         ttl = block.timestamp + 1 hours;
-        bytes32 message = adManager.createAdRequestHash(adId, address(adToken), orderChainId, adRecipient, token, ttl);
+        bytes32 message =
+            adManager.createAdRequestHash(adId, address(adToken), initAmt, orderChainId, adRecipient, token, ttl);
 
         sig = ethSign(message, adminPk);
     }

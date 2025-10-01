@@ -79,6 +79,13 @@ export class CreateAdDto {
   @IsString()
   creatorDstAddress!: string;
 
+  @ApiProperty({
+    description: 'Initial amount to fund the ad pool (in smallest unit)',
+    example: '1000000000000000000',
+  })
+  @Matches(/^\d+$/)
+  fundAmount!: string;
+
   @ApiPropertyOptional({
     pattern: '^d+$',
     description: 'Minimum amount for the ad (in smallest unit)',
@@ -338,6 +345,12 @@ export class CreateAdResponseDto {
     example: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
   })
   adToken!: `0x${string}`;
+
+  @ApiProperty({
+    pattern: '^d+$',
+    description: 'Initial Amount to fund the ad pool with',
+  })
+  initialAmount!: string;
 
   @ApiProperty({
     description: 'Chain ID for the order',
