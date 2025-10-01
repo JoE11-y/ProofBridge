@@ -16,11 +16,12 @@ export const apiCreateAd = (
   access: string,
   routeId: string,
   dst: `0x${string}`,
+  fundAmount: string,
 ) =>
   request(app.getHttpServer())
     .post('/v1/ads/create')
     .set('Authorization', `Bearer ${access}`)
-    .send({ routeId, creatorDstAddress: dst });
+    .send({ routeId, creatorDstAddress: dst, fundAmount });
 
 export const apiConfirm = (
   app: INestApplication,

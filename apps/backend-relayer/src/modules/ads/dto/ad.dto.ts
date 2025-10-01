@@ -79,6 +79,13 @@ export class CreateAdDto {
   @IsString()
   creatorDstAddress!: string;
 
+  @ApiProperty({
+    description: 'Initial amount to fund the ad pool (in smallest unit)',
+    example: '1000000000000000000',
+  })
+  @Matches(/^\d+$/)
+  fundAmount!: string;
+
   @ApiPropertyOptional({
     pattern: '^d+$',
     description: 'Minimum amount for the ad (in smallest unit)',

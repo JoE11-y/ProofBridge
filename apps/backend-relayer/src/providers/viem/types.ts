@@ -3,6 +3,7 @@ export type T_CreateAdRequest = {
   adChainId: bigint;
   adId: string;
   adToken: `0x${string}`;
+  initialAmount: string;
   orderChainId: bigint;
   adRecipient: `0x${string}`;
 };

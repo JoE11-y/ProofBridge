@@ -114,12 +114,21 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
     // Login and get access token
     const access = await loginUser(app, privateKey1);
 
+    await approveToken(
+      ethClient,
+      account1,
+      ethChain.tokenAddress,
+      ethChain.adManagerAddress,
+      parseEther('5'),
+    );
+
     // Step 1: Create a new advertisement
     const create = await apiCreateAd(
       app,
       access,
       route.id,
       account1.address,
+      parseEther('5').toString(),
     ).expect(201);
 
     const req = create.body as CreateAdResponseDto;
@@ -272,12 +281,21 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
   it('Trade lifecycle', async () => {
     const access = await loginUser(app, privateKey1);
 
+    await approveToken(
+      ethClient,
+      account1,
+      ethChain.tokenAddress,
+      ethChain.adManagerAddress,
+      parseEther('5'),
+    );
+
     // Step 1: Create a new advertisement
     const create = await apiCreateAd(
       app,
       access,
       route.id,
       account1.address,
+      parseEther('5').toString(),
     ).expect(201);
 
     const req = create.body as CreateAdResponseDto;
