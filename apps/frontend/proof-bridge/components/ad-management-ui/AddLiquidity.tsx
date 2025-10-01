@@ -1,4 +1,3 @@
-import { AD_MANAGER_ABI } from "@/abis/AdManager.abi"
 import { useConfirmAdTx, useCreateAd, useFundAd } from "@/hooks/useAds"
 import { useGetBridgeRoutes } from "@/hooks/useBridgeRoutes"
 import { chain_icons } from "@/lib/chain-icons"
@@ -7,10 +6,9 @@ import { Handshake, Info, ShieldAlert, Text } from "lucide-react"
 import moment from "moment"
 import Image from "next/image"
 import Link from "next/link"
-import React, { useEffect, useState } from "react"
-import { toast } from "sonner"
+import React, { useState } from "react"
 import { Chain, parseUnits } from "viem"
-import { useAccount, useWriteContract } from "wagmi"
+import { useAccount } from "wagmi"
 import { useChainModal } from "@rainbow-me/rainbowkit"
 
 export const AddLiquidity = ({
@@ -43,7 +41,7 @@ export const AddLiquidity = ({
   const handleCreateAd = async () => {
     try {
       const response = await createAd({
-        routeId: routes?.data[0].id!,
+        routeId: routes!.data[0]!.id!,
         creatorDstAddress: account.address!,
         maxAmount: parseUnits(
           max,
@@ -302,7 +300,7 @@ export const AddLiquidity = ({
                   <p className="pl-3">
                     Merchants may impose additional terms in the Advertiser
                     Terms. Kindly preview carefully before creating an ad. In
-                    the event of any conflict, the Platform's{" "}
+                    the event of any conflict, the Platform&apos;s{" "}
                     <Link href={"#"} className="!text-primary">
                       Terms
                     </Link>{" "}

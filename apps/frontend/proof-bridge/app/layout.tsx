@@ -1,8 +1,6 @@
 import type { Metadata } from "next"
 import localFont from "next/font/local"
-// @ts-ignore
 import "./globals.css"
-// @ts-ignore
 import "@rainbow-me/rainbowkit/styles.css"
 import { AntConfigProvider } from "@/components/shared/AntConfigProvider"
 import { SmoothScroll } from "@/components/shared/SmoothScroller"
