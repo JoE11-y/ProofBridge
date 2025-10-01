@@ -347,6 +347,12 @@ export class CreateAdResponseDto {
   adToken!: `0x${string}`;
 
   @ApiProperty({
+    pattern: '^d+$',
+    description: 'Initial Amount to fund the ad pool with',
+  })
+  initialAmount!: string;
+
+  @ApiProperty({
     description: 'Chain ID for the order',
     example: '1',
   })

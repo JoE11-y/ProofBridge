@@ -16,6 +16,7 @@ export type T_CreateAdRequestContractDetails = {
   timeToExpire: number;
   adId: string;
   adToken: `0x${string}`;
+  initialAmount: string;
   orderChainId: string;
   adRecipient: `0x${string}`;
   reqHash: `0x${string}`;

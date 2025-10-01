@@ -141,6 +141,7 @@ export class ViemService {
       timeToExpire: Number(timeToExpire),
       adId,
       adToken,
+      initialAmount,
       orderChainId: orderChainId.toString(),
       adRecipient,
       reqHash: message,
