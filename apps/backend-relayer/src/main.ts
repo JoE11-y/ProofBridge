@@ -10,7 +10,11 @@ async function bootstrap() {
   const PORT = parseInt(String(env.port), 10) || 2005;
   const app = await NestFactory.create(AppModule);
 
-  const devOrigins = ['http://localhost:3000', `http://localhost:${PORT}`];
+  const devOrigins = [
+    'http://localhost:3000',
+    `http://localhost:${PORT}`,
+    'https://proof-bridge.vercel.app',
+  ];
   const prodOrigins = [env.appUri, 'https://proofbridge.onrender.com'];
   app.enableCors({
     origin: env.isProd ? prodOrigins : devOrigins,
