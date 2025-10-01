@@ -9,6 +9,7 @@ import React, { useMemo } from "react"
 import { SiweMessage } from "siwe"
 import { useAccount } from "wagmi"
 import Cookies from "js-cookie"
+import { urls } from "@/utils/urls"
 
 function useAuthenticationAdapter() {
   // If the user is logged in but the account is different (e.g. they changed account in Metamask), log them out and reload the page.
@@ -32,10 +33,10 @@ function useAuthenticationAdapter() {
       },
       createMessage: ({ nonce, address, chainId }) => {
         return new SiweMessage({
-          domain: "proofbridge.xyz",
+          domain: urls.SIGN_DOMAIN,
           address,
           statement: "Sign in with Ethereum to the app.",
-          uri: "https://proofbridge.xyz",
+          uri: urls.SIGN_URI,
           version: "1",
           chainId,
           nonce,
