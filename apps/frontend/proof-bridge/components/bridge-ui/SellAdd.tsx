@@ -102,7 +102,7 @@ export const SellAd = ({ ...props }: propsI) => {
                   <p className="pl-3">
                     Merchants may impose additional terms in the Advertiser
                     Terms. Kindly read carefully before placing an order. In the
-                    event of any conflict, the Platform's{" "}
+                    event of any conflict, the Platform&apos;s{" "}
                     <Link href={"#"} className="!text-primary">
                       Terms
                     </Link>{" "}

@@ -7,7 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 gsap.registerPlugin(SplitText, ScrollTrigger)
 
 const textAnimation = (trigger: string, end?: string) => {
-  let split = SplitText.create(trigger, { type: "chars" })
+  const split = SplitText.create(trigger, { type: "chars" })
   // now animate the characters in a staggered fashion
   gsap.from(split.chars, {
     // duration: 1,
@@ -59,7 +59,7 @@ export const About = () => {
                 original assets across chains. Instead of bridging assets, users
                 lock ETH or other supported tokens on Ethereum (L1) and
                 instantly receive HBAR tokens on Hedera. These tokens are
-                native, and backed 1:1 by the user's collateral locked on
+                native, and backed 1:1 by the user&apos;s collateral locked on
                 Ethereum.
               </p>
             </div>
