@@ -36,29 +36,54 @@ export const useCreateAd = () => {
     mutationKey: ["create-ad"],
     mutationFn: async (data: ICreateAdRequest) => {
       const response = await createAd(data)
-      const txHash = await writeContractAsync({
-        address: response.contractAddress,
-        abi: AD_MANAGER_ABI,
+      const token = await getTokens({ chainId: String(response.chainId!) })
+      const approveHash = await writeContractAsync({
+        address: token.data[0].address,
+        abi: ERC20_ABI,
         chainId: Number(response.chainId),
-        functionName: "createAd",
+        functionName: "approve",
         args: [
-          response.signature,
-          response.authToken,
-          BigInt(response.timeToExpire),
-          response.adId,
-          response.adToken,
-          BigInt(response.orderChainId),
-          response.adRecipient,
+          response.contractAddress,
+          parseUnits(data.fundAmount, token.data[0].decimals),
         ],
       })
-      const receipt = await waitForTransactionReceipt(config, { hash: txHash })
-
-      if (receipt.status === "success") {
-        await confirmAdTx({
-          txHash: receipt.transactionHash,
-          signature: response.signature,
-          adId: response.adId,
+      const approveReceipt = await waitForTransactionReceipt(config, {
+        hash: approveHash,
+      })
+      if (approveReceipt.status === "success") {
+        const txHash = await writeContractAsync({
+          address: response.contractAddress,
+          abi: AD_MANAGER_ABI,
+          chainId: Number(response.chainId),
+          functionName: "createAd",
+          args: [
+            response.signature,
+            response.authToken,
+            BigInt(response.timeToExpire),
+            response.adId,
+            response.adToken,
+            BigInt(response.orderChainId),
+            response.adRecipient,
+          ],
         })
+        const receipt = await waitForTransactionReceipt(config, {
+          hash: txHash,
+        })
+
+        if (receipt.status === "success") {
+          await confirmAdTx({
+            txHash: receipt.transactionHash,
+            signature: response.signature,
+            adId: response.adId,
+          })
+        }
+
+        if (receipt.status === "reverted") {
+          throw Error("Transaction failed, Retry")
+        }
+      }
+      if (approveReceipt.status === "reverted") {
+        throw Error("Transaction not approved")
       }
       return response
     },
@@ -122,6 +147,13 @@ export const useFundAd = () => {
             adId: response.adId,
           })
         }
+
+        if (receipt.status === "reverted") {
+          throw Error("Transaction failed, Retry")
+        }
+      }
+      if (approveReceipt.status === "reverted") {
+        throw Error("Transaction not approved")
       }
       return response
     },

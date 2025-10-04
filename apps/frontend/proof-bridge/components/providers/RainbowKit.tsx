@@ -32,10 +32,10 @@ function useAuthenticationAdapter() {
       },
       createMessage: ({ nonce, address, chainId }) => {
         return new SiweMessage({
-          domain: "proofbridge.xyz",
+          domain: "proof-bridge.vercel.app",
           address,
           statement: "Sign in with Ethereum to the app.",
-          uri: "https://proofbridge.xyz",
+          uri: "https://proof-bridge.vercel.app",
           version: "1",
           chainId,
           nonce,

@@ -3,6 +3,7 @@ import { Address } from "viem"
 export interface ICreateAdRequest {
   routeId: string
   creatorDstAddress: string
+  fundAmount: string
   minAmount?: string
   maxAmount?: string
   metadata: {

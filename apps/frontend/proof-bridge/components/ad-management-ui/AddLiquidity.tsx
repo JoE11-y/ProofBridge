@@ -1,4 +1,4 @@
-import { useConfirmAdTx, useCreateAd, useFundAd } from "@/hooks/useAds"
+import { useCreateAd } from "@/hooks/useAds"
 import { useGetBridgeRoutes } from "@/hooks/useBridgeRoutes"
 import { chain_icons } from "@/lib/chain-icons"
 import { Button, Modal } from "antd"
@@ -22,7 +22,6 @@ export const AddLiquidity = ({
   const is_liquidity_chain = liquidity_chain.id === account.chainId
   const { openChainModal } = useChainModal()
   const { mutateAsync: createAd, isPending } = useCreateAd()
-  const { mutateAsync: fundAd, isPending: isFundingAd } = useFundAd()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState("")
@@ -35,8 +34,6 @@ export const AddLiquidity = ({
     adChainId: String(liquidity_chain.id),
     orderChainId: String(other_chain.id),
   })
-
-  const { mutateAsync: confirmTx, isPending: isConfirming } = useConfirmAdTx()
 
   const handleCreateAd = async () => {
     try {
@@ -56,18 +53,12 @@ export const AddLiquidity = ({
           title,
           description,
         },
-      })
-      await fundAd({
-        poolAmountTopUp: parseUnits(
+        fundAmount: parseUnits(
           amount,
           liquidity_chain.nativeCurrency.decimals
         ).toString(),
-        adId: response.adId,
-        amountBigInt: parseUnits(
-          amount,
-          liquidity_chain.nativeCurrency.decimals
-        ),
       })
+
       toggleModal()
     } catch (error) {}
   }
@@ -315,7 +306,7 @@ export const AddLiquidity = ({
               className="w-full mt-5"
               type="primary"
               size="large"
-              loading={isPending || isConfirming || isFundingAd}
+              loading={isPending}
             >
               Create Ad
             </Button>
