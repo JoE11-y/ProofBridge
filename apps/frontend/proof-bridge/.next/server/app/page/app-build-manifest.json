@@ -1,0 +1,43 @@
+{
+  "pages": {
+    "/page": [
+      "static/chunks/b8cd5_next_dist_22825703._.js",
+      "static/chunks/apps_frontend_proof-bridge_app_favicon_ico_mjs_b6e79dbc._.js",
+      "static/chunks/_959a992c._.css",
+      "static/chunks/node_modules__pnpm_2927f328._.js",
+      "static/chunks/e1679_@ant-design_cssinjs_es_e282652a._.js",
+      "static/chunks/bcdd2_antd_es_eecd96d9._.js",
+      "static/chunks/fe878_rc-motion_es_b56e3df5._.js",
+      "static/chunks/adf68_@tanstack_query-core_build_modern_d5e284d5._.js",
+      "static/chunks/9b150_viem__esm_021ce812._.js",
+      "static/chunks/node_modules__pnpm_d6fdb3b8._.js",
+      "static/chunks/46d50_@wagmi_core_dist_esm_6b4f8219._.js",
+      "static/chunks/077bc_@rainbow-me_rainbowkit_dist_93e2c443._.js",
+      "static/chunks/node_modules__pnpm_4baaba16._.js",
+      "static/chunks/b928a_ox__esm_1e755b92._.js",
+      "static/chunks/node_modules__pnpm_7cf026c0._.js",
+      "static/chunks/a251c_apg-js_src_4dada058._.js",
+      "static/chunks/c383f_ethers_lib_commonjs_22c37252._.js",
+      "static/chunks/node_modules__pnpm_b115889a._.js",
+      "static/chunks/apps_frontend_proof-bridge_7218fe77._.js",
+      "static/chunks/apps_frontend_proof-bridge_app_layout_tsx_e7c5cdbc._.js",
+      "static/chunks/b8cd5_next_dist_client_components_builtin_global-error_eb00b82c.js",
+      "static/chunks/apps_frontend_proof-bridge_components_c5edadb1._.js",
+      "static/chunks/42724_gsap_4b0f19f3._.js",
+      "static/chunks/b8cd5_next_82d886d5._.js",
+      "static/chunks/bcdd2_antd_es_ae2cfe9e._.js",
+      "static/chunks/7d417_moment_d8b5c7c3._.js",
+      "static/chunks/node_modules__pnpm_7df6e11e._.js",
+      "static/chunks/apps_frontend_proof-bridge_app_page_tsx_eb00b82c._.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_87482881._.js",
+      "static/chunks/b8cd5_next_dist_compiled_react-dom_686eaf56._.js",
+      "static/chunks/b8cd5_next_dist_compiled_next-devtools_index_e6c00a3f.js",
+      "static/chunks/b8cd5_next_dist_compiled_770d346c._.js",
+      "static/chunks/b8cd5_next_dist_client_f34d0780._.js",
+      "static/chunks/b8cd5_next_dist_7452a0b8._.js",
+      "static/chunks/69652_@swc_helpers_cjs_77b72907._.js",
+      "static/chunks/apps_frontend_proof-bridge_a0ff3932._.js",
+      "static/chunks/turbopack-apps_frontend_proof-bridge_f3e1bf9c._.js"
+    ]
+  }
+}

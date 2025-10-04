@@ -1,0 +1,3 @@
+{
+  "/(app)/(auth-protected)/ads-management/create/page": "app/(app)/(auth-protected)/ads-management/create/page.js"
+}

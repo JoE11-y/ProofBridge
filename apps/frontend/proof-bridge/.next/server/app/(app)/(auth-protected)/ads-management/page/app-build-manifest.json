@@ -1,0 +1,36 @@
+{
+  "pages": {
+    "/(app)/(auth-protected)/ads-management/page": [
+      "static/chunks/0cbcc24b9e7d2807.js",
+      "static/chunks/91b9d7b3776a87e0.js",
+      "static/chunks/401c6e03e1675609.css",
+      "static/chunks/34e8f33c3d8aa2ae.js",
+      "static/chunks/10fbdb3f0b657740.js",
+      "static/chunks/bb7d5f23c08dfb8d.js",
+      "static/chunks/51ba9395018c9e70.js",
+      "static/chunks/33252eb257b7e347.js",
+      "static/chunks/b3fa1ea9604dd8be.js",
+      "static/chunks/82432a3103d1b566.js",
+      "static/chunks/20cdfa4fee5fa862.js",
+      "static/chunks/87d04f4cb7191c88.js",
+      "static/chunks/7c593179f54e9e86.js",
+      "static/chunks/dd5fdc500f22ec9c.js",
+      "static/chunks/4c7b2d7a28ccbca3.js",
+      "static/chunks/b8b4be9ff26fa66e.js",
+      "static/chunks/f7819c7fb215e158.js",
+      "static/chunks/97a939af25d20507.js",
+      "static/chunks/952417a0fb7583e9.js",
+      "static/chunks/9d455128cc3600c5.js",
+      "static/chunks/94c9efb00b8f9605.js",
+      "static/chunks/1467cb20fa8678e9.js",
+      "static/chunks/abd3267ffed6be88.js",
+      "static/chunks/c325a16be8bf43a9.js",
+      "static/chunks/cd446e8889327baa.js",
+      "static/chunks/30c1643d585378a7.js",
+      "static/chunks/d00ae8a8e5672320.js",
+      "static/chunks/4fd4c31982cf5f08.js",
+      "static/chunks/5a524e05cd72a628.js",
+      "static/chunks/turbopack-e0f722f8485719e6.js"
+    ]
+  }
+}

@@ -1,15 +1,314 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Looking for ways order speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id            String @id @default(uuid())
+  username      String @unique
+  walletAddress String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuthNonce {
+  id            String    @id @default(uuid())
+  value         String    @unique
+  walletAddress String
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+enum TokenKind {
+  NATIVE
+  ERC20
+}
+
+model Chain {
+  id                 String @id @default(uuid())
+  name               String
+  chainId            BigInt @unique
+  adManagerAddress   String
+  orderPortalAddress String
+
+  tokens Token[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  mmr       MMR      @relation(fields: [mmrId], references: [id])
+  mmrId     String   @unique
+
+  @@unique([chainId, id])
+  @@index([name])
+  @@index([adManagerAddress])
+  @@index([orderPortalAddress])
+}
+
+model Token {
+  id       String    @id @default(uuid())
+  symbol   String
+  name     String
+  address  String
+  kind     TokenKind @default(ERC20)
+  decimals Int
+
+  chainUid String
+  chain    Chain  @relation(fields: [chainUid], references: [id], onDelete: Cascade)
+
+  adRoutes    Route[] @relation("adRoutes")
+  orderRoutes Route[] @relation("orderRoutes")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  adToToken Ad[] @relation("AdToToken")
+  AadToken  Ad[] @relation("AdadToken")
+
+  @@unique([chainUid, address])
+  @@index([symbol])
+  @@index([address])
+}
+
+/// Uni-directional: adToken -> orderToken
+model Route {
+  id String @id @default(uuid())
+
+  adTokenId String
+  adToken   Token  @relation("adRoutes", fields: [adTokenId], references: [id], onDelete: Restrict)
+
+  orderTokenId String
+  orderToken   Token  @relation("orderRoutes", fields: [orderTokenId], references: [id], onDelete: Restrict)
+
+  metadata Json?
+
+  trades Trade[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Ad        Ad[]
+
+  @@unique([orderTokenId, adTokenId])
+  @@index([adTokenId])
+  @@index([orderTokenId])
+}
+
+model Ad {
+  id                String @id @default(uuid())
+  creatorAddress    String
+  creatorDstAddress String
+  routeId           String
+  route             Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  adTokenId    String
+  orderTokenId String
+  adToken      Token  @relation("AdadToken", fields: [adTokenId], references: [id])
+  orderToken   Token  @relation("AdToToken", fields: [orderTokenId], references: [id])
+
+  // liquidity
+  poolAmount Decimal  @db.Decimal(78, 0)
+  minAmount  Decimal? @db.Decimal(78, 0)
+  maxAmount  Decimal? @db.Decimal(78, 0)
+
+  status   AdStatus @default(INACTIVE)
+  metadata Json?
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  Trade       Trade[]
+  AdLock      AdLock[]
+  adUpdateLog AdUpdateLog?
+
+  @@index([creatorAddress, status])
+  @@index([routeId, status])
+}
+
+model AdUpdateLog {
+  id        String   @id @default(uuid())
+  adId      String   @unique
+  signature String?
+  reqHash   String   @unique
+  ad        Ad       @relation(fields: [adId], references: [id], onDelete: Cascade)
+  log       AdLog[]
+  createdAt DateTime @default(now())
+}
+
+enum AdStatus {
+  INACTIVE
+  ACTIVE
+  PAUSED
+  EXHAUSTED
+  CLOSED
+}
+
+model AdLock {
+  id         String    @id @default(uuid())
+  adId       String
+  ad         Ad        @relation(fields: [adId], references: [id], onDelete: Cascade)
+  trade      Trade     @relation(fields: [tradeId], references: [id])
+  tradeId    String    @unique
+  amount     Decimal   @db.Decimal(78, 0)
+  authorized Boolean   @default(false)
+  releasedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+enum TradeStatus {
+  INACTIVE
+  ACTIVE
+  LOCKED
+  COMPLETED
+}
+
+model Trade {
+  id String @id @default(uuid())
+
+  adId String
+  ad   Ad     @relation(fields: [adId], references: [id])
+
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id], onDelete: Restrict)
+
+  // Participants
+  adCreatorAddress    String
+  bridgerAddress      String
+  bridgerDstAddress   String
+  adCreatorDstAddress String
+
+  // Order hash
+  orderHash String
+
+  amount Decimal @db.Decimal(78, 0)
+
+  status TradeStatus @default(INACTIVE)
+
+  adCreatorClaimed Boolean @default(false)
+  bridgerClaimed   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  adLock         AdLock?
+  tradeUpdateLog TradeUpdateLog?
+
+  secret           Secret?
+  AuthorizationLog AuthorizationLog[]
+
+  @@index([adId])
+  @@index([routeId])
+  @@index([adCreatorAddress])
+  @@index([bridgerAddress])
+}
+
+enum ActionOrigin {
+  AD_MANAGER
+  ORDER_PORTAL
+}
+
+enum ActionContext {
+  CREATEORDER
+  LOCKORDER
+  AUTHORIZE
+}
+
+model AuthorizationLog {
+  id          String       @id @default(uuid())
+  userAddress String
+  origin      ActionOrigin
+  tradeId     String
+  signature   String?
+  reqHash     String       @unique
+  trade       Trade        @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+}
+
+model TradeUpdateLog {
+  id        String        @id @default(uuid())
+  ctx       ActionContext
+  origin    ActionOrigin
+  tradeId   String        @unique
+  signature String?
+  reqHash   String
+  trade     Trade         @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  log       TradeLog[]
+  createdAt DateTime      @default(now())
+
+  @@index([reqHash])
+}
+
+model AdLog {
+  id       String @id @default(uuid())
+  field    String
+  oldValue String
+  newValue String
+
+  AdUpdateLog   AdUpdateLog? @relation(fields: [adUpdateLogId], references: [id])
+  adUpdateLogId String?
+}
+
+model TradeLog {
+  id       String @id @default(uuid())
+  field    String
+  oldValue String
+  newValue String
+
+  TradeUpdateLog   TradeUpdateLog? @relation(fields: [tradeUpdateLogId], references: [id])
+  tradeUpdateLogId String?
+}
+
+model MMR {
+  id     String        @id @default(uuid())
+  orders OrderRecord[]
+
+  chainId   String   @unique
+  chain     Chain?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([chainId, id])
+}
+
+model OrderRecord {
+  id           String   @id @default(uuid())
+  orderHash    String
+  elementIndex Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  mmrId        String
+  mmr          MMR      @relation(fields: [mmrId], references: [id])
+
+  @@unique([mmrId, orderHash])
+  @@unique([mmrId, elementIndex])
+  @@unique([orderHash, mmrId])
+}
+
+model Secret {
+  id               String   @id @default(uuid())
+  tradeId          String   @unique
+  trade            Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  iv               String
+  secretCipherText String
+  authTag          String
+  secretHash       String   @unique
+  createdAt        DateTime @default(now())
 }

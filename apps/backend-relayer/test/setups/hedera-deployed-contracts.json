@@ -1,0 +1,11 @@
+{
+  "adManagerAddress": "0x6ee1cab5d8e27fcc9565e8096a0b477bde89064c",
+  "orderPortalAddress": "0x4f9d3d2a1811cfa51b6a96c4327b939ccfbfc449",
+  "chainId": "296",
+  "name": "HEDERA TESTNET",
+  "tokenName": "ERC20Mock",
+  "tokenSymbol": "E20M",
+  "tokenAddress": "0x569656e4c3721dd8dc1182b166d5701615cfec0e",
+  "merkleManagerAddress": "0xab833d2b9448c68e412e320502e50027c529dac9",
+  "verifierAddress": "0x89b1002d7d5d159bce35c665ef97dc77ad0fd0ab"
+}

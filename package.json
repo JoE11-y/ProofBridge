@@ -9,5 +9,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.10.0"
+  "packageManager": "pnpm@10.10.0",
+  "dependencies": {
+    "@aztec/bb.js": "^0.87.0",
+    "@noir-lang/noir_js": "1.0.0-beta.9"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1"
+  }
 }

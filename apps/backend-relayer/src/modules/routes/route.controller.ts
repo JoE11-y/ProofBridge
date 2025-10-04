@@ -1,0 +1,48 @@
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Query,
+} from '@nestjs/common';
+import { RoutesService } from './route.service';
+import {
+  ListRouteResponseDto,
+  QueryRoutesDto,
+  RouteDataResponseDto,
+} from './dto/route.dto';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Routes')
+@Controller('v1/routes')
+export class RoutesController {
+  constructor(private readonly routes: RoutesService) {}
+
+  // GET /v1/routes?adTokenId&orderTokenId&adChainId&orderChainId&symbol&limit&cursor
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns a list of routes based on query parameters',
+    type: ListRouteResponseDto,
+  })
+  list(@Query() query: QueryRoutesDto): Promise<ListRouteResponseDto> {
+    return this.routes.list(query);
+  }
+
+  // GET /v1/routes/:id
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns route details by route ID',
+    type: RouteDataResponseDto,
+  })
+  get(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<RouteDataResponseDto> {
+    return this.routes.getById(id);
+  }
+}

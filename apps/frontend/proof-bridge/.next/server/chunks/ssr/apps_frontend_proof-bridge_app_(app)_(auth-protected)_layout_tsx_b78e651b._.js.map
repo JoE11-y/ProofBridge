@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/code_base/hackathons/ProofBridge/apps/frontend/proof-bridge/app/%28app%29/%28auth-protected%29/layout.tsx"],"sourcesContent":["import React from \"react\"\r\nimport { cookies } from \"next/headers\"\r\nimport { redirect } from \"next/navigation\"\r\n\r\nconst ProtectedLayout = async ({ children }: { children: React.ReactNode }) => {\r\n  const auth_token = (await cookies()).get(\"auth_token\")?.value\r\n  const refresh_token = (await cookies()).get(\"refresh_token\")?.value\r\n  if (!auth_token || !refresh_token) {\r\n    redirect(\"/bridge\")\r\n  }\r\n\r\n  return <div>{children}</div>\r\n}\r\n\r\nexport default ProtectedLayout\r\n"],"names":[],"mappings":";;;;;AACA;AACA;AAAA;;;;AAEA,MAAM,kBAAkB,OAAO,EAAE,QAAQ,EAAiC;IACxE,MAAM,aAAa,CAAC,MAAM,IAAA,yQAAO,GAAE,EAAE,GAAG,CAAC,eAAe;IACxD,MAAM,gBAAgB,CAAC,MAAM,IAAA,yQAAO,GAAE,EAAE,GAAG,CAAC,kBAAkB;IAC9D,IAAI,CAAC,cAAc,CAAC,eAAe;QACjC,IAAA,gUAAQ,EAAC;IACX;IAEA,qBAAO,6WAAC;kBAAK;;;;;;AACf;uCAEe","debugId":null}}]
+}

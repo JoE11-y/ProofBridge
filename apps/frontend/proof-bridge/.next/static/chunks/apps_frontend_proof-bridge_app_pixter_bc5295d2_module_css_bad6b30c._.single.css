@@ -1,0 +1,32 @@
+/* [project]/apps/frontend/proof-bridge/app/pixter_bc5295d2.module.css [app-client] (css) */
+@font-face {
+  font-family: pixter;
+  src: url("../media/Pixter_Display_Bold-s.p.c54d65fd.ttf") format("truetype");
+  font-display: swap;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: pixter;
+  src: url("../media/Pixter_Display-s.p.71b68f97.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: pixter Fallback;
+  src: local(Arial);
+  ascent-override: 80.56%;
+  descent-override: 22.99%;
+  line-gap-override: 51.77%;
+  size-adjust: 96.58%;
+}
+
+.pixter_bc5295d2-module__UYzyaq__className {
+  font-family: pixter, pixter Fallback;
+}
+
+.pixter_bc5295d2-module__UYzyaq__variable {
+  --font-pixter-display: "pixter", "pixter Fallback";
+}
+
+/*# sourceMappingURL=apps_frontend_proof-bridge_app_pixter_bc5295d2_module_css_bad6b30c._.single.css.map*/

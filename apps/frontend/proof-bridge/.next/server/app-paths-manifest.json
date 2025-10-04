@@ -1,0 +1,7 @@
+{
+  "/(app)/(auth-protected)/ads-management/create/page": "app/(app)/(auth-protected)/ads-management/create/page.js",
+  "/(app)/(auth-protected)/home/page": "app/(app)/(auth-protected)/home/page.js",
+  "/(app)/bridge/page": "app/(app)/bridge/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js"
+}

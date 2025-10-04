@@ -1,0 +1,9 @@
+{
+  "/(app)/(auth-protected)/ads-management/create/page": "/ads-management/create",
+  "/(app)/(auth-protected)/ads-management/page": "/ads-management",
+  "/(app)/(auth-protected)/home/page": "/home",
+  "/(app)/bridge/page": "/bridge",
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/"
+}
