@@ -20,15 +20,9 @@ import {
 import { config } from "@/utils/wagmi-config"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { parseUnits } from "viem"
 import { useAccount, useWriteContract } from "wagmi"
 import { waitForTransactionReceipt } from "wagmi/actions"
-import { hederaTestnet, sepolia } from "viem/chains"
 import { getTokens } from "@/services/tokens.service"
-const contractAddresses: Record<number, string> = {
-  [hederaTestnet.id]: "",
-  [sepolia.id]: "",
-}
 
 export const useCreateAd = () => {
   const { writeContractAsync } = useWriteContract()
@@ -42,10 +36,7 @@ export const useCreateAd = () => {
         abi: ERC20_ABI,
         chainId: Number(response.chainId),
         functionName: "approve",
-        args: [
-          response.contractAddress,
-          parseUnits(data.fundAmount, token.data[0].decimals),
-        ],
+        args: [response.contractAddress, data.fundAmount],
       })
       const approveReceipt = await waitForTransactionReceipt(config, {
         hash: approveHash,
@@ -62,6 +53,7 @@ export const useCreateAd = () => {
             BigInt(response.timeToExpire),
             response.adId,
             response.adToken,
+            data.fundAmount,
             BigInt(response.orderChainId),
             response.adRecipient,
           ],
