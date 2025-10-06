@@ -34,6 +34,7 @@ const HomePage = () => {
 
   const { data: all_ads } = useGetAllAds({
     creatorAddress: account.address!,
+    limit: 50,
   })
 
   const items: TabsProps["items"] = [

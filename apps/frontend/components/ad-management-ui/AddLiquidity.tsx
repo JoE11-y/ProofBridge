@@ -1,7 +1,7 @@
 import { useCreateAd } from "@/hooks/useAds"
 import { useGetBridgeRoutes } from "@/hooks/useBridgeRoutes"
 import { chain_icons } from "@/lib/chain-icons"
-import { Button, Modal } from "antd"
+import { Button, Modal, Select, Skeleton } from "antd"
 import { Handshake, Info, ShieldAlert, Text } from "lucide-react"
 import moment from "moment"
 import Image from "next/image"
@@ -10,16 +10,24 @@ import React, { useState } from "react"
 import { Chain, parseUnits } from "viem"
 import { useAccount } from "wagmi"
 import { useChainModal } from "@rainbow-me/rainbowkit"
+import { useGetAllChains } from "@/hooks/useChains"
+import { GiCancel } from "react-icons/gi"
+import { hederaTestnet, sepolia } from "viem/chains"
+import { CiWarning } from "react-icons/ci"
 
-export const AddLiquidity = ({
-  liquidity_chain,
-  other_chain,
-}: {
-  liquidity_chain: Chain
-  other_chain: Chain
-}) => {
+const supported_chains: Record<number, Chain> = {
+  [hederaTestnet.id]: hederaTestnet,
+  [sepolia.id]: sepolia,
+}
+
+export const AddLiquidity = () => {
   const account = useAccount()
-  const is_liquidity_chain = liquidity_chain.id === account.chainId
+  const { data: chains, isLoading: loadingChains } = useGetAllChains({
+    limit: 10,
+  })
+  const [liquidity_chain, setLiquidity_chain] = useState<Chain>()
+  const [other_chain, setOther_chain] = useState<Chain>()
+  const is_liquidity_chain = liquidity_chain?.id === account.chainId
   const { openChainModal } = useChainModal()
   const { mutateAsync: createAd, isPending } = useCreateAd()
   const [title, setTitle] = useState("")
@@ -31,8 +39,8 @@ export const AddLiquidity = ({
   const [openModal, setOpenModal] = useState(false)
   const toggleModal = () => setOpenModal(!openModal)
   const { data: routes, isLoading: loadingRoutes } = useGetBridgeRoutes({
-    adChainId: String(liquidity_chain.id),
-    orderChainId: String(other_chain.id),
+    adChainId: String(liquidity_chain?.id),
+    orderChainId: String(other_chain?.id),
   })
 
   const handleCreateAd = async () => {
@@ -42,11 +50,11 @@ export const AddLiquidity = ({
         creatorDstAddress: account.address!,
         maxAmount: parseUnits(
           max,
-          liquidity_chain.nativeCurrency.decimals
+          liquidity_chain?.nativeCurrency?.decimals!
         ).toString(),
         minAmount: parseUnits(
           min,
-          liquidity_chain.nativeCurrency.decimals
+          liquidity_chain?.nativeCurrency?.decimals!
         ).toString(),
 
         metadata: {
@@ -55,7 +63,7 @@ export const AddLiquidity = ({
         },
         fundAmount: parseUnits(
           amount,
-          liquidity_chain.nativeCurrency.decimals
+          liquidity_chain?.nativeCurrency?.decimals!
         ).toString(),
       })
 
@@ -74,29 +82,53 @@ export const AddLiquidity = ({
         <div className="grid md:grid-cols-2 gap-4 md:gap-6">
           <div>
             <p className="text-grey-300">Base Chain</p>
-            <div className="flex gap-2 items-center">
-              <Image
-                src={chain_icons[liquidity_chain.id]}
-                alt=""
-                height={40}
-                width={40}
-                className="rounded-full"
+            <div>
+              <Select
+                loading={loadingChains}
+                className="w-full !h-[40px]"
+                options={chains?.rows
+                  .filter((chain) => Number(chain.chainId) !== other_chain?.id!)
+                  .map((chain) => {
+                    return {
+                      label: chain.name,
+                      value: chain.chainId,
+                    }
+                  })}
+                allowClear={{
+                  clearIcon: <GiCancel className="text-red-500" size={15} />,
+                }}
+                onChange={(value: number) => {
+                  setLiquidity_chain(supported_chains[value])
+                }}
+                onClear={() => setLiquidity_chain(undefined)}
               />
-              <p className="text-lg">{liquidity_chain.name}</p>
             </div>
           </div>
 
           <div>
             <p className="text-grey-300"> Destination Chain</p>
-            <div className="flex gap-2 items-center">
-              <Image
-                src={chain_icons[other_chain.id]}
-                alt=""
-                height={30}
-                width={30}
-                className="rounded-full"
+            <div>
+              <Select
+                loading={loadingChains}
+                className="w-full !h-[40px]"
+                options={chains?.rows
+                  .filter(
+                    (chain) => Number(chain.chainId) !== liquidity_chain?.id!
+                  )
+                  .map((chain) => {
+                    return {
+                      label: chain.name,
+                      value: chain.chainId,
+                    }
+                  })}
+                allowClear={{
+                  clearIcon: <GiCancel className="text-red-500" size={15} />,
+                }}
+                onChange={(value: number) => {
+                  setOther_chain(supported_chains[value])
+                }}
+                onClear={() => setOther_chain(undefined)}
               />
-              <p className="text-lg">{other_chain.name}</p>
             </div>
           </div>
 
@@ -193,34 +225,53 @@ export const AddLiquidity = ({
             <Info size={16} className="text-blue-500" />
             <p>What users will see</p>
           </div>
-          <p>
-            Your ad will appear as: sell ETH for HBAR with the information and
-            trading terms specified above.
+          <p className="text-sm">
+            Your ad will appear as: Base{" "}
+            <span className="text-primary">
+              {liquidity_chain?.name || "N/A"}
+            </span>{" "}
+            for Destination{" "}
+            <span className="text-primary">{other_chain?.name || "N/A"}</span>{" "}
+            with the information and trading terms specified above.
           </p>
         </div>
       </div>
       <div className="flex justify-end">
-        {is_liquidity_chain ? (
-          <Button
-            onClick={() => {
-              if (!title || !description || !amount || !min || !max) {
-                setIsInputError(true)
-                return
-              }
-              setIsInputError(false)
-              toggleModal()
-            }}
-            className=""
-            type="primary"
-            size="large"
-            loading={isPending}
-          >
-            Preview Ad
-          </Button>
+        {!liquidity_chain ? (
+          <div className="flex items-center gap-2 text-yellow-500">
+            <CiWarning size={18} />
+            <p className="">Please select Base chain.</p>
+          </div>
+        ) : !other_chain ? (
+          <div className="flex items-center gap-2 text-yellow-500">
+            <CiWarning size={18} />
+            <p className="">Please select Destination chain.</p>
+          </div>
         ) : (
-          <Button type="primary" size="large" onClick={openChainModal}>
-            Connect to {liquidity_chain.name}
-          </Button>
+          <>
+            {is_liquidity_chain ? (
+              <Button
+                onClick={() => {
+                  if (!title || !description || !amount || !min || !max) {
+                    setIsInputError(true)
+                    return
+                  }
+                  setIsInputError(false)
+                  toggleModal()
+                }}
+                className=""
+                type="primary"
+                size="large"
+                loading={isPending}
+              >
+                Preview Ad
+              </Button>
+            ) : (
+              <Button type="primary" size="large" onClick={openChainModal}>
+                Connect to {liquidity_chain?.name}
+              </Button>
+            )}
+          </>
         )}
       </div>
 
@@ -244,7 +295,7 @@ export const AddLiquidity = ({
                 <p className="text-lg mb-4 underline">
                   Providing Liquidity for{" "}
                   <span className="text-primary font-semibold">
-                    {liquidity_chain.name}
+                    {liquidity_chain?.name}
                   </span>
                 </p>
               </div>
