@@ -1,10 +1,8 @@
 import { useCreateAd } from "@/hooks/useAds"
 import { useGetBridgeRoutes } from "@/hooks/useBridgeRoutes"
-import { chain_icons } from "@/lib/chain-icons"
-import { Button, Modal, Select, Skeleton } from "antd"
+import { Button, Modal, Select } from "antd"
 import { Handshake, Info, ShieldAlert, Text } from "lucide-react"
 import moment from "moment"
-import Image from "next/image"
 import Link from "next/link"
 import React, { useState } from "react"
 import { Chain, parseUnits } from "viem"
@@ -46,7 +44,7 @@ export const AddLiquidity = () => {
   const handleCreateAd = async () => {
     try {
       const response = await createAd({
-        routeId: routes!.data[0]!.id!,
+        routeId: routes?.data[0]?.id!,
         creatorDstAddress: account.address!,
         maxAmount: parseUnits(
           max,
@@ -70,6 +68,7 @@ export const AddLiquidity = () => {
       toggleModal()
     } catch (error) {}
   }
+
   return (
     <div className="space-y-6">
       <div className="bg-grey-900 md:p-6 p-3 rounded-md space-y-4">
@@ -81,7 +80,7 @@ export const AddLiquidity = () => {
         </div>
         <div className="grid md:grid-cols-2 gap-4 md:gap-6">
           <div>
-            <p className="text-grey-300">Base Chain</p>
+            <p className="text-grey-300 mb-1">Base Chain</p>
             <div>
               <Select
                 loading={loadingChains}
@@ -106,7 +105,7 @@ export const AddLiquidity = () => {
           </div>
 
           <div>
-            <p className="text-grey-300"> Destination Chain</p>
+            <p className="text-grey-300 mb-1">Destination Chain</p>
             <div>
               <Select
                 loading={loadingChains}

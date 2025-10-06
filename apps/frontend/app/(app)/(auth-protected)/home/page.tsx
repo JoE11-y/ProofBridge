@@ -49,7 +49,7 @@ const HomePage = () => {
           {isLoading ? (
             <>
               {Array.from([1, 2, 3]).map((value) => (
-                <SkeletonAdCard />
+                <SkeletonAdCard key={value} />
               ))}
             </>
           ) : (
@@ -70,7 +70,7 @@ const HomePage = () => {
           {loadingActive ? (
             <>
               {Array.from([1, 2, 3]).map((value) => (
-                <SkeletonAdCard />
+                <SkeletonAdCard key={value} />
               ))}
             </>
           ) : (
@@ -91,7 +91,7 @@ const HomePage = () => {
           {loadingInActive ? (
             <>
               {Array.from([1, 2, 3]).map((value) => (
-                <SkeletonAdCard />
+                <SkeletonAdCard key={value} />
               ))}
             </>
           ) : (
@@ -112,7 +112,7 @@ const HomePage = () => {
           {loadingExhuasted ? (
             <>
               {Array.from([1, 2, 3]).map((value) => (
-                <SkeletonAdCard />
+                <SkeletonAdCard key={value} />
               ))}
             </>
           ) : (
@@ -133,7 +133,7 @@ const HomePage = () => {
           {loadingClosed ? (
             <>
               {Array.from([1, 2, 3]).map((value) => (
-                <SkeletonAdCard />
+                <SkeletonAdCard key={value} />
               ))}
             </>
           ) : (
