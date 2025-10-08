@@ -8,7 +8,6 @@ const CreateAdPage = () => {
     <div>
       <div className="flex items-center justify-between flex-wrap">
         <GoBack />
-        <p className="text-xl font-sequel">Create Ad</p>
       </div>
       <div className="p-4">
         <CreateAd />

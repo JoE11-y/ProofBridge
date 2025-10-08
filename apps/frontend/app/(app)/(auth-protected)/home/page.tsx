@@ -9,31 +9,35 @@ import { useGetAllAds } from "@/hooks/useAds"
 import { useAccount } from "wagmi"
 import { AdCard } from "@/components/dashboard/AdCard"
 import { Tabs, TabsProps } from "antd"
+import { SkeletonAdCard } from "@/components/dashboard/SkeletonAdCard"
 
 const HomePage = () => {
   const account = useAccount()
-  const { data: all_active_ads } = useGetAllAds({
+  const { data: all_active_ads, isLoading: loadingActive } = useGetAllAds({
     status: "ACTIVE",
     creatorAddress: account.address!,
   })
 
-  const { data: all_inactive_ads } = useGetAllAds({
+  const { data: all_inactive_ads, isLoading: loadingInActive } = useGetAllAds({
     status: "PAUSED",
     creatorAddress: account.address!,
   })
 
-  const { data: all_exhaused_ads } = useGetAllAds({
-    status: "EXHAUSTED",
-    creatorAddress: account.address!,
-  })
+  const { data: all_exhausted_ads, isLoading: loadingExhuasted } = useGetAllAds(
+    {
+      status: "EXHAUSTED",
+      creatorAddress: account.address!,
+    }
+  )
 
-  const { data: all_closed_ads } = useGetAllAds({
+  const { data: all_closed_ads, isLoading: loadingClosed } = useGetAllAds({
     status: "CLOSED",
     creatorAddress: account.address!,
   })
 
-  const { data: all_ads } = useGetAllAds({
+  const { data: all_ads, isLoading } = useGetAllAds({
     creatorAddress: account.address!,
+    limit: 50,
   })
 
   const items: TabsProps["items"] = [
@@ -42,9 +46,19 @@ const HomePage = () => {
       label: "All ads",
       children: (
         <div className="space-y-4 md:space-y-6">
-          {all_ads?.data?.map((ad) => {
-            return <AdCard ad={ad} key={ad.id} />
-          })}
+          {isLoading ? (
+            <>
+              {Array.from([1, 2, 3]).map((value) => (
+                <SkeletonAdCard key={value} />
+              ))}
+            </>
+          ) : (
+            <>
+              {all_ads?.data?.map((ad) => {
+                return <AdCard ad={ad} key={ad.id} />
+              })}
+            </>
+          )}
         </div>
       ),
     },
@@ -53,9 +67,19 @@ const HomePage = () => {
       label: "Active",
       children: (
         <div className="space-y-4 md:space-y-6">
-          {all_active_ads?.data?.map((ad) => {
-            return <AdCard ad={ad} key={ad.id} />
-          })}
+          {loadingActive ? (
+            <>
+              {Array.from([1, 2, 3]).map((value) => (
+                <SkeletonAdCard key={value} />
+              ))}
+            </>
+          ) : (
+            <>
+              {all_active_ads?.data?.map((ad) => {
+                return <AdCard ad={ad} key={ad.id} />
+              })}
+            </>
+          )}
         </div>
       ),
     },
@@ -64,9 +88,19 @@ const HomePage = () => {
       label: "Inactive",
       children: (
         <div className="space-y-4 md:space-y-6">
-          {all_inactive_ads?.data?.map((ad) => {
-            return <AdCard ad={ad} key={ad.id} />
-          })}
+          {loadingInActive ? (
+            <>
+              {Array.from([1, 2, 3]).map((value) => (
+                <SkeletonAdCard key={value} />
+              ))}
+            </>
+          ) : (
+            <>
+              {all_inactive_ads?.data?.map((ad) => {
+                return <AdCard ad={ad} key={ad.id} />
+              })}
+            </>
+          )}
         </div>
       ),
     },
@@ -75,9 +109,19 @@ const HomePage = () => {
       label: "Exhausted",
       children: (
         <div className="space-y-4 md:space-y-6">
-          {all_exhaused_ads?.data?.map((ad) => {
-            return <AdCard ad={ad} key={ad.id} />
-          })}
+          {loadingExhuasted ? (
+            <>
+              {Array.from([1, 2, 3]).map((value) => (
+                <SkeletonAdCard key={value} />
+              ))}
+            </>
+          ) : (
+            <>
+              {all_exhausted_ads?.data?.map((ad) => {
+                return <AdCard ad={ad} key={ad.id} />
+              })}
+            </>
+          )}
         </div>
       ),
     },
@@ -86,9 +130,19 @@ const HomePage = () => {
       label: "Closed",
       children: (
         <div className="space-y-4 md:space-y-6">
-          {all_closed_ads?.data?.map((ad) => {
-            return <AdCard ad={ad} key={ad.id} />
-          })}
+          {loadingClosed ? (
+            <>
+              {Array.from([1, 2, 3]).map((value) => (
+                <SkeletonAdCard key={value} />
+              ))}
+            </>
+          ) : (
+            <>
+              {all_closed_ads?.data?.map((ad) => {
+                return <AdCard ad={ad} key={ad.id} />
+              })}
+            </>
+          )}
         </div>
       ),
     },
@@ -164,7 +218,7 @@ const HomePage = () => {
         </div>
       </div>
       <div>
-        <Tabs defaultActiveKey="1" items={items} type="card" size="large" />
+        <Tabs defaultActiveKey="1" items={items} type="line" size="large" />
       </div>
     </div>
   )

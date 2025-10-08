@@ -6,8 +6,8 @@ const chains_route = (path = "") => {
   return `${urls.API_URL}/v1/chains${path}`
 }
 
-export const getChains = async (params: {
-  limit?: string
+export const getAllChains = async (params: {
+  limit?: number
   cursor?: string
 }) => {
   const response = await api.get(chains_route("/"), { params })

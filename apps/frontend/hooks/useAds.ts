@@ -20,15 +20,9 @@ import {
 import { config } from "@/utils/wagmi-config"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { parseUnits } from "viem"
 import { useAccount, useWriteContract } from "wagmi"
 import { waitForTransactionReceipt } from "wagmi/actions"
-import { hederaTestnet, sepolia } from "viem/chains"
 import { getTokens } from "@/services/tokens.service"
-const contractAddresses: Record<number, string> = {
-  [hederaTestnet.id]: "",
-  [sepolia.id]: "",
-}
 
 export const useCreateAd = () => {
   const { writeContractAsync } = useWriteContract()
@@ -36,29 +30,52 @@ export const useCreateAd = () => {
     mutationKey: ["create-ad"],
     mutationFn: async (data: ICreateAdRequest) => {
       const response = await createAd(data)
-      const txHash = await writeContractAsync({
-        address: response.contractAddress,
-        abi: AD_MANAGER_ABI,
+      const token = await getTokens({ chainId: String(response.chainId!) })
+      const approveHash = await writeContractAsync({
+        address: token.data[0].address,
+        abi: ERC20_ABI,
         chainId: Number(response.chainId),
-        functionName: "createAd",
-        args: [
-          response.signature,
-          response.authToken,
-          BigInt(response.timeToExpire),
-          response.adId,
-          response.adToken,
-          BigInt(response.orderChainId),
-          response.adRecipient,
-        ],
+        functionName: "approve",
+        args: [response.contractAddress, data.fundAmount],
       })
-      const receipt = await waitForTransactionReceipt(config, { hash: txHash })
-
-      if (receipt.status === "success") {
-        await confirmAdTx({
-          txHash: receipt.transactionHash,
-          signature: response.signature,
-          adId: response.adId,
+      const approveReceipt = await waitForTransactionReceipt(config, {
+        hash: approveHash,
+      })
+      if (approveReceipt.status === "success") {
+        const txHash = await writeContractAsync({
+          address: response.contractAddress,
+          abi: AD_MANAGER_ABI,
+          chainId: Number(response.chainId),
+          functionName: "createAd",
+          args: [
+            response.signature,
+            response.authToken,
+            BigInt(response.timeToExpire),
+            response.adId,
+            response.adToken,
+            data.fundAmount,
+            BigInt(response.orderChainId),
+            response.adRecipient,
+          ],
         })
+        const receipt = await waitForTransactionReceipt(config, {
+          hash: txHash,
+        })
+
+        if (receipt.status === "success") {
+          await confirmAdTx({
+            txHash: receipt.transactionHash,
+            signature: response.signature,
+            adId: response.adId,
+          })
+        }
+
+        if (receipt.status === "reverted") {
+          throw Error("Transaction failed, Retry")
+        }
+      }
+      if (approveReceipt.status === "reverted") {
+        throw Error("Transaction not approved")
       }
       return response
     },
@@ -122,6 +139,13 @@ export const useFundAd = () => {
             adId: response.adId,
           })
         }
+
+        if (receipt.status === "reverted") {
+          throw Error("Transaction failed, Retry")
+        }
+      }
+      if (approveReceipt.status === "reverted") {
+        throw Error("Transaction not approved")
       }
       return response
     },
