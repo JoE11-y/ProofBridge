@@ -58,6 +58,7 @@ export const BridgeTab = () => {
                 {chains?.rows?.map((chain) => {
                   return (
                     <Button
+                      key={chain.chainId}
                       className=" !h-[35px]"
                       type={
                         selectedChainId === chain.chainId ? "primary" : "text"
