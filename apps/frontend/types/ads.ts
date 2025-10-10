@@ -116,7 +116,7 @@ export interface IAd {
   availableAmount: string
   minAmount: string
   maxAmount: string
-  status: "ACTIVE" | "PAUSED" | "INACTIVE" | "EXHAUSTED" | "CLOSED"
+  status: AdStatusT
   metadata: { title?: string; description?: string }
   createdAt: string
   updatedAt: string
@@ -139,7 +139,16 @@ export interface IAd {
 export interface IGetAdsParams {
   creatorAddress?: Address
   routeId?: string
-  status?: "ACTIVE" | "PAUSED" | "INACTIVE" | "EXHAUSTED" | "CLOSED"
+  status?: AdStatusT
   cursor?: string
   limit?: number
+  adChainId?: string
+  orderChainId?: string
 }
+
+export type AdStatusT =
+  | "ACTIVE"
+  | "PAUSED"
+  | "INACTIVE"
+  | "EXHAUSTED"
+  | "CLOSED"
