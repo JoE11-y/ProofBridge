@@ -4,33 +4,39 @@ import { Avatar, Button, Modal } from "antd"
 import { Clock, Info, ThumbsUp, Verified } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { AdStatusT, IAd } from "@/types/ads"
+import { formatUnits } from "viem"
+import { parseToBigInt } from "@/lib/parse-to-bigint"
+import { chains } from "@/lib/chains"
+import moment from "moment"
+import { truncateString } from "@/utils/truncate-string"
+import { Status } from "../shared/Status"
 
-interface propsI {
-  ad_id: string
-  full_name: string
-  total_orders: number
-  orders_completion_rate: string
-  avg_order_completion_time: string
-  token: string
-  price: string
-  available_tokens: string
-  limit: string
-  date_posted: { date: string; time: string }
-  advertiser_terms: string
-}
+const advertiser_terms = `⚠️ Warning: I'm fully active, do not be tempted to click
+                  ''Payment Completed'' box unless you have successfully
+                  completed the payment. Doing so may lead to disputes or
+                  account restrictions." -Leave an active phone number -And
+                  don't forget to leave a positive review please, I'll do same
+                  for you.🙏🙏🙏`
 
-export const BuyAd = ({ ...props }: propsI) => {
-  const {
-    ad_id,
-    token,
-    price,
-    available_tokens,
-    limit,
-    date_posted,
-    advertiser_terms,
-  } = props
+export const TradeAd = ({ ...props }: IAd) => {
   const [openModal, setOpenModal] = useState(false)
   const toggleModal = () => setOpenModal(!openModal)
+  const available_tokens = formatUnits(
+    parseToBigInt(props.availableAmount),
+    props.adToken.decimals
+  )
+  const minAmount = formatUnits(
+    parseToBigInt(props.minAmount),
+    props.adToken.decimals
+  )
+  const maxAmount = formatUnits(
+    parseToBigInt(props.maxAmount),
+    props.adToken.decimals
+  )
+  const tokenSymbol = props.adToken.symbol
+  const token = props.adToken.name
+  // const crossChain = chains[props.orderToken.chainId]
   return (
     <div>
       <Modal
@@ -78,7 +84,9 @@ export const BuyAd = ({ ...props }: propsI) => {
                   <p className="text-grey-200 capitalize pr-2 font-semibold text-xs">
                     Limits
                   </p>
-                  <p>{limit}</p>
+                  <p>
+                    {minAmount} - {maxAmount} {tokenSymbol}
+                  </p>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-grey-200 capitalize pr-2 font-semibold text-xs">
@@ -87,9 +95,9 @@ export const BuyAd = ({ ...props }: propsI) => {
                   <div className="flex items-center gap-1 text-grey-300">
                     <div className="flex items-center gap-1">
                       <span className=" h-3 w-1 bg-primary"></span>
-                      <p>{date_posted.date}</p>
+                      <p>{moment(props.updatedAt).format("LL")}</p>
                     </div>
-                    <p>{date_posted.time}</p>
+                    <p>{moment(props.updatedAt).format("LT")}</p>
                   </div>
                 </div>
               </div>
@@ -118,10 +126,10 @@ export const BuyAd = ({ ...props }: propsI) => {
           </div>
           <div className="bg-grey-800/60 w-full h-full md:rounded-r-[12px] p-4 md:p-6 md:py-7 space-y-3">
             <div className="flex items-center gap-4">
-              <p>Price</p>
+              <p>Quantity</p>
               <p className="font-semibold text-primary font-pixter tracking-wide">
-                {price}
-                {token}
+                {available_tokens}
+                {tokenSymbol}
               </p>
             </div>
 
@@ -138,7 +146,8 @@ export const BuyAd = ({ ...props }: propsI) => {
                   />
                   <input className="w-full !border-0 outline-0 text-lg font-semibold tracking-wider" />
                   <p className="text-[11px] space-x-2">
-                    <span>{token}</span> <span className="text-[10px]">|</span>{" "}
+                    <span>{tokenSymbol}</span>{" "}
+                    <span className="text-[10px]">|</span>{" "}
                     <span className="cursor-pointer text-primary" role="button">
                       All
                     </span>
@@ -167,8 +176,13 @@ export const BuyAd = ({ ...props }: propsI) => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Button size="large" className="w-full !h-[45px]" type="primary">
-                Buy
+              <Button
+                size="large"
+                className="w-full !h-[45px]"
+                type="primary"
+                disabled={props.status !== "ACTIVE"}
+              >
+                Bridge
               </Button>
               <Button
                 size="large"
@@ -185,11 +199,13 @@ export const BuyAd = ({ ...props }: propsI) => {
         </div>
       </Modal>
       <div className="md:grid md:[grid-template-columns:2fr_1fr_2fr_1fr_1fr] gap-7 items-center text-sm md:py-0 py-2">
-        <MerchantInfo {...props} />
+        <MerchantInfo {...props} variant="variant_2" />
 
-        <div className="flex items-baseline gap-2 font-bold">
-          <p className="text-xl">{price}</p>
-          <p className="text-xs">{token}</p>
+        <div className="flex items-baseline gap-2 mt-2">
+          <p className="md:hidden block text-xs">Other Chain: </p>
+          <p className="md:text-lg text-[16px]">
+            {chains[props?.orderToken?.chainId!].name}
+          </p>
         </div>
 
         <div className="uppercase">
@@ -197,27 +213,36 @@ export const BuyAd = ({ ...props }: propsI) => {
             <span className="md:hidden text-grey-400 capitalize pr-2">
               Quantity
             </span>
-            {available_tokens}
+            <span className="">
+              {available_tokens} {tokenSymbol}
+            </span>
           </p>
           <p>
             <span className="md:hidden text-grey-400 capitalize pr-2">
               Limits
             </span>
-            {limit}
+            <span>
+              {minAmount} - {maxAmount} {tokenSymbol}
+            </span>
           </p>
         </div>
 
         <div className="flex md:block items-center gap-1 text-grey-400 md:text-inherit">
           <div className="flex items-center gap-1">
             <span className="md:hidden block h-3 w-1 bg-primary"></span>
-            <p>{date_posted.date}</p>
+            <p>{moment(props.updatedAt).format("LL")}</p>
           </div>
-          <p>{date_posted.time}</p>
+          <p>{moment(props.updatedAt).format("LT")}</p>
         </div>
 
         <div className="w-full flex justify-end md:mt-0 -mt-8">
-          <Button type="primary" className="md:w-[120px]" onClick={toggleModal}>
-            Buy
+          <Button
+            type="primary"
+            className="md:w-[120px] !h-[40px]"
+            onClick={toggleModal}
+            disabled={props.status !== "ACTIVE"}
+          >
+            Bridge
           </Button>
         </div>
       </div>
@@ -225,18 +250,17 @@ export const BuyAd = ({ ...props }: propsI) => {
   )
 }
 
-interface merchantI extends propsI {
+interface merchantI extends IAd {
   variant?: "variant_1" | "variant_2"
 }
 
 const MerchantInfo = ({
-  full_name,
-  avg_order_completion_time,
-  orders_completion_rate,
-  total_orders,
+  status,
   variant,
+  creatorAddress,
+  ...props
 }: merchantI) => {
-  const initial = full_name ? full_name.trim()[0].toUpperCase() : "U"
+  const initial = creatorAddress[creatorAddress.length - 1]
 
   return (
     <>
@@ -252,22 +276,12 @@ const MerchantInfo = ({
               </Avatar>
               <div>
                 <div className="flex items-center gap-1">
-                  <p className="font-semibold tracking-wider">{full_name}</p>
+                  <p className="font-semibold tracking-wider">
+                    {truncateString(creatorAddress, 5, 5)}
+                  </p>
                   <Verified className="text-primary" size={15} />
                 </div>
-                <div className="flex items-center gap-1 md:hidden text-xs text-grey-300">
-                  <Clock size={12} />
-                  <p>{avg_order_completion_time}</p>
-                </div>
-                <div className="flex items-center md:gap-1 gap-1 md:text-sm text-xs md:text-inherit text-grey-300">
-                  <p>{total_orders} order(s)</p>
-                  <p>|</p>
-                  <p>{orders_completion_rate}</p>
-                </div>
-                <div className="md:flex items-center gap-1 hidden text-xs">
-                  <Clock size={12} />
-                  <p>{avg_order_completion_time}</p>
-                </div>
+                <Status status={status} size="sm" />
               </div>
             </div>
           </div>
@@ -280,26 +294,9 @@ const MerchantInfo = ({
                 {initial}
               </Avatar>
               <div>
-                <div className="flex items-center gap-1">
-                  <p className="font-semibold tracking-wider">{full_name}</p>
-                  <Verified className="text-primary" size={15} />
-                </div>
-                <div className="flex items-center gap-1 md:hidden text-xs text-grey-300">
-                  <Clock size={12} />
-                  <p>{avg_order_completion_time}</p>
-                </div>
+                <Status status={status} size="sm" />
               </div>
             </div>
-            <div className="flex items-center md:gap-3 gap-1 md:text-sm text-xs md:text-inherit text-grey-300">
-              <p>{total_orders} order(s)</p>
-              <p>|</p>
-              <p>{orders_completion_rate}</p>
-            </div>
-          </div>
-
-          <div className="md:flex items-center gap-1 hidden">
-            <Clock size={16} />
-            <p>{avg_order_completion_time}</p>
           </div>
         </div>
       )}

@@ -6,7 +6,7 @@ const tokens_route = (path = "") => {
   return `${urls.API_URL}/v1/tokens${path}`
 }
 
-export const getTokens = async (params: IGetTokensParams) => {
+export const getTokens = async (params?: IGetTokensParams) => {
   const response = await api.get(tokens_route("/"), { params })
   return response.data as { data: IToken[]; nextCursor: string }
 }
