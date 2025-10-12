@@ -123,14 +123,14 @@ export interface IAd {
   adToken: {
     name: string
     symbol: string
-    address: string
+    address: Address
     decimals: number
     chainId: string
   }
   orderToken: {
     name: string
     symbol: string
-    address: string
+    address: Address
     decimals: number
     chainId: string
   }

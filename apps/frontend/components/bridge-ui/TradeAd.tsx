@@ -1,18 +1,22 @@
 "use client"
-import React, { useState } from "react"
-import { Avatar, Button, Modal } from "antd"
+import React, { useEffect, useState } from "react"
+import { Avatar, Button, Modal, Skeleton } from "antd"
 import { Clock, Info, ThumbsUp, Verified } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { AdStatusT, IAd } from "@/types/ads"
-import { formatUnits } from "viem"
+import { formatUnits, parseUnits } from "viem"
 import { parseToBigInt } from "@/lib/parse-to-bigint"
 import { chains } from "@/lib/chains"
 import moment from "moment"
 import { truncateString } from "@/utils/truncate-string"
 import { Status } from "../shared/Status"
+import { chain_icons } from "@/lib/chain-icons"
+import { useAccount, useBalance } from "wagmi"
+import { useCreateTrade } from "@/hooks/useTrades"
+import { useChainModal } from "@rainbow-me/rainbowkit"
 
-const advertiser_terms = `⚠️ Warning: I'm fully active, do not be tempted to click
+const _advertiser_terms = `⚠️ Warning: I'm fully active, do not be tempted to click
                   ''Payment Completed'' box unless you have successfully
                   completed the payment. Doing so may lead to disputes or
                   account restrictions." -Leave an active phone number -And
@@ -37,6 +41,36 @@ export const TradeAd = ({ ...props }: IAd) => {
   const tokenSymbol = props.adToken.symbol
   const token = props.adToken.name
   // const crossChain = chains[props.orderToken.chainId]
+  const txFeePercent = 1
+  const [amount, setAmount] = useState("")
+  const txFee = Number(amount) * (txFeePercent / 100)
+  const account = useAccount()
+  const balance = useBalance({
+    chainId: Number(props.adToken.chainId),
+    token: props.adToken.address,
+    address: account.address,
+  })
+  const [balance_value, setBalance_value] = useState("")
+
+  useEffect(() => {
+    if (balance.data) {
+      setBalance_value(
+        formatUnits(balance?.data?.value!, balance?.data?.decimals!)
+      )
+    }
+  }, [balance])
+
+  const { mutateAsync, isPending } = useCreateTrade()
+  const { openChainModal } = useChainModal()
+
+  const handleCreateTrade = async () => {
+    await mutateAsync({
+      adId: props.id,
+      routeId: props.routeId,
+      amount: parseUnits(amount, props.orderToken.decimals).toString(),
+      bridgerDstAddress: account.address!,
+    })
+  }
   return (
     <div>
       <Modal
@@ -118,7 +152,7 @@ export const TradeAd = ({ ...props }: IAd) => {
                     protection.
                   </p>
                   <div className="max-h-[130px] overflow-y-auto mt-2 py-2 pr-2 text-grey-50">
-                    <p>{advertiser_terms}</p>
+                    <p>{props.metadata.description}</p>
                   </div>
                 </div>
               </div>
@@ -126,64 +160,108 @@ export const TradeAd = ({ ...props }: IAd) => {
           </div>
           <div className="bg-grey-800/60 w-full h-full md:rounded-r-[12px] p-4 md:p-6 md:py-7 space-y-3">
             <div className="flex items-center gap-4">
-              <p>Quantity</p>
+              <p>Your balance</p>
               <p className="font-semibold text-primary font-pixter tracking-wide">
-                {available_tokens}
-                {tokenSymbol}
+                {balance.isLoading ? (
+                  <Skeleton.Button active />
+                ) : (
+                  <>
+                    {balance.data && Number(balance_value).toLocaleString()}{" "}
+                    {balance?.data?.symbol}
+                  </>
+                )}
               </p>
             </div>
 
             <div className="mb-16 space-y-4">
               <div className="h-[80px] w-full bg-grey-900/40 rounded-md p-4 flex flex-col justify-between">
-                <p className="text-xs text-grey-300">I will deposit</p>
-                <div className="grid [grid-template-columns:20px_1fr_17%] gap-1 items-center">
+                <p className="text-xs text-grey-300">
+                  In {chains[props.orderToken.chainId].name} chain
+                </p>
+                <div className="grid [grid-template-columns:20px_1fr_20%] gap-1 items-center">
                   <Image
-                    src={"/assets/logos/eth.png"}
+                    src={chain_icons[props.orderToken.chainId]}
                     alt=""
                     height={20}
                     width={20}
                     className="rounded-full"
                   />
-                  <input className="w-full !border-0 outline-0 text-lg font-semibold tracking-wider" />
+                  <input
+                    className="w-full !border-0 outline-0 text-lg font-semibold tracking-wider"
+                    type="number"
+                    onChange={(e) => setAmount(e.target.value)}
+                    value={amount}
+                  />
                   <p className="text-[11px] space-x-2">
                     <span>{tokenSymbol}</span>{" "}
                     <span className="text-[10px]">|</span>{" "}
-                    <span className="cursor-pointer text-primary" role="button">
+                    <span
+                      className="cursor-pointer text-primary"
+                      role="button"
+                      onClick={() => {
+                        setAmount(
+                          formatUnits(
+                            balance?.data?.value!,
+                            balance?.data?.decimals!
+                          )
+                        )
+                      }}
+                    >
                       All
                     </span>
                   </p>
                 </div>
-              </div>
-              <div className="h-[80px] w-full bg-grey-900/40 rounded-md p-4 flex flex-col justify-between">
-                <p className="text-xs text-grey-300">I will get</p>
-                <div className="grid [grid-template-columns:20px_1fr_17%] gap-1 items-center">
-                  <Image
-                    src={"/assets/logos/hbar.png"}
-                    alt=""
-                    height={20}
-                    width={20}
-                    className="rounded-full"
-                  />
-                  <input className="w-full !border-0 outline-0 text-lg font-semibold tracking-wider" />
-                  <p className="text-[11px] space-x-2">
-                    <span>{token}</span> <span className="text-[10px]">|</span>{" "}
-                    <span className="cursor-pointer text-primary" role="button">
-                      All
-                    </span>
+                {Number(balance_value) < Number(amount) && (
+                  <p className="text-red-400 my-1">
+                    Insuffient funds in wallet
                   </p>
-                </div>
+                )}
               </div>
+              {amount && (
+                <div className="w-full bg-grey-900/40 rounded-md p-4 flex flex-col justify-between space-y-2">
+                  <div className="flex items-center justify-between w-full">
+                    <p>Transaction Fee</p>
+                    <p>{txFee} </p>
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <p>You&apos;ll get</p>
+                    <p>{Number(amount) - txFee} </p>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                size="large"
-                className="w-full !h-[45px]"
-                type="primary"
-                disabled={props.status !== "ACTIVE"}
-              >
-                Bridge
-              </Button>
+            <div className="flex gap-4">
+              {String(account.chainId) !== props.orderToken.chainId ? (
+                <Button
+                  size="large"
+                  className="w-full !h-[45px] !text-sm"
+                  type="primary"
+                  disabled={
+                    props.status !== "ACTIVE" ||
+                    Number(balance_value) < Number(amount) ||
+                    isPending
+                  }
+                  onClick={openChainModal}
+                >
+                  Connect to {chains[props.orderToken.chainId].name}
+                </Button>
+              ) : (
+                <Button
+                  size="large"
+                  className="w-full !h-[45px]"
+                  type="primary"
+                  disabled={
+                    props.status !== "ACTIVE" ||
+                    Number(balance_value) < Number(amount) ||
+                    isPending
+                  }
+                  onClick={handleCreateTrade}
+                  loading={isPending}
+                >
+                  Bridge
+                </Button>
+              )}
               <Button
                 size="large"
                 className="w-full !h-[45px] !bg-transparent"
@@ -193,7 +271,7 @@ export const TradeAd = ({ ...props }: IAd) => {
               </Button>
             </div>
             <p className="text-grey-300">
-              If there is risk, the withdrawal may be delayed by up to 24 hours.
+              If there is risk, the withdrawal may be delayed.
             </p>
           </div>
         </div>

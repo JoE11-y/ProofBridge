@@ -13,7 +13,6 @@ import { GiChainLightning } from "react-icons/gi"
 import SkeletonTradeAd from "./SkeletonTradeAd"
 
 export const BridgeTab = () => {
-  const [tabKey, setTabKey] = useState<"buy" | "sell">("buy")
   const { data: chains, isLoading: loadingChains } = useGetAllChains({})
 
   const [selectedChainId, setSelectedChainId] = useState<string>("")
@@ -138,13 +137,13 @@ export const BridgeTab = () => {
 
       <div className="hidden md:grid [grid-template-columns:2fr_1fr_2fr_1fr_1fr] gap-7 items-center text-grey-400 text-sm font-semibold border-y-1 border-y-grey-800 py-2">
         <p>Advertiser</p>
-        <p>Cross chain</p>
+        <p>Destination chain</p>
         <p>Available | Limits</p>
         <p>Date posted</p>
         <div>
           <Alert
-            message={<p className="text-xs">0 Transaction fees</p>}
-            type="warning"
+            message={<p className="text-xs md:text-end">Action</p>}
+            type="info"
           />
         </div>
       </div>

@@ -4,6 +4,7 @@ export interface IGetTokensParams {
   limit?: string
   cursor?: string
   chainId?: string
+  address?: string
 }
 
 export interface IToken {
