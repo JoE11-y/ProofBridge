@@ -1,9 +1,13 @@
 import { ORDER_PORTAL_ABI } from "@/abis/orderPortal.abi"
 import { chains } from "@/lib/chains"
-import { confirmTradeTx, createTrade } from "@/services/trades.service"
-import { ICreateTradeRequest } from "@/types/trades"
+import {
+  confirmTradeTx,
+  createTrade,
+  getAllTrades,
+} from "@/services/trades.service"
+import { ICreateTradeRequest, IGetTradesParams } from "@/types/trades"
 import { config } from "@/utils/wagmi-config"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { parseUnits } from "viem"
 import { waitForTransactionReceipt } from "wagmi/actions"
 import { useAccount, useWriteContract } from "wagmi"
@@ -105,5 +109,12 @@ export const useCreateTrade = () => {
         }
       )
     },
+  })
+}
+
+export const useGetAllTrades = (params: IGetTradesParams) => {
+  return useQuery({
+    queryKey: ["trades", params],
+    queryFn: () => getAllTrades(params),
   })
 }

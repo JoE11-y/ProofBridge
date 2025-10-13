@@ -27,7 +27,7 @@ export const confirmTradeTx = async (data: IConfirmTradeTxRequest) => {
 }
 
 export const getAllTrades = async (params: IGetTradesParams) => {
-  const response = await api.get(trades_route(), { params })
+  const response = await api.get(trades_route("/all"), { params })
   return response.data as {
     data: ITrade[]
     nextCursor: string
