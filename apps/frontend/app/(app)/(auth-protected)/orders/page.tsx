@@ -28,7 +28,7 @@ const OrdersPage = () => {
         <p className="text-sm">View and Manage your orders here</p>
       </div>
       <div className="grid md:grid-cols-4 grid-cols-2 md:gap-7 gap-4 text-white">
-        <div className="border-grey-800 border-1 p-4 rounded-md w-full bg-gradient-to-bl from-grey-500 to-grey-1000">
+        <div className="border-grey-800 border-1 p-4 rounded-md w-full bg-gradient-to-bl from-primary/20 to-grey-1000">
           <div className="flex justify-center flex-col gap-2 md:h-[150px] h-[100px] w-full">
             <div className="space-y-2">
               <div className="flex w-full justify-between items-center gap-2">
@@ -43,7 +43,7 @@ const OrdersPage = () => {
           </div>
         </div>
 
-        <div className="border-grey-700 border-1 p-4 rounded-md w-full bg-gradient-to-tr from-grey-500 to-grey-1000">
+        <div className="border-grey-700 border-1 p-4 rounded-md w-full bg-gradient-to-tr from-primary/20 to-grey-1000">
           <div className="flex justify-center flex-col gap-2 md:h-[150px] h-[100px] w-full">
             <div className="space-y-2">
               <div className="flex w-full justify-between items-center gap-2">
@@ -58,7 +58,7 @@ const OrdersPage = () => {
           </div>
         </div>
 
-        <div className="border-grey-800 border-1 p-4 rounded-md w-full bg-gradient-to-bl from-grey-500 to-grey-1000">
+        <div className="border-grey-800 border-1 p-4 rounded-md w-full bg-gradient-to-bl from-primary/20 to-grey-1000">
           <div className="flex justify-center flex-col gap-2 md:h-[150px] h-[100px] w-full">
             <div className="space-y-2">
               <div className="flex w-full justify-between items-center gap-2">
@@ -73,7 +73,7 @@ const OrdersPage = () => {
           </div>
         </div>
 
-        <div className="border-grey-700 border-1 p-4 rounded-md w-full bg-gradient-to-br from-grey-500 to-grey-1000">
+        <div className="border-grey-700 border-1 p-4 rounded-md w-full bg-gradient-to-br from-primary/20 to-grey-1000">
           <div className="flex justify-center flex-col gap-2 md:h-[150px] h-[100px] w-full">
             <div className="space-y-2">
               <div className="flex w-full justify-between items-center gap-2">

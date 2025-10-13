@@ -163,6 +163,7 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
         loading={isLoading}
         onChange={onChange}
         showSorterTooltip={{ target: "sorter-icon" }}
+        rowClassName={"bg-grey-900/60 hover:!bg-primary/20"}
       />
     </>
   )
