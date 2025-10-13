@@ -7,10 +7,10 @@ const BridgePage = () => {
   return (
     <div className="max-w-[1150px] mx-auto space-y-4 md:space-y-4">
       <div className="w-full bg-grey-900 p-4 rounded-md md:block hidden">
-        <div className="md:max-w-[60%] mx-auto">
-          <div className="flex items-center gap-6 w-full">
+        <div className=" mx-auto">
+          <div className="flex items-center justify-between gap-6 w-full">
             <div>
-              <h3 className="md:text-xl font-perfectly-nineties font-medium">
+              <h3 className="md:text-xl tracking-widest font-pixter font-medium">
                 First P2P cross-chain bridge on Hedera
               </h3>
               <p className="text-[13px]">

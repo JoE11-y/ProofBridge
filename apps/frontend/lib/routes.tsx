@@ -32,7 +32,7 @@ export const app_routes: IRoute[] = [
   },
   {
     label: "Orders",
-    path: "/transactions",
+    path: "/orders",
     icon: <ReceiptText size={20} />,
   },
 
