@@ -166,7 +166,16 @@ export class MMRService implements OnModuleDestroy {
       `${mmrId}:${TREE_METADATA_KEYS.ELEMENT_COUNT}`,
     ];
 
+    // Seed the counters if they don't exist
     for (const k of keys) {
+      try {
+        const v = await store.get(k);
+        if (v !== null) {
+          continue;
+        }
+      } catch {
+        // ignore
+      }
       await store.set(k, '0');
     }
   }
