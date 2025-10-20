@@ -26,7 +26,7 @@ export const Status = ({
   const colorMap: Record<string, string> = {
     ACTIVE: "bg-primary text-black",
     PAUSED: "bg-amber-500 text-black",
-    LOCKED: "bg-amber-400 text-black",
+    LOCKED: "bg-amber-300/10 text-amber-300",
     INACTIVE: "bg-grey-600 text-grey-200",
     CLOSED: "bg-red-500 text-white",
     EXHAUSTED: "bg-transparent border border-red-600 text-red-300",

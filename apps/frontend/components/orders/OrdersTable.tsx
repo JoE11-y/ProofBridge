@@ -94,8 +94,8 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
           value: "ACTIVE",
         },
         {
-          text: "PAUSED",
-          value: "PAUSED",
+          text: "LOCKED",
+          value: "LOCKED",
         },
         {
           text: "INACTIVE",
@@ -154,19 +154,22 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
 
 const Action = ({ value, rowData }: { value: string; rowData: ITrade }) => {
   const { mutateAsync: lockFunds, isPending: lockingFunds } = useLockFunds()
+  const { address } = useAccount()
 
   return (
     <>
-      {rowData.status === "INACTIVE" ? (
+      {rowData.status === "LOCKED" && address === rowData.adCreatorAddress ? (
         <Button
           type="primary"
           size="small"
-          className="!w-full !h-[35px] !lowercase"
-          disabled={true}
+          className="!w-full !h-[35px]"
+          loading={lockingFunds}
+          onClick={() => {}}
         >
-          {value}
+          Release
         </Button>
-      ) : (
+      ) : rowData.status === "ACTIVE" &&
+        address === rowData.adCreatorAddress ? (
         <Button
           type="primary"
           size="small"
@@ -178,6 +181,8 @@ const Action = ({ value, rowData }: { value: string; rowData: ITrade }) => {
         >
           Lock
         </Button>
+      ) : (
+        <p className="text-center">-</p>
       )}
     </>
   )

@@ -152,3 +152,4 @@ export type AdStatusT =
   | "INACTIVE"
   | "EXHAUSTED"
   | "CLOSED"
+  | "LOCKED"
