@@ -110,9 +110,10 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.ONE_HOUR;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
+    console.log('timeToExpire', timeToExpire);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -158,9 +159,10 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.FIVE_MINUTES;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
+    console.log('timeToExpire', timeToExpire);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -194,9 +196,10 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.FIVE_MINUTES;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
+    console.log('timeToExpire', timeToExpire);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -231,9 +234,10 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.FIVE_MINUTES;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
+    console.log('timeToExpire', timeToExpire);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -267,9 +271,11 @@ export class ViemService {
 
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.TEN_MINUTES;
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
+    console.log('timeToExpire', timeToExpire);
 
     const orderHash = getTypedHash(data.orderParams);
 
@@ -311,9 +317,11 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.TEN_MINUTES;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
+
+    console.log('timeToExpire', timeToExpire);
 
     const orderHash = getTypedHash(data.orderParams);
 
@@ -442,9 +450,10 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.TEN_MINUTES;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
+    console.log('timeToExpire', timeToExpire);
 
     const orderHash = getTypedHash(data.orderParams);
 
