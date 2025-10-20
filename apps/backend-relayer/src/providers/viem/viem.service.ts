@@ -113,6 +113,15 @@ export class ViemService {
     const timeToExpire: string = BigNumber(timeToMilliseconds)
       .div(this.MILLISECOND)
       .toFixed(0);
+
+    console.log('adContractAddress', adContractAddress);
+    console.log('adId', adId);
+    console.log('adToken', adToken);
+    console.log('initialAmount', initialAmount);
+    console.log('token', token);
+    console.log('orderChainId', orderChainId);
+    console.log('adRecipient', adRecipient);
+    console.log('token', token);
     console.log('timeToExpire', timeToExpire);
 
     const message = await client.readContract({
