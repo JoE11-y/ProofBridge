@@ -18,6 +18,7 @@ import { getAddress } from 'viem';
 import { AdStatus, Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { ViemService } from '../../providers/viem/viem.service';
+import { randomUUID } from 'crypto';
 
 type AdQueryInput = {
   routeId?: string;
@@ -333,9 +334,24 @@ export class AdsService {
       );
     }
 
+    const adId = randomUUID();
+
+    const reqContractDetails =
+      await this.viemService.getCreateAdRequestContractDetails({
+        adChainId: route.adToken.chain.chainId,
+        adContractAddress: route.adToken.chain
+          .adManagerAddress as `0x${string}`,
+        adId: adId,
+        orderChainId: route.orderToken.chain.chainId,
+        adToken: route.adToken.address as `0x${string}`,
+        initialAmount: fundAmount.toFixed(0),
+        adRecipient: dto.creatorDstAddress as `0x${string}`,
+      });
+
     const requestDetails = await this.prisma.$transaction(async (prisma) => {
       const ad = await prisma.ad.create({
         data: {
+          id: adId,
           creatorAddress: getAddress(user.walletAddress),
           creatorDstAddress: getAddress(dto.creatorDstAddress),
           routeId: route.id,
@@ -353,18 +369,6 @@ export class AdsService {
           status: true,
         },
       });
-
-      const reqContractDetails =
-        await this.viemService.getCreateAdRequestContractDetails({
-          adChainId: route.adToken.chain.chainId,
-          adContractAddress: route.adToken.chain
-            .adManagerAddress as `0x${string}`,
-          adId: ad.id,
-          orderChainId: route.orderToken.chain.chainId,
-          adToken: route.adToken.address as `0x${string}`,
-          initialAmount: fundAmount.toFixed(0),
-          adRecipient: ad.creatorDstAddress as `0x${string}`,
-        });
 
       await prisma.adUpdateLog.create({
         data: {

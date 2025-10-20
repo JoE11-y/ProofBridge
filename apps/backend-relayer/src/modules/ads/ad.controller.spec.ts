@@ -54,7 +54,7 @@ describe('AdsController (unit)', () => {
     const dto = {
       routeId: 'r-1',
       creatorDstAddress: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-      poolAmount: '1000',
+      fundAmount: '1000',
     };
     const req: any = { user: { sub: 'user_id' } };
     const created = { id: 'ad-1' };

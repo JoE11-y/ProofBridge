@@ -54,11 +54,15 @@ export class ViemService {
   constructor() {}
   getClient(chainId: string): { wallet: any; client: any } {
     let chain: Chain;
+    let rpc_url: string = '';
 
     const id = Number(chainId);
 
     if (id === sepolia.id) {
       chain = sepolia;
+      if (env.evmRpcApiKey != '') {
+        rpc_url = `https://eth-sepolia.g.alchemy.com/v2/${env.evmRpcApiKey}`;
+      }
     } else if (id === hederaTestnet.id) {
       chain = hederaTestnet;
     } else if (id === ethLocalnet.id) {
@@ -85,7 +89,7 @@ export class ViemService {
 
     const client = createPublicClient({
       chain,
-      transport: http(),
+      transport: rpc_url ? http(rpc_url) : http(),
     });
 
     return {
