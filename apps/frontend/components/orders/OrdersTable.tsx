@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Button, Table } from "antd"
+import { Button, Modal, Table } from "antd"
 import type { TableColumnsType, TableProps } from "antd"
 import { ITrade } from "@/types/trades"
 import { useGetAllTrades, useLockFunds } from "@/hooks/useTrades"
@@ -13,6 +13,7 @@ import { formatUnits } from "viem"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { chains } from "@/lib/chains"
+import { useChainModal, useConnectModal } from "@rainbow-me/rainbowkit"
 
 type DataIndex = keyof ITrade
 
@@ -33,6 +34,8 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
     bridgerAddress: type === "outgoing" ? account.address : undefined,
     adCreatorAddress: type === "incoming" ? account.address : undefined,
   })
+  const [tradeInfo, setTradeInfo] = useState<ITrade>()
+  const [openReleaseModal, setOpenReleaseModal] = useState(false)
 
   const columns: TableColumnsType<ITrade> = [
     {
@@ -134,10 +137,19 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
       title: "Action",
       dataIndex: "status",
       render: (value, rowData) => {
-        return <Action value={value} rowData={rowData} />
+        return (
+          <Action
+            value={value}
+            rowData={rowData}
+            setTradeInfo={setTradeInfo}
+            setOpenReleaseModal={setOpenReleaseModal}
+          />
+        )
       },
     },
   ]
+
+  const chainModal = useChainModal()
   return (
     <>
       <Table<ITrade>
@@ -148,23 +160,140 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
         showSorterTooltip={{ target: "sorter-icon" }}
         rowClassName={"bg-grey-900/60 hover:!bg-primary/20"}
       />
+
+      <Modal
+        open={openReleaseModal}
+        title={"Release Tokens"}
+        okText={
+          tradeInfo?.route?.adToken?.chain?.name?.includes(
+            String(account.chain?.name)
+          )
+            ? "Connect to Chain"
+            : "Release"
+        }
+        onOk={() => {
+          if (
+            tradeInfo?.route?.adToken?.chain?.name?.includes(
+              String(account.chain?.name)
+            )
+          ) {
+            chainModal.openChainModal && chainModal.openChainModal()
+          } else {
+            setOpenReleaseModal(true)
+          }
+        }}
+        onCancel={() => setOpenReleaseModal(false)}
+        confirmLoading={false}
+        centered
+        width={400}
+        cancelButtonProps={{
+          disabled: false,
+        }}
+        styles={{
+          content: { padding: 16, borderRadius: "12px" },
+          mask: { backdropFilter: "blur(12px)" },
+        }}
+      >
+        {tradeInfo && (
+          <div className="space-y-4 mt-5 text-sm">
+            <div className="bg-grey-900/60 p-4 rounded-lg space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Trade ID</span>
+                <span className="font-medium">
+                  {truncateString(tradeInfo.id, 4, 4)}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Amount</span>
+                <span className="font-medium">
+                  {formatUnits(
+                    BigInt(tradeInfo.amount),
+                    tradeInfo.route.orderToken.decimals
+                  )}{" "}
+                  {tradeInfo.route.orderToken.symbol}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Route</span>
+                <div className="flex items-center gap-2">
+                  <span>{tradeInfo.route.orderToken.chain.name}</span>
+                  <ArrowRight size={14} className="text-primary" />
+                  <span>{tradeInfo.route.adToken.chain.name}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Bridger</span>
+                <span className="font-medium">
+                  {truncateString(tradeInfo.bridgerAddress, 4, 4)}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Created</span>
+                <span className="font-medium">
+                  {moment(tradeInfo.createdAt).format("lll")}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Status</span>
+                <Status status={tradeInfo.status} />
+              </div>
+            </div>
+
+            <div className="bg-amber-500/10 p-3 rounded-lg">
+              <p className="text-amber-500 text-sm">
+                Please ensure you have received the payment before releasing the
+                tokens. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </>
   )
 }
 
-const Action = ({ value, rowData }: { value: string; rowData: ITrade }) => {
+const Action = ({
+  value,
+  rowData,
+  setTradeInfo,
+  setOpenReleaseModal,
+}: {
+  value: string
+  rowData: ITrade
+  setTradeInfo: (value: ITrade) => void
+  setOpenReleaseModal: (value: boolean) => void
+}) => {
   const { mutateAsync: lockFunds, isPending: lockingFunds } = useLockFunds()
-  const { address } = useAccount()
+  const { address, chain } = useAccount()
+  const chainModal = useChainModal()
 
   return (
     <>
-      {rowData.status === "LOCKED" && address === rowData.adCreatorAddress ? (
+      {rowData?.route?.adToken?.chain?.name.includes(String(chain?.name)) ? (
         <Button
           type="primary"
           size="small"
           className="!w-full !h-[35px]"
           loading={lockingFunds}
-          onClick={() => {}}
+          onClick={chainModal?.openChainModal}
+        >
+          Connect to {rowData?.route?.adToken?.chain?.name}
+        </Button>
+      ) : rowData.status === "LOCKED" &&
+        address === rowData.adCreatorAddress ? (
+        <Button
+          type="primary"
+          size="small"
+          className="!w-full !h-[35px]"
+          loading={lockingFunds}
+          onClick={() => {
+            setOpenReleaseModal(true)
+            setTradeInfo(rowData)
+          }}
         >
           Release
         </Button>
