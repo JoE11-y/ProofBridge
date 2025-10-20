@@ -2,7 +2,13 @@
 
 import React from "react"
 
-type StatusKind = "ACTIVE" | "PAUSED" | "INACTIVE" | "EXHAUSTED" | "CLOSED"
+type StatusKind =
+  | "ACTIVE"
+  | "PAUSED"
+  | "INACTIVE"
+  | "EXHAUSTED"
+  | "CLOSED"
+  | "LOCKED"
 
 export const Status = ({
   status,
@@ -20,6 +26,7 @@ export const Status = ({
   const colorMap: Record<string, string> = {
     ACTIVE: "bg-primary text-black",
     PAUSED: "bg-amber-500 text-black",
+    LOCKED: "bg-amber-400 text-black",
     INACTIVE: "bg-grey-600 text-grey-200",
     CLOSED: "bg-red-500 text-white",
     EXHAUSTED: "bg-transparent border border-red-600 text-red-300",

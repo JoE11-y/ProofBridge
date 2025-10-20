@@ -6,6 +6,7 @@ import {
   ICreateTradeRequest,
   ICreateTradeResponse,
   IGetTradesParams,
+  ILockFundsReponse,
   ITrade,
 } from "@/types/trades"
 
@@ -16,6 +17,11 @@ const trades_route = (path = "") => {
 export const createTrade = async (data: ICreateTradeRequest) => {
   const response = await api.post(trades_route("/create"), data)
   return response.data as ICreateTradeResponse
+}
+
+export const lockFunds = async (id: string) => {
+  const response = await api.post(trades_route(`/${id}/lock`))
+  return response.data as ILockFundsReponse
 }
 
 export const confirmTradeTx = async (data: IConfirmTradeTxRequest) => {

@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { Button, Table } from "antd"
 import type { TableColumnsType, TableProps } from "antd"
 import { ITrade } from "@/types/trades"
-import { useGetAllTrades } from "@/hooks/useTrades"
+import { useGetAllTrades, useLockFunds } from "@/hooks/useTrades"
 import { useAccount } from "wagmi"
 import { truncateString } from "@/utils/truncate-string"
 import { Status } from "../shared/Status"
@@ -134,24 +134,7 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
       title: "Action",
       dataIndex: "status",
       render: (value, rowData) => {
-        return (
-          <>
-            {rowData.status === "INACTIVE" ? (
-              <Button
-                type="primary"
-                size="small"
-                className="!w-full !h-[35px] !lowercase"
-                disabled={true}
-              >
-                {value}
-              </Button>
-            ) : (
-              <Button type="primary" size="small" className="!w-full !h-[35px]">
-                Lock
-              </Button>
-            )}
-          </>
-        )
+        return <Action value={value} rowData={rowData} />
       },
     },
   ]
@@ -165,6 +148,37 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
         showSorterTooltip={{ target: "sorter-icon" }}
         rowClassName={"bg-grey-900/60 hover:!bg-primary/20"}
       />
+    </>
+  )
+}
+
+const Action = ({ value, rowData }: { value: string; rowData: ITrade }) => {
+  const { mutateAsync: lockFunds, isPending: lockingFunds } = useLockFunds()
+
+  return (
+    <>
+      {rowData.status === "INACTIVE" ? (
+        <Button
+          type="primary"
+          size="small"
+          className="!w-full !h-[35px] !lowercase"
+          disabled={true}
+        >
+          {value}
+        </Button>
+      ) : (
+        <Button
+          type="primary"
+          size="small"
+          className="!w-full !h-[35px]"
+          loading={lockingFunds}
+          onClick={() => {
+            lockFunds(rowData.id)
+          }}
+        >
+          Lock
+        </Button>
+      )}
     </>
   )
 }

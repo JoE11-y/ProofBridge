@@ -1,19 +1,19 @@
 import { ORDER_PORTAL_ABI } from "@/abis/orderPortal.abi"
-import { chains } from "@/lib/chains"
 import {
   confirmTradeTx,
   createTrade,
   getAllTrades,
+  lockFunds,
 } from "@/services/trades.service"
 import { ICreateTradeRequest, IGetTradesParams } from "@/types/trades"
 import { config } from "@/utils/wagmi-config"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { parseUnits } from "viem"
 import { waitForTransactionReceipt } from "wagmi/actions"
 import { useAccount, useWriteContract } from "wagmi"
 import { toast } from "sonner"
 import { ERC20_ABI } from "@/abis/ERC20.abi"
-import { getSingleToken, getTokens } from "@/services/tokens.service"
+import { getTokens } from "@/services/tokens.service"
+import { AD_MANAGER_ABI } from "@/abis/AdManager.abi"
 
 export const useCreateTrade = () => {
   const account = useAccount()
@@ -104,6 +104,72 @@ export const useCreateTrade = () => {
         error?.response?.data?.message ||
           error?.message ||
           "Unable to open trade",
+        {
+          description: "",
+        }
+      )
+    },
+  })
+}
+
+export const useLockFunds = () => {
+  const { writeContractAsync } = useWriteContract()
+  return useMutation({
+    mutationKey: ["lock-fund"],
+    mutationFn: async (id: string) => {
+      const response = await lockFunds(id)
+
+      const txHash = await writeContractAsync({
+        address: response.contractAddress,
+        chainId: Number(response.chainId),
+        abi: AD_MANAGER_ABI,
+        functionName: "lockForOrder",
+        args: [
+          response.signature,
+          response.authToken,
+          BigInt(response.timeToExpire),
+          {
+            orderChainToken: response.orderParams.orderChainToken,
+            adChainToken: response.orderParams.adChainToken,
+            amount: BigInt(response.orderParams.amount),
+            bridger: response.orderParams.bridger,
+            orderChainId: BigInt(response.orderParams.orderChainId),
+            srcOrderPortal: response.orderParams.orderPortal,
+            orderRecipient: response.orderParams.orderRecipient,
+            adId: response.orderParams.adId,
+            adCreator: response.orderParams.adCreator,
+            adRecipient: response.orderParams.adRecipient,
+            salt: BigInt(response.orderParams.salt),
+          },
+        ],
+      })
+
+      const receipt = await waitForTransactionReceipt(config, {
+        hash: txHash,
+      })
+      if (receipt.status === "success") {
+        await confirmTradeTx({
+          txHash: receipt.transactionHash,
+          signature: response.signature,
+          tradeId: id,
+        })
+      }
+
+      if (receipt.status !== "success") {
+        throw Error("Transaction failed, Retry")
+      }
+
+      return response
+    },
+
+    onSuccess: () => {
+      toast.success("Funds lock was successful")
+    },
+    onError: function (error: any, variables, result, ctx) {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to lock funds",
         {
           description: "",
         }

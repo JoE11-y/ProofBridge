@@ -35,6 +35,28 @@ export interface ICreateTradeResponse {
   }
 }
 
+export interface ILockFundsReponse {
+  chainId: string
+  contractAddress: Address
+  signature: Address
+  authToken: Address
+  timeToExpire: number
+  orderParams: {
+    orderChainToken: string
+    adChainToken: string
+    amount: string
+    bridger: string
+    orderChainId: string
+    orderPortal: string
+    orderRecipient: string
+    adId: string
+    adCreator: string
+    adRecipient: string
+    salt: string
+  }
+  orderHash: string
+  reqHash: string
+}
 export interface IConfirmTradeTxRequest {
   tradeId: string
   txHash: Address
