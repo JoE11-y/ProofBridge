@@ -73,7 +73,7 @@ export class TradesService {
 
     return {
       ...row,
-      amount: row.amount.toString(),
+      amount: row.amount.toFixed(0),
     };
   }
 
@@ -152,7 +152,7 @@ export class TradesService {
     const cleanedRows = rows.map((row) => ({
       ...row,
       status: row.status as string,
-      amount: row.amount.toString(),
+      amount: row.amount.toFixed(0),
     }));
 
     return { data: cleanedRows, nextCursor };
@@ -262,7 +262,7 @@ export class TradesService {
         orderParams: {
           orderChainToken: ad.route.orderToken.address,
           adChainToken: ad.route.adToken.address,
-          amount: amount.toString(),
+          amount: amount.toFixed(0),
           bridger: getAddress(user.walletAddress),
           orderChainId: ad.route.orderToken.chain.chainId.toString(),
           orderPortal: ad.route.orderToken.chain.orderPortalAddress,
@@ -283,7 +283,7 @@ export class TradesService {
           id: tradeId,
           adId: ad.id,
           routeId: ad.route.id,
-          amount: amount.toString(),
+          amount: amount.toFixed(0),
           adCreatorAddress: getAddress(ad.creatorAddress),
           adCreatorDstAddress: getAddress(ad.creatorDstAddress),
           bridgerAddress: getAddress(user.walletAddress),
@@ -400,7 +400,7 @@ export class TradesService {
     return {
       orderChainToken: getAddress(trade.route.orderToken.address),
       adChainToken: getAddress(trade.route.adToken.address),
-      amount: trade.amount.toString(),
+      amount: trade.amount.toFixed(0),
       bridger: getAddress(trade.bridgerAddress),
       orderChainId: trade.route.orderToken.chain.chainId.toString(),
       orderPortal: getAddress(trade.route.orderToken.chain.orderPortalAddress),
@@ -494,7 +494,7 @@ export class TradesService {
         orderParams: {
           orderChainToken: getAddress(trade.route.orderToken.address),
           adChainToken: getAddress(trade.route.adToken.address),
-          amount: trade.amount.toString(),
+          amount: trade.amount.toFixed(0),
           bridger: getAddress(trade.bridgerAddress),
           orderChainId: trade.route.orderToken.chain.chainId.toString(),
           orderPortal: getAddress(
@@ -702,7 +702,7 @@ export class TradesService {
         orderParams: {
           orderChainToken: trade.route.orderToken.address as `0x${string}`,
           adChainToken: trade.route.adToken.address as `0x${string}`,
-          amount: trade.amount.toString(),
+          amount: trade.amount.toFixed(0),
           bridger: getAddress(trade.bridgerAddress),
           orderChainId: trade.route.orderToken.chain.chainId.toString(),
           orderPortal: trade.route.orderToken.chain
