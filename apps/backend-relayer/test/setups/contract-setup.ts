@@ -1,7 +1,7 @@
 import { writeFileSync } from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
-// import { hederaTestnet as hederaLocalnet } from 'viem/chains';
+import { hederaTestnet as hederaLocalnet } from 'viem/chains';
 
 import MerkleManagerArtifact from '../../../contracts/out/MerkleManager.sol/MerkleManager.json';
 import VerifierArtifact from '../../../contracts/out/Verifier.sol/HonkVerifier.json';
@@ -10,7 +10,7 @@ import OrderPortalArtifact from '../../../contracts/out/OrderPortal.sol/OrderPor
 import Erc20MockArtifact from '../../../contracts/out/ERC20Mock.sol/ERC20Mock.json';
 
 import { createPublicClient, createWalletClient, http } from 'viem';
-import { ethLocalnet, hederaLocalnet } from '../../src/providers/viem/localnet';
+import { ethLocalnet } from '../../src/providers/viem/localnet';
 import { AddressLike, ChainData, fundEthAddress } from './utils';
 import { adminSetup } from './contract-actions';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -162,7 +162,7 @@ export async function setupContracts() {
 
   console.log('Setting up HEDERA contracts...');
 
-  // await setupContract(hederaContracts, ethContracts, false);
+  await setupContract(hederaContracts, ethContracts, false);
 
   return { ethContracts, hederaContracts };
 }

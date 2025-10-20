@@ -91,7 +91,7 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
   beforeAll(async () => {
     app = await createTestingApp();
     await fundEthAddress(ethClient, account1.address);
-    // await fundHBar(hederaClient, account1.address);
+    await fundHBar(hederaClient, account1.address);
     await fundHBar(hederaClient, account2.address);
 
     // Fetch available routes between chains
@@ -114,6 +114,14 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
     // Login and get access token
     const access = await loginUser(app, privateKey1);
 
+    await mintToken(
+      ethClient,
+      account1,
+      ethChain.tokenAddress,
+      account1.address,
+      parseEther('100'),
+    );
+
     await approveToken(
       ethClient,
       account1,
@@ -132,6 +140,8 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
     ).expect(201);
 
     const req = create.body as CreateAdResponseDto;
+    console.log(req);
+    console.log(create);
     const adId = req.adId;
 
     expect(ethChain.adManagerAddress).toEqual(req.contractAddress);
@@ -157,8 +167,8 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
 
     expectObject(adAfterCreate.body, {
       id: adId,
-      status: 'EXHAUSTED',
-      poolAmount: '0',
+      status: 'ACTIVE',
+      poolAmount: parseEther('5').toString(),
     });
 
     // Step 2: Fund the advertisement
@@ -198,7 +208,7 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
     const activeAd = await apiGetAd(app, adId).expect(200);
 
     expectObject(activeAd.body, {
-      poolAmount: parseEther('10').toString(),
+      poolAmount: parseEther('15').toString(),
       status: 'ACTIVE',
     });
 
@@ -229,7 +239,7 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
     const afterWithdraw = await apiGetAd(app, adId).expect(200);
 
     expectObject(afterWithdraw.body, {
-      poolAmount: parseEther('7').toString(),
+      poolAmount: parseEther('12').toString(),
       status: 'ACTIVE',
     });
 
@@ -281,6 +291,14 @@ describe('Integrations E2E — (ETH → Hedera)', () => {
 
   it('Trade lifecycle', async () => {
     const access = await loginUser(app, privateKey1);
+
+    await mintToken(
+      ethClient,
+      account1,
+      ethChain.tokenAddress,
+      account1.address,
+      parseEther('100'),
+    );
 
     await approveToken(
       ethClient,
