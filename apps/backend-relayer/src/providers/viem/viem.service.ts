@@ -114,16 +114,6 @@ export class ViemService {
       .div(this.MILLISECOND)
       .toFixed(0);
 
-    console.log('adContractAddress', adContractAddress);
-    console.log('adId', adId);
-    console.log('adToken', adToken);
-    console.log('initialAmount', initialAmount);
-    console.log('token', token);
-    console.log('orderChainId', orderChainId);
-    console.log('adRecipient', adRecipient);
-    console.log('token', token);
-    console.log('timeToExpire', timeToExpire);
-
     const message = await client.readContract({
       address: adContractAddress,
       abi: AD_MANAGER_ABI,
@@ -171,7 +161,6 @@ export class ViemService {
     const timeToExpire: string = BigNumber(timeToMilliseconds)
       .div(this.MILLISECOND)
       .toFixed(0);
-    console.log('timeToExpire', timeToExpire);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -208,7 +197,6 @@ export class ViemService {
     const timeToExpire: string = BigNumber(timeToMilliseconds)
       .div(this.MILLISECOND)
       .toFixed(0);
-    console.log('timeToExpire', timeToExpire);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -246,7 +234,6 @@ export class ViemService {
     const timeToExpire: string = BigNumber(timeToMilliseconds)
       .div(this.MILLISECOND)
       .toFixed(0);
-    console.log('timeToExpire', timeToExpire);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -284,7 +271,6 @@ export class ViemService {
     const timeToExpire: string = BigNumber(timeToMilliseconds)
       .div(this.MILLISECOND)
       .toFixed(0);
-    console.log('timeToExpire', timeToExpire);
 
     const orderHash = getTypedHash(data.orderParams);
 
@@ -329,8 +315,6 @@ export class ViemService {
     const timeToExpire: string = BigNumber(timeToMilliseconds)
       .div(this.MILLISECOND)
       .toFixed(0);
-
-    console.log('timeToExpire', timeToExpire);
 
     const orderHash = getTypedHash(data.orderParams);
 
@@ -462,7 +446,6 @@ export class ViemService {
     const timeToExpire: string = BigNumber(timeToMilliseconds)
       .div(this.MILLISECOND)
       .toFixed(0);
-    console.log('timeToExpire', timeToExpire);
 
     const orderHash = getTypedHash(data.orderParams);
 
