@@ -8,6 +8,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 interface IMerkleManager {
     function getRootHash() external view returns (bytes32);
+    function getRootAtIndex(uint256 leafIndex) external view returns (bytes32);
+    function getLeafCount() external view returns (uint256);
     function appendOrderHash(bytes32 orderHash) external returns (bool);
     function getElementsCount() external view returns (uint256);
     function getOrderIndex(bytes32 orderHash) external view returns (uint256);
@@ -28,14 +30,11 @@ interface IMerkleManager {
  * @dev Manages all order hashes for ProofBridge protocol per chain
  */
 contract MerkleManager is IMerkleManager, AccessControl, ReentrancyGuard {
-    // Mapping of node index to relative root hash
-    mapping(uint256 => bytes32) internal nodeIndexToRoot;
-
-    // Mapping of node index to peaks. Peaks can be calculated and/or stored off-chain
-    mapping(uint256 => bytes32[]) internal nodeIndexToPeaks;
-
     // Mapping of order hash to its index in the tree
     mapping(bytes32 => uint256) internal orderHashToIndex;
+
+    // Mapping of leaves count to roothistory
+    mapping(uint256 => bytes32) internal rootHistory;
 
     // Peaks of the last tree can be calculated and/or stored off-chain
     bytes32[] internal lastPeaks;
@@ -87,12 +86,14 @@ contract MerkleManager is IMerkleManager, AccessControl, ReentrancyGuard {
         lastPeaks = nextPeaks;
         lastElementsCount = nextElementsCount;
         lastRoot = nextRootHash;
-        nodeIndexToRoot[nextElementsCount] = lastRoot;
-        nodeIndexToPeaks[nextElementsCount] = lastPeaks;
 
         // Map order hash to its correct MMR leaf index
         uint256 mmrLeafIndex = leafCountToMmrIndex(leavesCount);
         orderHashToIndex[orderHash] = mmrLeafIndex;
+
+        // Store root history
+        rootHistory[leavesCount] = lastRoot;
+
         leavesCount += 1;
 
         emit DepositHashAppended(mmrLeafIndex, orderHash, lastRoot, lastElementsCount);
@@ -105,6 +106,23 @@ contract MerkleManager is IMerkleManager, AccessControl, ReentrancyGuard {
      */
     function getRootHash() external view returns (bytes32) {
         return lastRoot;
+    }
+
+    /**
+     * @dev Return the root at a specific leaf index.
+     * @param leafIndex The leaf index to retrieve the root for.
+     * @return The root hash at the specified leaf index.
+     */
+    function getRootAtIndex(uint256 leafIndex) external view returns (bytes32) {
+        return rootHistory[leafIndex];
+    }
+
+    /**
+     * @dev Returns the number of leaves in the tree.
+     * @return The latest leaves count.
+     */
+    function getLeafCount() external view returns (uint256) {
+        return leavesCount;
     }
 
     /**
