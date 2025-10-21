@@ -55,14 +55,14 @@ export class TradesService {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
             orderToken: {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
           },
@@ -74,6 +74,23 @@ export class TradesService {
     return {
       ...row,
       amount: row.amount.toFixed(0),
+      route: {
+        ...row.route,
+        adToken: {
+          ...row.route.adToken,
+          chain: {
+            ...row.route.adToken.chain,
+            chainId: row.route.adToken.chain.chainId.toString(),
+          },
+        },
+        orderToken: {
+          ...row.route.orderToken,
+          chain: {
+            ...row.route.orderToken.chain,
+            chainId: row.route.orderToken.chain.chainId.toString(),
+          },
+        },
+      },
     };
   }
 
@@ -126,14 +143,14 @@ export class TradesService {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
             orderToken: {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
           },
@@ -153,6 +170,24 @@ export class TradesService {
       ...row,
       status: row.status as string,
       amount: row.amount.toFixed(0),
+      chainId: row.route.orderToken.chain.chainId,
+      route: {
+        ...row.route,
+        adToken: {
+          ...row.route.adToken,
+          chain: {
+            ...row.route.adToken.chain,
+            chainId: row.route.adToken.chain.chainId.toString(),
+          },
+        },
+        orderToken: {
+          ...row.route.orderToken,
+          chain: {
+            ...row.route.orderToken.chain,
+            chainId: row.route.orderToken.chain.chainId.toString(),
+          },
+        },
+      },
     }));
 
     return { data: cleanedRows, nextCursor };
@@ -654,26 +689,24 @@ export class TradesService {
 
     const localRoot = await this.merkleService.getRoot(mmrId);
 
-    const onChainRoot = await this.viemService.fetchOnChainRoot(isAdCreator, {
-      chainId: isAdCreator
-        ? trade.route.orderToken.chain.chainId
-        : trade.route.adToken.chain.chainId,
-      contractAddress: isAdCreator
-        ? (trade.route.orderToken.chain.orderPortalAddress as `0x${string}`)
-        : (trade.route.adToken.chain.adManagerAddress as `0x${string}`),
-    });
+    const rootExists = await this.viemService.checkLocalRootExist(
+      localRoot,
+      isAdCreator,
+      {
+        chainId: isAdCreator
+          ? trade.route.orderToken.chain.chainId
+          : trade.route.adToken.chain.chainId,
+        contractAddress: isAdCreator
+          ? (trade.route.orderToken.chain.orderPortalAddress as `0x${string}`)
+          : (trade.route.adToken.chain.adManagerAddress as `0x${string}`),
+      },
+    );
 
-    console.log('onChainRoot', onChainRoot);
-    console.log('localRoot', localRoot);
-
-    // verification mechanism to check for MMR root consistency - disabled for now
-    // check if local root has been recorded on chain
-
-    // if (onChainRoot.toLowerCase() !== localRoot.toLowerCase()) {
-    //   throw new BadRequestException(
-    //     'MMR root mismatch - chain is not up to date',
-    //   );
-    // }
+    if (!rootExists) {
+      throw new BadRequestException(
+        'MMR root mismatch - chain is not up to date',
+      );
+    }
 
     const secret = this.encryptionService.decryptSecret({
       iv: tradeSecret.iv,

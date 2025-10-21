@@ -387,18 +387,18 @@ export class ViemService {
     }
   }
 
-  async fetchOnChainRoot(
+  async fetchOnChainLatestRoot(
     isAdCreator: boolean,
     data: T_FetchRoot,
   ): Promise<string> {
     if (isAdCreator) {
-      return this.fetchAdChainRoot(data);
+      return this.fetchAdChainLatestRoot(data);
     } else {
-      return this.fetchOrderChainRoot(data);
+      return this.fetchOrderChainLatestRoot(data);
     }
   }
 
-  async fetchAdChainRoot(data: T_FetchRoot): Promise<string> {
+  async fetchAdChainLatestRoot(data: T_FetchRoot): Promise<string> {
     const { chainId, contractAddress } = data;
 
     const { client } = this.getClient(chainId.toString());
@@ -413,7 +413,7 @@ export class ViemService {
     return root;
   }
 
-  async fetchOrderChainRoot(data: T_FetchRoot): Promise<string> {
+  async fetchOrderChainLatestRoot(data: T_FetchRoot): Promise<string> {
     const { chainId, contractAddress } = data;
 
     const { client } = this.getClient(chainId.toString());
@@ -426,6 +426,93 @@ export class ViemService {
     });
 
     return root;
+  }
+
+  async checkLocalRootExist(
+    localRoot: string,
+    isAdCreator: boolean,
+    data: T_FetchRoot,
+  ): Promise<boolean> {
+    const onChainRoots = await this.fetchOnChainRoots(isAdCreator, data);
+    return onChainRoots.includes(localRoot);
+  }
+
+  async fetchOnChainRoots(
+    isAdCreator: boolean,
+    data: T_FetchRoot,
+  ): Promise<string[]> {
+    if (isAdCreator) {
+      return this.fetchAdChainRoots(data);
+    } else {
+      return this.fetchOrderChainRoots(data);
+    }
+  }
+
+  async fetchAdChainRoots(data: T_FetchRoot): Promise<string[]> {
+    const { chainId, contractAddress } = data;
+
+    const { client } = this.getClient(chainId.toString());
+
+    const leafCount = await client.readContract({
+      address: contractAddress,
+      abi: AD_MANAGER_ABI,
+      functionName: 'getMerkleLeafCount',
+      args: [],
+    });
+
+    const roots: string[] = [];
+
+    let failureCount = 0;
+    for (let i = 0; i < Number(leafCount) && failureCount < 2; i++) {
+      try {
+        const root = await client.readContract({
+          address: contractAddress,
+          abi: AD_MANAGER_ABI,
+          functionName: 'getHistoricalRoot',
+          args: [BigInt(i)],
+        });
+        roots.push(root);
+      } catch (error) {
+        console.error(`Failed to fetch historical root at index ${i}:`, error);
+        failureCount++;
+        continue;
+      }
+    }
+
+    return roots;
+  }
+
+  async fetchOrderChainRoots(data: T_FetchRoot): Promise<string[]> {
+    const { chainId, contractAddress } = data;
+
+    const { client } = this.getClient(chainId.toString());
+    const leafCount = await client.readContract({
+      address: contractAddress,
+      abi: ORDER_PORTAL_ABI,
+      functionName: 'getMerkleLeafCount',
+      args: [],
+    });
+
+    const roots: string[] = [];
+
+    let failureCount = 0;
+    for (let i = 0; i < Number(leafCount) && failureCount < 2; i++) {
+      try {
+        const root = await client.readContract({
+          address: contractAddress,
+          abi: ORDER_PORTAL_ABI,
+          functionName: 'getHistoricalRoot',
+          args: [BigInt(i)],
+        });
+        roots.push(root);
+      } catch (error) {
+        console.error(`Failed to fetch historical root at index ${i}:`, error);
+        failureCount++;
+        continue;
+      }
+    }
+
+    return roots;
   }
 
   async getUnlockOrderContractDetails(

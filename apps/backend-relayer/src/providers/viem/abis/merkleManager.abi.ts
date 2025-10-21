@@ -57,6 +57,13 @@ export const MERKLE_MANAGER_ABI = [
   },
   {
     type: 'function',
+    name: 'getLeafCount',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'getOrderIndex',
     inputs: [{ name: 'orderHash', type: 'bytes32', internalType: 'bytes32' }],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
@@ -66,6 +73,13 @@ export const MERKLE_MANAGER_ABI = [
     type: 'function',
     name: 'getRoleAdmin',
     inputs: [{ name: 'role', type: 'bytes32', internalType: 'bytes32' }],
+    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getRootAtIndex',
+    inputs: [{ name: 'leafIndex', type: 'uint256', internalType: 'uint256' }],
     outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'view',
   },
@@ -101,11 +115,7 @@ export const MERKLE_MANAGER_ABI = [
     name: 'renounceRole',
     inputs: [
       { name: 'role', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: 'callerConfirmation',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: 'callerConfirmation', type: 'address', internalType: 'address' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -135,11 +145,7 @@ export const MERKLE_MANAGER_ABI = [
       { name: 'value', type: 'bytes32', internalType: 'bytes32' },
       { name: 'proof', type: 'bytes32[]', internalType: 'bytes32[]' },
       { name: 'peaks', type: 'bytes32[]', internalType: 'bytes32[]' },
-      {
-        name: 'elementsCount',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
+      { name: 'elementsCount', type: 'uint256', internalType: 'uint256' },
       { name: 'root', type: 'bytes32', internalType: 'bytes32' },
     ],
     outputs: [],
@@ -180,12 +186,7 @@ export const MERKLE_MANAGER_ABI = [
     type: 'event',
     name: 'RoleAdminChanged',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'previousAdminRole',
         type: 'bytes32',
@@ -205,12 +206,7 @@ export const MERKLE_MANAGER_ABI = [
     type: 'event',
     name: 'RoleGranted',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'account',
         type: 'address',
@@ -230,12 +226,7 @@ export const MERKLE_MANAGER_ABI = [
     type: 'event',
     name: 'RoleRevoked',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'account',
         type: 'address',

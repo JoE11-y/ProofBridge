@@ -120,7 +120,6 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         None, // Not present in storage.
         Open, // Reserved liquidity.
         Filled // Unlocked and paid.
-
     }
 
     /// @notice Source-chain configs.
@@ -483,10 +482,13 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param adId Ad id to fund.
      * @param amount Amount to deposit.
      */
-    function fundAd(bytes memory signature, bytes32 authToken, uint256 timeToExpire, string memory adId, uint256 amount)
-        external
-        nonReentrant
-    {
+    function fundAd(
+        bytes memory signature,
+        bytes32 authToken,
+        uint256 timeToExpire,
+        string memory adId,
+        uint256 amount
+    ) external nonReentrant {
         Ad storage ad = __getAdOwned(adId, msg.sender);
         if (!ad.open) revert AdManager__AdClosed();
         if (amount == 0) revert AdManager__ZeroAmount();
@@ -722,10 +724,25 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     }
 
     /**
-     * @notice Return the merkle manager root
+     * @notice Return the latest merkle manager root
      */
-    function getMerkleRoot() external view returns (bytes32 root) {
+    function getLatestMerkleRoot() external view returns (bytes32 root) {
         root = i_merkleManager.getRootHash();
+    }
+
+    /**
+     * @notice Return the root at merkle leaf index
+     * @param index The index of the root
+     */
+    function getHistoricalRoot(uint256 index) external view returns (bytes32 root) {
+        root = i_merkleManager.getRootAtIndex(index);
+    }
+
+    /**
+     * @notice Returns merkle leaf count
+     */
+    function getMerkleLeafCount() external view returns (uint256 count) {
+        count = i_merkleManager.getLeafCount();
     }
 
     /*//////////////////////////////////////////////////////////////

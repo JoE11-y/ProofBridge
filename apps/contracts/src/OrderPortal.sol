@@ -100,7 +100,6 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
         None, // Unknown / not created
         Open, // Created and funded
         Filled // Unlocked / paid out
-
     }
 
     /// @notice Destination chain configurations.
@@ -470,8 +469,23 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     /**
      * @notice Return the merkle manager root
      */
-    function getMerkleRoot() external view returns (bytes32 root) {
+    function getLatestMerkleRoot() external view returns (bytes32 root) {
         root = i_merkleManager.getRootHash();
+    }
+
+    /**
+     * @notice Return the root at merkle leaf index
+     * @param index The index of the root
+     */
+    function getHistoricalRoot(uint256 index) external view returns (bytes32 root) {
+        root = i_merkleManager.getRootAtIndex(index);
+    }
+
+    /**
+     * @notice Returns merkle leaf count
+     */
+    function getMerkleLeafCount() external view returns (uint256 count) {
+        count = i_merkleManager.getLeafCount();
     }
 
     /*//////////////////////////////////////////////////////////////
