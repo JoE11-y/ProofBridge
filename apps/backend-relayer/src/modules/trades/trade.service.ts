@@ -664,6 +664,7 @@ export class TradesService {
     });
 
     console.log('onChainRoot', onChainRoot);
+    console.log('localRoot', localRoot);
 
     // verification mechanism to check for MMR root consistency - disabled for now
     // check if local root has been recorded on chain
