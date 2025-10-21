@@ -206,6 +206,12 @@ export class TradeResponseDto {
   @ApiProperty({ example: '0x1234567890abcdef' })
   adCreatorAddress!: string;
 
+  @ApiProperty({ example: '1' })
+  adChainId!: string;
+
+  @ApiProperty({ example: '294' })
+  orderChainId!: string;
+
   @ApiProperty({ example: '0x1234567890abcdef' })
   bridgerAddress!: string;
 

@@ -71,23 +71,28 @@ export class TradesService {
     });
     if (!row) throw new NotFoundException('Trade not found');
 
+    const orderChainId = row.route.orderToken.chain.chainId.toString();
+    const adChainId = row.route.adToken.chain.chainId.toString();
+
     return {
       ...row,
       amount: row.amount.toFixed(0),
+      adChainId: adChainId,
+      orderChainId: orderChainId,
       route: {
         ...row.route,
         adToken: {
           ...row.route.adToken,
           chain: {
             ...row.route.adToken.chain,
-            chainId: row.route.adToken.chain.chainId.toString(),
+            chainId: adChainId,
           },
         },
         orderToken: {
           ...row.route.orderToken,
           chain: {
             ...row.route.orderToken.chain,
-            chainId: row.route.orderToken.chain.chainId.toString(),
+            chainId: orderChainId,
           },
         },
       },
@@ -166,29 +171,34 @@ export class TradesService {
       nextCursor = next.id;
     }
 
-    const cleanedRows = rows.map((row) => ({
-      ...row,
-      status: row.status as string,
-      amount: row.amount.toFixed(0),
-      chainId: row.route.orderToken.chain.chainId,
-      route: {
-        ...row.route,
-        adToken: {
-          ...row.route.adToken,
-          chain: {
-            ...row.route.adToken.chain,
-            chainId: row.route.adToken.chain.chainId.toString(),
+    const cleanedRows = rows.map((row) => {
+      const orderChainId = row.route.orderToken.chain.chainId.toString();
+      const adChainId = row.route.adToken.chain.chainId.toString();
+      return {
+        ...row,
+        status: row.status as string,
+        amount: row.amount.toFixed(0),
+        adChainId: adChainId,
+        orderChainId: orderChainId,
+        route: {
+          ...row.route,
+          adToken: {
+            ...row.route.adToken,
+            chain: {
+              ...row.route.adToken.chain,
+              chainId: adChainId,
+            },
+          },
+          orderToken: {
+            ...row.route.orderToken,
+            chain: {
+              ...row.route.orderToken.chain,
+              chainId: orderChainId,
+            },
           },
         },
-        orderToken: {
-          ...row.route.orderToken,
-          chain: {
-            ...row.route.orderToken.chain,
-            chainId: row.route.orderToken.chain.chainId.toString(),
-          },
-        },
-      },
-    }));
+      };
+    });
 
     return { data: cleanedRows, nextCursor };
   }
