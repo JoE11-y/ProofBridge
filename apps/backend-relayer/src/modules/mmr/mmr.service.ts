@@ -28,9 +28,9 @@ export class MMRService implements OnModuleDestroy {
     mmrId: MmrId,
     valueHex: string,
   ): Promise<{ elementIndex: number; x: string }> {
-    // await this.ensureMmrExists(mmrId);
+    await this.ensureMmrExists(mmrId);
     await this.ensureStoreReady();
-    // await this.ensureOrderNotExists(mmrId, valueHex);
+    await this.ensureOrderNotExists(mmrId, valueHex);
     await this.seedMMRCounters(mmrId);
 
     const mmr = this.getMmr(mmrId);
@@ -38,38 +38,37 @@ export class MMRService implements OnModuleDestroy {
 
     const { elementIndex } = await mmr.append(x.toString());
 
-    // await this.prisma.orderRecord.create({
-    //   data: {
-    //     orderHash: valueHex,
-    //     elementIndex,
-    //     mmrId,
-    //   },
-    // });
+    await this.prisma.orderRecord.create({
+      data: {
+        orderHash: valueHex,
+        elementIndex,
+        mmrId,
+      },
+    });
 
     return { elementIndex, x: x.toString() };
   }
 
   async getMerkleProof(mmrId: MmrId, orderHash: string): Promise<Proof> {
-    // await this.ensureMmrExists(mmrId);
+    await this.ensureMmrExists(mmrId);
     await this.ensureStoreReady();
-    // const exists = await this.prisma.orderRecord.findUnique({
-    //   where: {
-    //     mmrId_orderHash: {
-    //       mmrId,
-    //       orderHash,
-    //     },
-    //   },
-    //   select: { elementIndex: true },
-    // });
-    // if (!exists) {
-    //   throw new Error(`Order ${orderHash} not recorded in MMR ${mmrId}`);
-    // }
+    const exists = await this.prisma.orderRecord.findUnique({
+      where: {
+        mmrId_orderHash: {
+          mmrId,
+          orderHash,
+        },
+      },
+      select: { elementIndex: true },
+    });
+    if (!exists) {
+      throw new Error(`Order ${orderHash} not recorded in MMR ${mmrId}`);
+    }
 
     const mmr = this.getMmr(mmrId);
     const x = this.hashToField(orderHash);
 
-    // console.log(exists.elementIndex);
-    const elementIndex = 1; // exists.elementIndex;
+    const elementIndex = exists.elementIndex;
 
     const proof = await mmr.getProof(elementIndex);
     const ok = await mmr.verifyProof(proof, x.toString());
