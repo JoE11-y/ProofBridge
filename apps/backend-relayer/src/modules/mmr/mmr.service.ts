@@ -4,7 +4,6 @@ import { Poseidon2Hasher } from './hasher/Poseidon2Hasher';
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
 import path from 'path';
-import fs from 'fs';
 import LevelDB from './store/LevelDB';
 import { TREE_METADATA_KEYS } from '@accumulators/merkle-mountain-range';
 
@@ -13,16 +12,56 @@ type MmrId = string;
 const DB_PATH =
   process.env.ROCKS_PATH ?? path.resolve(process.cwd(), 'leveldb_data');
 
-fs.mkdirSync(DB_PATH, { recursive: true });
-
 @Injectable()
 export class MMRService implements OnModuleDestroy {
   private store: LevelDB | null = null;
   private storeInitPromise: Promise<void> | null = null;
   private hasher = new Poseidon2Hasher();
   private mmrCache = new Map<MmrId, Mmr>();
+  private ready = false;
+  private starting?: Promise<void>;
 
   constructor(private readonly prisma: PrismaService) {}
+
+  async startup(): Promise<void> {
+    if (!this.starting) this.starting = this._startup();
+    return this.starting;
+  }
+
+  isReady() {
+    return this.ready;
+  }
+
+  private async _startup(): Promise<void> {
+    const resolved = LevelDB.resolveLocation(DB_PATH);
+    this.store = new LevelDB(resolved);
+    await this.store.init();
+
+    const mustRebuild =
+      process.env.REBUILD_ON_BOOT === '1' || !(await this.hasBootSentinel());
+
+    if (mustRebuild) {
+      await this.rebuildAllMmrs();
+      await this.setBootSentinel();
+    }
+
+    const shutdown = async () => {
+      try {
+        await this.onModuleDestroy();
+      } finally {
+        process.exit(0);
+      }
+    };
+
+    process.on('SIGTERM', () => {
+      void shutdown();
+    });
+    process.on('SIGINT', () => {
+      void shutdown();
+    });
+
+    this.ready = true;
+  }
 
   async append(
     mmrId: MmrId,
@@ -52,6 +91,7 @@ export class MMRService implements OnModuleDestroy {
   async getMerkleProof(mmrId: MmrId, orderHash: string): Promise<Proof> {
     await this.ensureMmrExists(mmrId);
     await this.ensureStoreReady();
+
     const exists = await this.prisma.orderRecord.findUnique({
       where: {
         mmrId_orderHash: {
@@ -61,6 +101,7 @@ export class MMRService implements OnModuleDestroy {
       },
       select: { elementIndex: true },
     });
+
     if (!exists) {
       throw new Error(`Order ${orderHash} not recorded in MMR ${mmrId}`);
     }
@@ -96,25 +137,34 @@ export class MMRService implements OnModuleDestroy {
       }
     }
     this.mmrCache.clear();
+
+    if (this.store) {
+      try {
+        await this.store.close();
+      } catch {
+        // ignore
+      }
+    }
+
     this.store = null;
     this.storeInitPromise = null;
   }
 
   private async ensureStoreReady(): Promise<void> {
-    if (this.store) return;
+    if (this.store && this.store.isOpen()) return;
 
-    if (!this.storeInitPromise) {
-      this.storeInitPromise = (async () => {
-        if (this.store) return;
-        const store = new LevelDB(DB_PATH);
-        await store.init();
-        this.store = store;
-      })().catch((err) => {
-        this.store = null;
+    if (!this.store) {
+      const resolved = LevelDB.resolveLocation(DB_PATH);
+      this.store = new LevelDB(resolved);
+    }
+
+    if (!this.storeInitPromise)
+      this.storeInitPromise = this.store.init().catch((err) => {
         this.storeInitPromise = null;
+        this.store = null;
         throw err;
       });
-    }
+
     await this.storeInitPromise;
   }
 
@@ -180,5 +230,65 @@ export class MMRService implements OnModuleDestroy {
       }
       await store.set(k, '0');
     }
+  }
+
+  private async getAllMmrIds(): Promise<MmrId[]> {
+    const mmrs = await this.prisma.mMR.findMany({
+      select: { id: true },
+    });
+    return mmrs.map((m) => m.id);
+  }
+
+  private async rebuildMmrTree(mmrId: MmrId): Promise<void> {
+    await this.ensureStoreReady();
+
+    const mmr = this.getMmr(mmrId);
+
+    try {
+      await mmr.clear();
+    } catch {
+      //ignore
+    }
+
+    const pageSize = 5_000;
+    let cursor = 0;
+
+    await this.seedMMRCounters(mmrId);
+
+    while (true) {
+      const batch = await this.prisma.orderRecord.findMany({
+        where: { mmrId },
+        orderBy: { elementIndex: 'asc' },
+        select: { orderHash: true },
+        skip: cursor,
+        take: pageSize,
+      });
+      if (batch.length === 0) break;
+
+      for (const record of batch) {
+        const x = this.hashToField(record.orderHash);
+        await mmr.append(x.toString());
+      }
+      cursor += batch.length;
+    }
+  }
+
+  private async rebuildAllMmrs(): Promise<void> {
+    const mmrIds = await this.getAllMmrIds();
+    for (const mmrId of mmrIds) {
+      await this.rebuildMmrTree(mmrId);
+    }
+  }
+
+  private async hasBootSentinel(): Promise<boolean> {
+    await this.ensureStoreReady();
+    try {
+      return (await this.store!.get('boot.ok')) !== undefined;
+    } catch {
+      return false;
+    }
+  }
+  private async setBootSentinel(): Promise<void> {
+    await this.store!.set('boot.ok', new Date().toISOString());
   }
 }
