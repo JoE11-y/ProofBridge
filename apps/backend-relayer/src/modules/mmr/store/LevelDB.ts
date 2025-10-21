@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Level } from 'level';
+import { RaveLevel } from 'rave-level';
 import type { AbstractLevel } from 'abstract-level';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -9,7 +9,7 @@ type Key = string | Buffer | Uint8Array;
 type Val = string | Buffer | Uint8Array;
 
 interface OpenRetryOpts {
-  retries?: number; // default 20
+  retries?: number; // default 5
   delayMs?: number; // default 1000
 }
 
@@ -22,7 +22,7 @@ export default class LevelDB implements IStore {
     this.location = path.resolve(location);
     fs.mkdirSync(this.location, { recursive: true });
 
-    this.db = new Level<Key, Val>(this.location, {
+    this.db = new RaveLevel<Key, Val>(this.location, {
       valueEncoding: 'buffer',
     });
   }
@@ -41,7 +41,7 @@ export default class LevelDB implements IStore {
   }
 
   private async openWithRetry({
-    retries = 20,
+    retries = 5,
     delayMs = 1000,
   }: OpenRetryOpts): Promise<void> {
     for (let i = 0; i < retries; i++) {
@@ -49,8 +49,10 @@ export default class LevelDB implements IStore {
         await this.db.open();
         return;
       } catch (e: any) {
+        console.log(e);
         if (
           e?.code === 'LEVEL_LOCKED' ||
+          e?.code === 'LEVEL_DATABASE_NOT_OPEN' ||
           /LOCK.*already held/i.test(String(e?.message))
         ) {
           await new Promise((r) => setTimeout(r, delayMs));
