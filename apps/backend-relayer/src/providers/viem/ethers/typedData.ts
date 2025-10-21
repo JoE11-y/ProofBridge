@@ -86,7 +86,7 @@ export function buildOrderParams(
       bridger,
       orderRecipient,
       orderChainId,
-      orderPortal,
+      srcOrderPortal: orderPortal,
       adId,
       adCreator,
       adRecipient,

@@ -283,7 +283,7 @@ export class AdManagerOrderParamsDto {
     description: 'Order portal address',
   })
   @IsString()
-  orderPortal!: string;
+  srcOrderPortal!: string;
 
   @ApiProperty({
     example: '0x1234567890abcdef',
