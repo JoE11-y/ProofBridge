@@ -1,10 +1,14 @@
 "use client"
 
 import React, { useState } from "react"
-import { Button, Table } from "antd"
+import { Button, Modal, Table } from "antd"
 import type { TableColumnsType, TableProps } from "antd"
 import { ITrade } from "@/types/trades"
-import { useGetAllTrades } from "@/hooks/useTrades"
+import {
+  useGetAllTrades,
+  useLockFunds,
+  useUnLockFunds,
+} from "@/hooks/useTrades"
 import { useAccount } from "wagmi"
 import { truncateString } from "@/utils/truncate-string"
 import { Status } from "../shared/Status"
@@ -13,6 +17,7 @@ import { formatUnits } from "viem"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { chains } from "@/lib/chains"
+import { useChainModal, useConnectModal } from "@rainbow-me/rainbowkit"
 
 type DataIndex = keyof ITrade
 
@@ -29,10 +34,12 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
   type = "incoming",
 }) => {
   const account = useAccount()
-  const { data, isLoading } = useGetAllTrades({
+  const { data, isLoading, refetch, isRefetching } = useGetAllTrades({
     bridgerAddress: type === "outgoing" ? account.address : undefined,
     adCreatorAddress: type === "incoming" ? account.address : undefined,
   })
+  const [tradeInfo, setTradeInfo] = useState<ITrade>()
+  const [openReleaseModal, setOpenReleaseModal] = useState(false)
 
   const columns: TableColumnsType<ITrade> = [
     {
@@ -94,8 +101,8 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
           value: "ACTIVE",
         },
         {
-          text: "PAUSED",
-          value: "PAUSED",
+          text: "LOCKED",
+          value: "LOCKED",
         },
         {
           text: "INACTIVE",
@@ -135,36 +142,210 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
       dataIndex: "status",
       render: (value, rowData) => {
         return (
-          <>
-            {rowData.status === "INACTIVE" ? (
-              <Button
-                type="primary"
-                size="small"
-                className="!w-full !h-[35px] !lowercase"
-                disabled={true}
-              >
-                {value}
-              </Button>
-            ) : (
-              <Button type="primary" size="small" className="!w-full !h-[35px]">
-                Lock
-              </Button>
-            )}
-          </>
+          <Action
+            value={value}
+            rowData={rowData}
+            setTradeInfo={setTradeInfo}
+            setOpenReleaseModal={setOpenReleaseModal}
+            refetch={refetch}
+          />
         )
       },
     },
   ]
+
+  const chainModal = useChainModal()
+  const { mutateAsync: unlockFunds, isPending: unlockingFunds } =
+    useUnLockFunds()
+  const isBridger = account.address === tradeInfo?.bridgerAddress
+  const isAdCreator = account.address === tradeInfo?.adCreatorAddress
+  const adTokenChain = tradeInfo?.route?.adToken?.chain
+  const orderTokenChain = tradeInfo?.route?.orderToken?.chain
+  const isAdChain = adTokenChain?.chainId === String(account.chainId)
+  const isOrderChain = orderTokenChain?.chainId === String(account.chainId)
+  const bridgerIsNotConnected = isBridger && !isAdChain
+  const adCreatorIsNotConnected = isAdCreator && !isOrderChain
+
   return (
     <>
       <Table<ITrade>
         columns={columns}
         dataSource={data?.data!}
-        loading={isLoading}
+        loading={isLoading || isRefetching}
         onChange={onChange}
         showSorterTooltip={{ target: "sorter-icon" }}
         rowClassName={"bg-grey-900/60 hover:!bg-primary/20"}
       />
+
+      <Modal
+        open={openReleaseModal}
+        title={
+          <p className="text-sm">
+            Claim Tokens from{" "}
+            {isAdChain ? adTokenChain?.name : orderTokenChain?.name}
+          </p>
+        }
+        okText={
+          bridgerIsNotConnected
+            ? `Connect to ${adTokenChain?.name}`
+            : adCreatorIsNotConnected
+            ? `Connect to ${orderTokenChain?.name}`
+            : "Claim"
+        }
+        onOk={async () => {
+          if (adCreatorIsNotConnected && bridgerIsNotConnected) {
+            chainModal.openChainModal && chainModal.openChainModal()
+          } else {
+            await unlockFunds(tradeInfo?.id!)
+            setOpenReleaseModal(false)
+            refetch()
+          }
+        }}
+        onCancel={() => setOpenReleaseModal(false)}
+        confirmLoading={unlockingFunds}
+        centered
+        width={400}
+        cancelButtonProps={{
+          disabled: unlockingFunds,
+        }}
+        styles={{
+          content: { padding: 16, borderRadius: "12px" },
+          mask: { backdropFilter: "blur(12px)" },
+        }}
+      >
+        {tradeInfo && (
+          <div className="space-y-4 mt-5 text-sm">
+            <div className="bg-grey-900/60 p-4 rounded-lg space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Trade ID</span>
+                <span className="font-medium">
+                  {truncateString(tradeInfo.id, 4, 4)}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Amount</span>
+                <span className="font-medium">
+                  {formatUnits(
+                    BigInt(tradeInfo.amount),
+                    tradeInfo.route.orderToken.decimals
+                  )}{" "}
+                  {tradeInfo.route.orderToken.symbol}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Route</span>
+                <div className="flex items-center gap-2">
+                  <span>{tradeInfo.route.orderToken.chain.name}</span>
+                  <ArrowRight size={14} className="text-primary" />
+                  <span>{tradeInfo.route.adToken.chain.name}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Bridger</span>
+                <span className="font-medium">
+                  {truncateString(tradeInfo.bridgerAddress, 4, 4)}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Created</span>
+                <span className="font-medium">
+                  {moment(tradeInfo.createdAt).format("lll")}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-grey-300">Status</span>
+                <Status status={tradeInfo.status} />
+              </div>
+            </div>
+
+            <div className="bg-amber-500/10 p-3 rounded-lg">
+              <p className="text-amber-500 text-sm">
+                Please ensure you have received the tokens before releasing the
+                tokens on your end. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </>
+  )
+}
+
+const Action = ({
+  value,
+  rowData,
+  setTradeInfo,
+  setOpenReleaseModal,
+  refetch,
+}: {
+  value: string
+  rowData: ITrade
+  setTradeInfo: (value: ITrade) => void
+  setOpenReleaseModal: (value: boolean) => void
+  refetch: () => void
+}) => {
+  const { mutateAsync: lockFunds, isPending: lockingFunds } = useLockFunds()
+  const { address, chainId } = useAccount()
+  const chainModal = useChainModal()
+  const isBridger = address === rowData?.bridgerAddress
+  const isAdCreator = address === rowData?.adCreatorAddress
+  const adTokenChain = rowData?.route?.adToken?.chain
+  const orderTokenChain = rowData?.route?.orderToken?.chain
+  const isAdChain = adTokenChain?.chainId === String(chainId)
+  const isOrderChain = orderTokenChain?.chainId === String(chainId)
+  const bridgerIsNotConnected = isBridger && !isAdChain
+  const adCreatorIsNotConnected = isAdCreator && !isOrderChain
+
+  return (
+    <>
+      {bridgerIsNotConnected || adCreatorIsNotConnected ? (
+        <Button
+          type="primary"
+          size="small"
+          className="!w-full !h-[35px]"
+          loading={lockingFunds}
+          onClick={chainModal?.openChainModal}
+        >
+          {bridgerIsNotConnected
+            ? `Connect to ${adTokenChain?.name}`
+            : adCreatorIsNotConnected
+            ? `Connect to ${orderTokenChain?.name}`
+            : "Claim"}
+        </Button>
+      ) : rowData.status === "LOCKED" ? (
+        <Button
+          type="primary"
+          size="small"
+          className="!w-full !h-[35px]"
+          loading={lockingFunds}
+          onClick={() => {
+            setOpenReleaseModal(true)
+            setTradeInfo(rowData)
+          }}
+        >
+          Claim
+        </Button>
+      ) : rowData.status === "ACTIVE" &&
+        address === rowData.adCreatorAddress ? (
+        <Button
+          type="primary"
+          size="small"
+          className="!w-full !h-[35px]"
+          loading={lockingFunds}
+          onClick={async () => {
+            await lockFunds(rowData.id)
+            refetch()
+          }}
+        >
+          Lock
+        </Button>
+      ) : (
+        <p className="text-center">-</p>
+      )}
     </>
   )
 }
