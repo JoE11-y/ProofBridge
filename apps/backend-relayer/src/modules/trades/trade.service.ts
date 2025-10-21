@@ -85,14 +85,14 @@ export class TradesService {
           ...row.route.adToken,
           chain: {
             ...row.route.adToken.chain,
-            chainId: row.route.adToken.chain.chainId.toString(),
+            chainId: adChainId,
           },
         },
         orderToken: {
           ...row.route.orderToken,
           chain: {
             ...row.route.orderToken.chain,
-            chainId: row.route.orderToken.chain.chainId.toString(),
+            chainId: orderChainId,
           },
         },
       },
