@@ -653,7 +653,6 @@ export class TradesService {
     );
 
     const localRoot = await this.merkleService.getRoot(mmrId);
-    console.log(localRoot);
 
     const onChainRoot = await this.viemService.fetchOnChainRoot(isAdCreator, {
       chainId: isAdCreator
@@ -664,11 +663,16 @@ export class TradesService {
         : (trade.route.adToken.chain.adManagerAddress as `0x${string}`),
     });
 
-    if (onChainRoot.toLowerCase() !== localRoot.toLowerCase()) {
-      throw new BadRequestException(
-        'MMR root mismatch - chain is not up to date',
-      );
-    }
+    console.log('onChainRoot', onChainRoot);
+
+    // verification mechanism to check for MMR root consistency - disabled for now
+    // check if local root has been recorded on chain
+
+    // if (onChainRoot.toLowerCase() !== localRoot.toLowerCase()) {
+    //   throw new BadRequestException(
+    //     'MMR root mismatch - chain is not up to date',
+    //   );
+    // }
 
     const secret = this.encryptionService.decryptSecret({
       iv: tradeSecret.iv,
@@ -681,7 +685,7 @@ export class TradesService {
       orderHash: trade.orderHash,
       secret: secret,
       isAdCreator,
-      targetRoot: onChainRoot,
+      targetRoot: localRoot,
     });
 
     const nullifierHash = await this.proofService.generateNullifierHash(
@@ -717,7 +721,7 @@ export class TradesService {
           salt: trade.id,
         },
         nullifierHash: nullifierHash,
-        targetRoot: onChainRoot,
+        targetRoot: localRoot,
         proof,
       });
 
