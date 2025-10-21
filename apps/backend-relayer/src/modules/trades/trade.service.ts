@@ -654,26 +654,24 @@ export class TradesService {
 
     const localRoot = await this.merkleService.getRoot(mmrId);
 
-    const onChainRoot = await this.viemService.fetchOnChainRoot(isAdCreator, {
-      chainId: isAdCreator
-        ? trade.route.orderToken.chain.chainId
-        : trade.route.adToken.chain.chainId,
-      contractAddress: isAdCreator
-        ? (trade.route.orderToken.chain.orderPortalAddress as `0x${string}`)
-        : (trade.route.adToken.chain.adManagerAddress as `0x${string}`),
-    });
+    const rootExists = await this.viemService.checkLocalRootExist(
+      localRoot,
+      isAdCreator,
+      {
+        chainId: isAdCreator
+          ? trade.route.orderToken.chain.chainId
+          : trade.route.adToken.chain.chainId,
+        contractAddress: isAdCreator
+          ? (trade.route.orderToken.chain.orderPortalAddress as `0x${string}`)
+          : (trade.route.adToken.chain.adManagerAddress as `0x${string}`),
+      },
+    );
 
-    console.log('onChainRoot', onChainRoot);
-    console.log('localRoot', localRoot);
-
-    // verification mechanism to check for MMR root consistency - disabled for now
-    // check if local root has been recorded on chain
-
-    // if (onChainRoot.toLowerCase() !== localRoot.toLowerCase()) {
-    //   throw new BadRequestException(
-    //     'MMR root mismatch - chain is not up to date',
-    //   );
-    // }
+    if (!rootExists) {
+      throw new BadRequestException(
+        'MMR root mismatch - chain is not up to date',
+      );
+    }
 
     const secret = this.encryptionService.decryptSecret({
       iv: tradeSecret.iv,

@@ -195,9 +195,23 @@ export const AD_MANAGER_ABI = [
   },
   {
     type: 'function',
-    name: 'getMerkleRoot',
+    name: 'getHistoricalRoot',
+    inputs: [{ name: 'index', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: 'root', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getLatestMerkleRoot',
     inputs: [],
     outputs: [{ name: 'root', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getMerkleLeafCount',
+    inputs: [],
+    outputs: [{ name: 'count', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {
