@@ -57,6 +57,45 @@ export interface ILockFundsReponse {
   orderHash: string
   reqHash: string
 }
+
+export interface IUnlockFundsResponse {
+  chainId: string
+  contractAddress: Address
+  signature: Address
+  authToken: string
+  timeToExpire: number
+  orderParams: {
+    orderChainToken: Address
+    adChainToken: Address
+    amount: string
+    bridger: Address
+    orderChainId: string
+    orderPortal: Address
+    orderRecipient: Address
+    adId: string
+    adCreator: Address
+    adRecipient: Address
+    salt: string
+    adChainId: string
+  }
+  nullifierHash: Address
+  targetRoot: Address
+  proof: Address
+  orderHash: Address
+  reqHash: Address
+}
+
+export interface IUnlockFundsRequest {
+  id: string
+  signature: Address
+}
+
+export interface IConfirmUnlockFundsRequest {
+  id: string
+  signature: Address
+  txHash: Address
+}
+
 export interface IConfirmTradeTxRequest {
   tradeId: string
   txHash: Address
@@ -101,4 +140,20 @@ export interface ITrade {
     adToken: IToken
     orderToken: IToken
   }
+}
+
+export interface ITradeParams {
+  orderChainToken: Address
+  adChainToken: Address
+  amount: string
+  bridger: Address
+  orderRecipient: Address
+  adId: string
+  adCreator: Address
+  adRecipient: Address
+  salt: string
+  orderChainId: string
+  orderPortal: Address
+  adChainId: string
+  adManager: Address
 }

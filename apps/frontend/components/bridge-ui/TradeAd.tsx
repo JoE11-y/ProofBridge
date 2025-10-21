@@ -70,6 +70,7 @@ export const TradeAd = ({ ...props }: IAd) => {
       amount: parseUnits(amount, props.orderToken.decimals).toString(),
       bridgerDstAddress: account.address!,
     })
+    toggleModal()
   }
   return (
     <div>
