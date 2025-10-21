@@ -8,9 +8,15 @@ import { IStore } from '@accumulators/core';
 type Key = string | Buffer | Uint8Array;
 type Val = string | Buffer | Uint8Array;
 
+interface OpenRetryOpts {
+  retries?: number; // default 20
+  delayMs?: number; // default 1000
+}
+
 export default class LevelDB implements IStore {
   private db: AbstractLevel<Key, Key, Val>;
   private location: string;
+  private opening?: Promise<void>;
 
   constructor(location: string) {
     this.location = path.resolve(location);
@@ -21,10 +27,39 @@ export default class LevelDB implements IStore {
     });
   }
 
-  async init(): Promise<void> {
-    if (this.db.status !== 'open') {
-      await this.db.open();
+  static resolveLocation(base: string): string {
+    const instance = process.env.RENDER_INSTANCE_ID ?? 'local';
+    const loc = path.join(base, instance);
+    fs.mkdirSync(loc, { recursive: true });
+    return loc;
+  }
+
+  async init(opts: OpenRetryOpts = {}): Promise<void> {
+    if (this.db.status === 'open') return;
+    if (!this.opening) this.opening = this.openWithRetry(opts);
+    return this.opening;
+  }
+
+  private async openWithRetry({
+    retries = 20,
+    delayMs = 1000,
+  }: OpenRetryOpts): Promise<void> {
+    for (let i = 0; i < retries; i++) {
+      try {
+        await this.db.open();
+        return;
+      } catch (e: any) {
+        if (
+          e?.code === 'LEVEL_LOCKED' ||
+          /LOCK.*already held/i.test(String(e?.message))
+        ) {
+          await new Promise((r) => setTimeout(r, delayMs));
+          continue;
+        }
+        throw e;
+      }
     }
+    throw new Error(`LevelDB lock not released after ${retries} attempts`);
   }
 
   isOpen(): boolean {
