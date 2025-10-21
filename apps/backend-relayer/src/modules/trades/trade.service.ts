@@ -691,6 +691,9 @@ export class TradesService {
       mmrId = trade.route.adToken.chain.mmrId;
     }
 
+    console.log(mmrId, 'mmrId');
+    console.log(trade.orderHash, 'orderHash');
+
     // get merkle proof
     const merkleProof = await this.merkleService.getMerkleProof(
       mmrId,

@@ -68,6 +68,8 @@ export class MMRService implements OnModuleDestroy {
     const mmr = this.getMmr(mmrId);
     const x = this.hashToField(orderHash);
 
+    console.log(exists.elementIndex);
+
     const proof = await mmr.getProof(exists.elementIndex);
     const ok = await mmr.verifyProof(proof, x.toString());
     if (!ok) {

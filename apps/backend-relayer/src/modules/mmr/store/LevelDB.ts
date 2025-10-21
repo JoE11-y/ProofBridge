@@ -41,6 +41,7 @@ export default class LevelDB implements IStore {
   }
 
   async get(key: Key): Promise<string | undefined> {
+    console.log('LevelDB get key:', key);
     if (!this.isOperational()) throw new Error('Database not operational');
     try {
       const v = await this.db.get(key);
