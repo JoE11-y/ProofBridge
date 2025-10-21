@@ -155,6 +155,9 @@ export class ConfirmTradeActionDto {
 export class ChainDto {
   @ApiProperty({ example: 'Ethereum' })
   name!: string;
+
+  @ApiProperty({ example: '1' })
+  chainId!: string;
 }
 
 export class TokenDto {

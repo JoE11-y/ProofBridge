@@ -55,14 +55,14 @@ export class TradesService {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
             orderToken: {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
           },
@@ -74,6 +74,23 @@ export class TradesService {
     return {
       ...row,
       amount: row.amount.toFixed(0),
+      route: {
+        ...row.route,
+        adToken: {
+          ...row.route.adToken,
+          chain: {
+            ...row.route.adToken.chain,
+            chainId: row.route.adToken.chain.chainId.toString(),
+          },
+        },
+        orderToken: {
+          ...row.route.orderToken,
+          chain: {
+            ...row.route.orderToken.chain,
+            chainId: row.route.orderToken.chain.chainId.toString(),
+          },
+        },
+      },
     };
   }
 
@@ -126,14 +143,14 @@ export class TradesService {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
             orderToken: {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
           },
@@ -153,6 +170,24 @@ export class TradesService {
       ...row,
       status: row.status as string,
       amount: row.amount.toFixed(0),
+      chainId: row.route.orderToken.chain.chainId,
+      route: {
+        ...row.route,
+        adToken: {
+          ...row.route.adToken,
+          chain: {
+            ...row.route.adToken.chain,
+            chainId: row.route.adToken.chain.chainId.toString(),
+          },
+        },
+        orderToken: {
+          ...row.route.orderToken,
+          chain: {
+            ...row.route.orderToken.chain,
+            chainId: row.route.orderToken.chain.chainId.toString(),
+          },
+        },
+      },
     }));
 
     return { data: cleanedRows, nextCursor };
