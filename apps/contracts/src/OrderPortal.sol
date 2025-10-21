@@ -469,7 +469,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     /**
      * @notice Return the merkle manager root
      */
-    function getMerkleRoot() external view returns (bytes32 root) {
+    function getLatestMerkleRoot() external view returns (bytes32 root) {
         root = i_merkleManager.getRootHash();
     }
 
