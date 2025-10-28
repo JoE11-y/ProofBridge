@@ -141,7 +141,7 @@ export const useLockFunds = () => {
             amount: BigInt(response.orderParams.amount),
             bridger: response.orderParams.bridger,
             orderChainId: BigInt(response.orderParams.orderChainId),
-            srcOrderPortal: response.orderParams.orderPortal,
+            srcOrderPortal: response.orderParams.srcOrderPortal,
             orderRecipient: response.orderParams.orderRecipient,
             adId: response.orderParams.adId,
             adCreator: response.orderParams.adCreator,

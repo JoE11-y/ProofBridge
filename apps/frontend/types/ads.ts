@@ -144,6 +144,8 @@ export interface IGetAdsParams {
   limit?: number
   adChainId?: string
   orderChainId?: string
+  adTokenId?: string
+  orderTokenId?: string
 }
 
 export type AdStatusT =

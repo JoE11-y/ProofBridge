@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from "react"
 import { Avatar, Button, Modal, Skeleton } from "antd"
-import { Clock, Info, ThumbsUp, Verified } from "lucide-react"
+import { ArrowRight, Clock, Info, ThumbsUp, Verified } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { AdStatusT, IAd } from "@/types/ads"
@@ -28,26 +28,26 @@ export const TradeAd = ({ ...props }: IAd) => {
   const toggleModal = () => setOpenModal(!openModal)
   const available_tokens = formatUnits(
     parseToBigInt(props.availableAmount),
-    props.adToken.decimals
+    props.orderToken.decimals
   )
   const minAmount = formatUnits(
     parseToBigInt(props.minAmount),
-    props.adToken.decimals
+    props.orderToken.decimals
   )
   const maxAmount = formatUnits(
     parseToBigInt(props.maxAmount),
-    props.adToken.decimals
+    props.orderToken.decimals
   )
-  const tokenSymbol = props.adToken.symbol
-  const token = props.adToken.name
+  const tokenSymbol = props.orderToken.symbol
+  const token = props.orderToken.name
   // const crossChain = chains[props.orderToken.chainId]
   const txFeePercent = 1
   const [amount, setAmount] = useState("")
   const txFee = Number(amount) * (txFeePercent / 100)
   const account = useAccount()
   const balance = useBalance({
-    chainId: Number(props.adToken.chainId),
-    token: props.adToken.address,
+    chainId: Number(props.orderToken.chainId),
+    token: props.orderToken.address,
     address: account.address,
   })
   const [balance_value, setBalance_value] = useState("")
@@ -113,15 +113,28 @@ export const TradeAd = ({ ...props }: IAd) => {
                   <p className="text-grey-200 capitalize pr-2 font-semibold text-xs">
                     Quantity
                   </p>
-                  <p>{available_tokens}</p>
+                  <p>
+                    {Number(available_tokens).toLocaleString()} {tokenSymbol}
+                  </p>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-grey-200 capitalize pr-2 font-semibold text-xs">
                     Limits
                   </p>
                   <p>
-                    {minAmount} - {maxAmount} {tokenSymbol}
+                    {Number(minAmount).toLocaleString()} -{" "}
+                    {Number(maxAmount).toLocaleString()} {tokenSymbol}
                   </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-grey-200 capitalize pr-2 font-semibold text-xs">
+                    Route
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <p>{chains[props.orderToken.chainId].name}</p>
+                    <ArrowRight size={15} className="text-yellow-500" />
+                    <p>{chains[props.adToken.chainId].name}</p>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-grey-200 capitalize pr-2 font-semibold text-xs">
@@ -161,7 +174,7 @@ export const TradeAd = ({ ...props }: IAd) => {
           </div>
           <div className="bg-grey-800/60 w-full h-full md:rounded-r-[12px] p-4 md:p-6 md:py-7 space-y-3">
             <div className="flex items-center gap-4">
-              <p>Your balance</p>
+              <p>{chains[props.orderToken.chainId]?.name} balance</p>
               <p className="font-semibold text-primary font-pixter tracking-wide">
                 {balance.isLoading ? (
                   <Skeleton.Button active />
@@ -176,12 +189,10 @@ export const TradeAd = ({ ...props }: IAd) => {
 
             <div className="mb-16 space-y-4">
               <div className="h-[80px] w-full bg-grey-900/40 rounded-md p-4 flex flex-col justify-between">
-                <p className="text-xs text-grey-300">
-                  In {chains[props.orderToken.chainId].name} chain
-                </p>
+                <p className="text-xs text-grey-300">Amount to Bridge?</p>
                 <div className="grid [grid-template-columns:20px_1fr_20%] gap-1 items-center">
                   <Image
-                    src={chain_icons[props.orderToken.chainId]}
+                    src={chain_icons[props.adToken.chainId]}
                     alt=""
                     height={20}
                     width={20}
@@ -281,9 +292,9 @@ export const TradeAd = ({ ...props }: IAd) => {
         <MerchantInfo {...props} variant="variant_2" />
 
         <div className="flex items-baseline gap-2 mt-2">
-          <p className="md:hidden block text-xs">Other Chain: </p>
+          <p className="md:hidden block text-xs">Destination Chain: </p>
           <p className="md:text-lg text-[16px]">
-            {chains[props?.orderToken?.chainId!].name}
+            {chains[props?.adToken?.chainId!].name}
           </p>
         </div>
 

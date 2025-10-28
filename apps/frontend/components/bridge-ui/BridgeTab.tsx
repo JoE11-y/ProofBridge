@@ -1,7 +1,16 @@
 "use client"
 import React, { useEffect, useState } from "react"
-import { Alert, Avatar, Button, Divider, Input, Skeleton, Tooltip } from "antd"
-import { Bot, Clock, Rabbit, Verified } from "lucide-react"
+import {
+  Alert,
+  Avatar,
+  Button,
+  Divider,
+  Input,
+  Select,
+  Skeleton,
+  Tooltip,
+} from "antd"
+import { ArrowRight, Bot, Clock, Rabbit, Verified } from "lucide-react"
 import Image from "next/image"
 import { TradeAd } from "./TradeAd"
 import { SellAd } from "./SellAdd"
@@ -11,27 +20,37 @@ import { useGetAllTokens } from "@/hooks/useTokens"
 import { useGetAllAds } from "@/hooks/useAds"
 import { GiChainLightning } from "react-icons/gi"
 import SkeletonTradeAd from "./SkeletonTradeAd"
+import { hederaTestnet, sepolia } from "viem/chains"
+import { chain_icons } from "@/lib/chain-icons"
+import { IoDocumentText } from "react-icons/io5"
 
 export const BridgeTab = () => {
   const { data: chains, isLoading: loadingChains } = useGetAllChains({})
 
-  const [selectedChainId, setSelectedChainId] = useState<string>("")
+  const [selectedBaseChainId, setSelectedBaseChainId] = useState<string>(
+    `${hederaTestnet.id}`
+  )
+  const [selectedDstChainId, setSelectedDstChainId] = useState<string>(
+    `${sepolia.id}`
+  )
   const [selectedTokenId, setSelectedTokenId] = useState<string>("")
 
   const { data: tokens, isLoading: loadingTokens } = useGetAllTokens({
-    chainId: selectedChainId,
+    chainId: selectedBaseChainId,
   })
 
   const { data: Ads, isLoading: loadingAds } = useGetAllAds({
     limit: 20,
     status: "ACTIVE",
-    adChainId: selectedChainId,
+    orderChainId: selectedBaseChainId,
+    adChainId: selectedDstChainId,
+    orderTokenId: selectedTokenId,
   })
-  useEffect(() => {
-    if (chains?.rows.length) {
-      setSelectedChainId(chains.rows[0].chainId)
-    }
-  }, [chains])
+  // useEffect(() => {
+  //   if (chains?.rows.length) {
+  //     setSelectedBaseChainId(chains.rows[0].chainId)
+  //   }
+  // }, [chains])
 
   useEffect(() => {
     if (tokens?.data.length) {
@@ -41,12 +60,18 @@ export const BridgeTab = () => {
   return (
     <div className="w-full bg-grey-900 p-4 md:p-6 rounded-md space-y-4 md:space-y-6 tracking-wider">
       <div className="">
-        <div className="flex items-center gap-2 mb-2">
-          <GiChainLightning />
-          <p>Chains</p>
+        <div className="flex items-center gap-7 mb-2">
+          <div className="flex items-center gap-2 w-[200px]">
+            <GiChainLightning />
+            <p className="text-sm">From Chain</p>
+          </div>
+          <div className="flex items-center gap-2 w-[200px]">
+            <GiChainLightning />
+            <p className="text-sm">To Chain</p>
+          </div>
         </div>
         <div className="flex md:flex-row flex-col md:items-center gap-4">
-          <div className="inline-flex items-center gap-1 bg-grey-800 p-1 rounded-sm w-fit">
+          <div className="inline-flex items-center gap-2 bg-grey-800 p-[5px] rounded-sm w-fit">
             {loadingChains ? (
               <>
                 <Skeleton.Button active={true} />
@@ -54,20 +79,51 @@ export const BridgeTab = () => {
               </>
             ) : (
               <>
-                {chains?.rows?.map((chain) => {
-                  return (
-                    <Button
-                      key={chain.chainId}
-                      className=" !h-[35px]"
-                      type={
-                        selectedChainId === chain.chainId ? "primary" : "text"
-                      }
-                      onClick={() => setSelectedChainId(chain.chainId)}
-                    >
-                      {chain.name}
-                    </Button>
-                  )
-                })}
+                <Select
+                  onChange={(id) => setSelectedBaseChainId(id)}
+                  className="min-w-[200px] !h-[40px]"
+                  value={selectedBaseChainId}
+                >
+                  {chains?.rows?.map((chain) => {
+                    return (
+                      <Select.Option key={chain.chainId} value={chain.chainId}>
+                        <div className="flex items-center gap-2">
+                          <Image
+                            src={chain_icons[chain.chainId]}
+                            alt=""
+                            width={20}
+                            height={20}
+                          />
+                          <span className="text-[13px]">{chain.name}</span>
+                        </div>
+                      </Select.Option>
+                    )
+                  })}
+                </Select>
+                <div>
+                  <ArrowRight size={14} />
+                </div>
+                <Select
+                  onChange={(id) => setSelectedDstChainId(id)}
+                  className="min-w-[200px] !h-[40px]"
+                  value={selectedDstChainId}
+                >
+                  {chains?.rows?.map((chain) => {
+                    return (
+                      <Select.Option key={chain.chainId} value={chain.chainId}>
+                        <div className="flex items-center gap-2">
+                          <Image
+                            src={chain_icons[chain.chainId]}
+                            alt=""
+                            width={20}
+                            height={20}
+                          />
+                          <span className="text-[13px]">{chain.name}</span>
+                        </div>
+                      </Select.Option>
+                    )
+                  })}
+                </Select>
               </>
             )}
           </div>
@@ -133,6 +189,16 @@ export const BridgeTab = () => {
         >
           <Bot size={30} className="text-primary" />
         </Tooltip>
+      </div>
+      <div className="flex items-center gap-2">
+        <IoDocumentText className="text-primary" />
+        <p className="text-sm underline">
+          {
+            chains?.rows?.find((chain) => chain.chainId === selectedBaseChainId)
+              ?.name
+          }{" "}
+          ADs
+        </p>
       </div>
 
       <div className="hidden md:grid [grid-template-columns:2fr_1fr_2fr_1fr_1fr] gap-7 items-center text-grey-400 text-sm font-semibold border-y-1 border-y-grey-800 py-2">

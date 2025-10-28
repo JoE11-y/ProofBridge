@@ -10,12 +10,20 @@ import { useAccount } from "wagmi"
 import { useChainModal } from "@rainbow-me/rainbowkit"
 import { useGetAllChains } from "@/hooks/useChains"
 import { GiCancel } from "react-icons/gi"
-import { hederaTestnet, sepolia } from "viem/chains"
+import {
+  hederaTestnet,
+  sepolia,
+  polygonAmoy,
+  optimismSepolia,
+} from "viem/chains"
 import { CiWarning } from "react-icons/ci"
+import { useGetAllTokens } from "@/hooks/useTokens"
 
 const supported_chains: Record<number, Chain> = {
   [hederaTestnet.id]: hederaTestnet,
   [sepolia.id]: sepolia,
+  [polygonAmoy.id]: polygonAmoy,
+  [optimismSepolia.id]: optimismSepolia,
 }
 
 export const AddLiquidity = () => {
@@ -23,9 +31,9 @@ export const AddLiquidity = () => {
   const { data: chains, isLoading: loadingChains } = useGetAllChains({
     limit: 10,
   })
-  const [liquidity_chain, setLiquidity_chain] = useState<Chain>()
-  const [other_chain, setOther_chain] = useState<Chain>()
-  const is_liquidity_chain = liquidity_chain?.id === account.chainId
+  const [base_chain, setBase_chain] = useState<Chain>()
+  const [order_chain, setOrder_chain] = useState<Chain>()
+  const is_base_chain = base_chain?.id === account.chainId
   const { openChainModal } = useChainModal()
   const { mutateAsync: createAd, isPending } = useCreateAd()
   const [title, setTitle] = useState("")
@@ -36,9 +44,14 @@ export const AddLiquidity = () => {
   const [isInputError, setIsInputError] = useState(false)
   const [openModal, setOpenModal] = useState(false)
   const toggleModal = () => setOpenModal(!openModal)
+  const [selectedTokenId, setSelectedTokenId] = useState<string>("")
+  const { data: tokens, isLoading: loadingTokens } = useGetAllTokens({
+    chainId: String(order_chain?.id),
+  })
   const { data: routes, isLoading: loadingRoutes } = useGetBridgeRoutes({
-    adChainId: String(liquidity_chain?.id),
-    orderChainId: String(other_chain?.id),
+    adChainId: String(base_chain?.id),
+    orderChainId: String(order_chain?.id),
+    adTokenId: selectedTokenId,
   })
 
   const handleCreateAd = async () => {
@@ -48,11 +61,11 @@ export const AddLiquidity = () => {
         creatorDstAddress: account.address!,
         maxAmount: parseUnits(
           max,
-          liquidity_chain?.nativeCurrency?.decimals!
+          base_chain?.nativeCurrency?.decimals!
         ).toString(),
         minAmount: parseUnits(
           min,
-          liquidity_chain?.nativeCurrency?.decimals!
+          base_chain?.nativeCurrency?.decimals!
         ).toString(),
 
         metadata: {
@@ -61,7 +74,7 @@ export const AddLiquidity = () => {
         },
         fundAmount: parseUnits(
           amount,
-          liquidity_chain?.nativeCurrency?.decimals!
+          base_chain?.nativeCurrency?.decimals!
         ).toString(),
       })
 
@@ -86,7 +99,7 @@ export const AddLiquidity = () => {
                 loading={loadingChains}
                 className="w-full !h-[40px]"
                 options={chains?.rows
-                  .filter((chain) => Number(chain.chainId) !== other_chain?.id!)
+                  .filter((chain) => Number(chain.chainId) !== order_chain?.id!)
                   .map((chain) => {
                     return {
                       label: chain.name,
@@ -97,9 +110,9 @@ export const AddLiquidity = () => {
                   clearIcon: <GiCancel className="text-red-500" size={15} />,
                 }}
                 onChange={(value: number) => {
-                  setLiquidity_chain(supported_chains[value])
+                  setBase_chain(supported_chains[value])
                 }}
-                onClear={() => setLiquidity_chain(undefined)}
+                onClear={() => setBase_chain(undefined)}
               />
             </div>
           </div>
@@ -111,9 +124,7 @@ export const AddLiquidity = () => {
                 loading={loadingChains}
                 className="w-full !h-[40px]"
                 options={chains?.rows
-                  .filter(
-                    (chain) => Number(chain.chainId) !== liquidity_chain?.id!
-                  )
+                  .filter((chain) => Number(chain.chainId) !== base_chain?.id!)
                   .map((chain) => {
                     return {
                       label: chain.name,
@@ -124,25 +135,34 @@ export const AddLiquidity = () => {
                   clearIcon: <GiCancel className="text-red-500" size={15} />,
                 }}
                 onChange={(value: number) => {
-                  setOther_chain(supported_chains[value])
+                  setOrder_chain(supported_chains[value])
                 }}
-                onClear={() => setOther_chain(undefined)}
+                onClear={() => setOrder_chain(undefined)}
               />
             </div>
           </div>
 
           <div>
-            <p className="text-grey-300">Title</p>
-            <input
-              className="w-full h-[40px] border-[1px]"
-              placeholder="Give this ad a title"
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            {isInputError && !title && (
-              <p className="text-xs text-red-400 tracking-widest">
-                Title is required
-              </p>
-            )}
+            <p className="text-grey-300 mb-1">Token</p>
+            <div>
+              <Select
+                loading={loadingTokens}
+                className="w-full !h-[40px]"
+                options={tokens?.data.map((token) => {
+                  return {
+                    label: token.name,
+                    value: token.id,
+                  }
+                })}
+                allowClear={{
+                  clearIcon: <GiCancel className="text-red-500" size={15} />,
+                }}
+                onChange={(value: string) => {
+                  setSelectedTokenId(value)
+                }}
+                onClear={() => setSelectedTokenId("")}
+              />
+            </div>
           </div>
 
           <div>
@@ -189,6 +209,20 @@ export const AddLiquidity = () => {
               </p>
             )}
           </div>
+
+          <div>
+            <p className="text-grey-300">Title</p>
+            <input
+              className="w-full h-[40px] border-[1px]"
+              placeholder="Give this ad a title"
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            {isInputError && !title && (
+              <p className="text-xs text-red-400 tracking-widest">
+                Title is required
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -226,29 +260,37 @@ export const AddLiquidity = () => {
           </div>
           <p className="text-sm">
             Your ad will appear as: Base{" "}
-            <span className="text-primary">
-              {liquidity_chain?.name || "N/A"}
-            </span>{" "}
+            <span className="text-primary">{base_chain?.name || "N/A"}</span>{" "}
             for Destination{" "}
-            <span className="text-primary">{other_chain?.name || "N/A"}</span>{" "}
+            <span className="text-primary">{order_chain?.name || "N/A"}</span>{" "}
             with the information and trading terms specified above.
           </p>
         </div>
       </div>
       <div className="flex justify-end">
-        {!liquidity_chain ? (
+        {!base_chain ? (
           <div className="flex items-center gap-2 text-yellow-500">
             <CiWarning size={18} />
             <p className="">Please select Base chain.</p>
           </div>
-        ) : !other_chain ? (
+        ) : !order_chain ? (
           <div className="flex items-center gap-2 text-yellow-500">
             <CiWarning size={18} />
             <p className="">Please select Destination chain.</p>
           </div>
+        ) : !selectedTokenId ? (
+          <div className="flex items-center gap-2 text-yellow-500">
+            <CiWarning size={18} />
+            <p className="">Please select A token.</p>
+          </div>
+        ) : !routes?.data[0] ? (
+          <div className="flex items-center gap-2 text-yellow-500">
+            <CiWarning size={18} />
+            <p className="">Route not available.</p>
+          </div>
         ) : (
           <>
-            {is_liquidity_chain ? (
+            {is_base_chain ? (
               <Button
                 onClick={() => {
                   if (!title || !description || !amount || !min || !max) {
@@ -267,7 +309,7 @@ export const AddLiquidity = () => {
               </Button>
             ) : (
               <Button type="primary" size="large" onClick={openChainModal}>
-                Connect to {liquidity_chain?.name}
+                Connect to {base_chain?.name}
               </Button>
             )}
           </>
@@ -294,7 +336,7 @@ export const AddLiquidity = () => {
                 <p className="text-lg mb-4 underline">
                   Providing Liquidity for{" "}
                   <span className="text-primary font-semibold">
-                    {liquidity_chain?.name}
+                    {base_chain?.name}
                   </span>
                 </p>
               </div>
