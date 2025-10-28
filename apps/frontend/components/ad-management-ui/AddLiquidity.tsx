@@ -46,7 +46,7 @@ export const AddLiquidity = () => {
   const toggleModal = () => setOpenModal(!openModal)
   const [selectedTokenId, setSelectedTokenId] = useState<string>("")
   const { data: tokens, isLoading: loadingTokens } = useGetAllTokens({
-    chainId: String(order_chain?.id),
+    chainId: String(base_chain?.id),
   })
   const { data: routes, isLoading: loadingRoutes } = useGetBridgeRoutes({
     adChainId: String(base_chain?.id),
