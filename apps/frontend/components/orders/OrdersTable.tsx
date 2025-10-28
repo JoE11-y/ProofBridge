@@ -84,9 +84,19 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
       render: (value, rowData) => {
         return (
           <div className="flex items-center gap-1">
-            <p>{rowData.route.orderToken.chain.name}</p>
-            <ArrowRight size={14} className="text-primary" />
-            <p>{rowData.route.adToken.chain.name}</p>
+            {type === "incoming" ? (
+              <>
+                <p>{rowData.route.adToken.chain.name}</p>
+                <ArrowRight size={14} className="text-primary" />
+                <p>{rowData.route.orderToken.chain.name}</p>
+              </>
+            ) : (
+              <>
+                <p>{rowData.route.orderToken.chain.name}</p>
+                <ArrowRight size={14} className="text-primary" />
+                <p>{rowData.route.adToken.chain.name}</p>
+              </>
+            )}
           </div>
         )
       },
@@ -165,6 +175,7 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
   const isOrderChain = orderTokenChain?.chainId === String(account.chainId)
   const bridgerIsNotConnected = isBridger && !isAdChain
   const adCreatorIsNotConnected = isAdCreator && !isOrderChain
+  const { mutateAsync: lockFunds, isPending: lockingFunds } = useLockFunds()
 
   return (
     <>
@@ -181,32 +192,62 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
         open={openReleaseModal}
         title={
           <p className="text-sm">
-            Claim Tokens from{" "}
-            {isAdChain ? adTokenChain?.name : orderTokenChain?.name}
+            {isAdCreator && tradeInfo?.status === "ACTIVE" ? (
+              <>Lock tokens</>
+            ) : (
+              <>
+                Claim Tokens from{" "}
+                {isAdCreator ? orderTokenChain?.name : adTokenChain?.name}
+              </>
+            )}
           </p>
         }
         okText={
-          bridgerIsNotConnected
-            ? `Connect to ${adTokenChain?.name}`
-            : adCreatorIsNotConnected
-            ? `Connect to ${orderTokenChain?.name}`
-            : "Claim"
+          type === "incoming" && tradeInfo?.status === "ACTIVE" ? (
+            <>{!isAdChain ? `Connect to ${adTokenChain?.name}` : "Lock"}</>
+          ) : (
+            <>
+              {bridgerIsNotConnected
+                ? `Connect to ${adTokenChain?.name}`
+                : adCreatorIsNotConnected
+                ? `Connect to ${orderTokenChain?.name}`
+                : "Claim"}
+            </>
+          )
         }
         onOk={async () => {
-          if (adCreatorIsNotConnected && bridgerIsNotConnected) {
-            chainModal.openChainModal && chainModal.openChainModal()
-          } else {
-            await unlockFunds(tradeInfo?.id!)
-            setOpenReleaseModal(false)
-            refetch()
+          if (type === "incoming" && tradeInfo?.status === "ACTIVE") {
+            if (!isAdChain) {
+              chainModal.openChainModal && chainModal.openChainModal()
+            } else {
+              await lockFunds(tradeInfo?.id!)
+              setOpenReleaseModal(false)
+              refetch()
+            }
+          } else if (type === "incoming" && tradeInfo?.status === "LOCKED") {
+            if (!isOrderChain) {
+              chainModal.openChainModal && chainModal.openChainModal()
+            } else {
+              await unlockFunds(tradeInfo?.id!)
+              setOpenReleaseModal(false)
+              refetch()
+            }
+          } else if (type === "outgoing" && tradeInfo?.status === "LOCKED") {
+            if (!isAdChain) {
+              chainModal.openChainModal && chainModal.openChainModal()
+            } else {
+              await unlockFunds(tradeInfo?.id!)
+              setOpenReleaseModal(false)
+              refetch()
+            }
           }
         }}
         onCancel={() => setOpenReleaseModal(false)}
-        confirmLoading={unlockingFunds}
+        confirmLoading={unlockingFunds || lockingFunds}
         centered
         width={400}
         cancelButtonProps={{
-          disabled: unlockingFunds,
+          disabled: unlockingFunds || lockingFunds,
         }}
         styles={{
           content: { padding: 16, borderRadius: "12px" },
@@ -236,10 +277,21 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
 
               <div className="flex justify-between items-center">
                 <span className="text-grey-300">Route</span>
-                <div className="flex items-center gap-2">
-                  <span>{tradeInfo.route.orderToken.chain.name}</span>
-                  <ArrowRight size={14} className="text-primary" />
-                  <span>{tradeInfo.route.adToken.chain.name}</span>
+
+                <div className="flex items-center gap-2 text-xs">
+                  {type === "incoming" ? (
+                    <>
+                      <p>{tradeInfo.route.adToken.chain.name}</p>
+                      <ArrowRight size={12} className="text-primary" />
+                      <p>{tradeInfo.route.orderToken.chain.name}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>{tradeInfo.route.orderToken.chain.name}</p>
+                      <ArrowRight size={12} className="text-primary" />
+                      <p>{tradeInfo.route.adToken.chain.name}</p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -263,10 +315,16 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
             </div>
 
             <div className="bg-amber-500/10 p-3 rounded-lg">
-              <p className="text-amber-500 text-sm">
-                Please ensure you have received the tokens before releasing the
-                tokens on your end. This action cannot be undone.
-              </p>
+              {tradeInfo.status === "ACTIVE" ? (
+                <p className="text-amber-500 text-sm">
+                  This action cannot be undone.
+                </p>
+              ) : (
+                <p className="text-amber-500 text-sm">
+                  Please ensure you have received the tokens before releasing
+                  the tokens on your end. This action cannot be undone.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -276,52 +334,26 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
 }
 
 const Action = ({
-  value,
   rowData,
   setTradeInfo,
   setOpenReleaseModal,
-  refetch,
 }: {
   value: string
   rowData: ITrade
   setTradeInfo: (value: ITrade) => void
   setOpenReleaseModal: (value: boolean) => void
   refetch: () => void
+  type?: "incoming" | "outgoing"
 }) => {
-  const { mutateAsync: lockFunds, isPending: lockingFunds } = useLockFunds()
-  const { address, chainId } = useAccount()
-  const chainModal = useChainModal()
-  const isBridger = address === rowData?.bridgerAddress
-  const isAdCreator = address === rowData?.adCreatorAddress
-  const adTokenChain = rowData?.route?.adToken?.chain
-  const orderTokenChain = rowData?.route?.orderToken?.chain
-  const isAdChain = adTokenChain?.chainId === String(chainId)
-  const isOrderChain = orderTokenChain?.chainId === String(chainId)
-  const bridgerIsNotConnected = isBridger && !isAdChain
-  const adCreatorIsNotConnected = isAdCreator && !isOrderChain
+  const { address } = useAccount()
 
   return (
     <>
-      {bridgerIsNotConnected || adCreatorIsNotConnected ? (
+      {rowData.status === "LOCKED" ? (
         <Button
           type="primary"
           size="small"
           className="!w-full !h-[35px]"
-          loading={lockingFunds}
-          onClick={chainModal?.openChainModal}
-        >
-          {bridgerIsNotConnected
-            ? `Connect to ${adTokenChain?.name}`
-            : adCreatorIsNotConnected
-            ? `Connect to ${orderTokenChain?.name}`
-            : "Claim"}
-        </Button>
-      ) : rowData.status === "LOCKED" ? (
-        <Button
-          type="primary"
-          size="small"
-          className="!w-full !h-[35px]"
-          loading={lockingFunds}
           onClick={() => {
             setOpenReleaseModal(true)
             setTradeInfo(rowData)
@@ -331,18 +363,19 @@ const Action = ({
         </Button>
       ) : rowData.status === "ACTIVE" &&
         address === rowData.adCreatorAddress ? (
-        <Button
-          type="primary"
-          size="small"
-          className="!w-full !h-[35px]"
-          loading={lockingFunds}
-          onClick={async () => {
-            await lockFunds(rowData.id)
-            refetch()
-          }}
-        >
-          Lock
-        </Button>
+        <>
+          <Button
+            type="primary"
+            size="small"
+            className="!w-full !h-[35px]"
+            onClick={() => {
+              setOpenReleaseModal(true)
+              setTradeInfo(rowData)
+            }}
+          >
+            Lock
+          </Button>
+        </>
       ) : (
         <p className="text-center">-</p>
       )}

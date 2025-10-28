@@ -47,7 +47,7 @@ export interface ILockFundsReponse {
     amount: string
     bridger: string
     orderChainId: string
-    orderPortal: string
+    srcOrderPortal: string
     orderRecipient: string
     adId: string
     adCreator: string
