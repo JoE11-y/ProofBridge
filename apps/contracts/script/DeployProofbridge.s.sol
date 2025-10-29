@@ -12,7 +12,7 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {IWNativeToken, WNativeToken} from "src/wNativeToken.sol";
 
-contract Proofbridge is Script {
+contract DeployProofbridge is Script {
     function _envOrAddress(string memory key, address fallback_) internal view returns (address out) {
         try vm.envAddress(key) returns (address v) {
             out = v;

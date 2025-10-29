@@ -2,9 +2,62 @@
 
 This is a Noir proof circuit that proves a user is authorized to execute a trade intent **without revealing the signature itself**. The verifier only needs the **hash** of that secret signature.
 
-* We bind authorization to a user’s **ECDSA key** (secp256k1).
+* We bind authorization to a user's **ECDSA key** (secp256k1).
 * The *actual* trade-intent signature remains private; only its hash is provided publicly.
-* This design avoids “passwords” and keeps the secret unique to the user.
+* This design avoids "passwords" and keeps the secret unique to the user.
+
+## Development Status
+
+### Current Status
+
+**ECDSA implementation is not currently active** due to prohibitively large proof sizes generated in combination with deposit verification for the zero-knowledge circuits.
+
+### In Development
+
+**BLS signature aggregation and consensus mechanisms** using BN254 curves for trade fulfillment consensus between bridgers and ad creators. This is part of the project milestones and represents the primary authentication approach moving forward.
+
+#### BLS Trade Consensus Design
+
+**Objective**: Aggregate bridger and ad creator signatures as cryptographic consensus for trade fulfillment, integrated with deposit proofs for complete transaction validation.
+
+**Key Features:**
+
+* **Dual-Party Consensus**: Combines bridger and ad creator BLS signatures into a single aggregated proof
+* **Trade Fulfillment Validation**: Cryptographic consensus that both parties agree to trade execution
+* **Deposit Proof Integration**: BLS consensus proof will be combined with MMR inclusion proofs from the deposits circuit
+* **Atomic Settlement**: Ensures both authentication and deposit validation in a unified ZK proof system
+* **BN254 Optimization**: Leverages BN254 curve for efficient pairing operations in zero-knowledge circuits
+
+#### Integration with Deposits Circuit
+
+The BLS consensus mechanism will work in conjunction with the deposits proof circuit:
+
+1. **Deposit Validation**: Deposits circuit proves order inclusion in MMR
+2. **Consensus Validation**: BLS aggregation proves both parties consent to fulfillment
+3. **Combined Proof**: Single ZK proof validates both deposit existence and trade consensus
+4. **Cross-Chain Settlement**: Unified proof enables atomic settlement across chains
+
+#### Technical Implementation
+
+* **Signature Aggregation**: `BLS_Aggregate(bridger_sig, ad_creator_sig) → consensus_sig`
+* **Consensus Verification**: Validates aggregated signature against trade parameters
+* **Proof Composition**: Combines BLS consensus with MMR inclusion proofs
+* **Gas Efficiency**: Single proof verification instead of multiple signature checks
+
+#### Development Roadmap
+
+* **Current Focus**: BLS aggregation for bridger + ad creator consensus (milestone deliverable)
+* **Next Phase**: Unified proof system combining BLS consensus with deposit validation
+* **Final Phase**: Full integration with cross-chain settlement protocol
+
+#### Why BLS Over ECDSA
+
+* **Proof Size**: ECDSA signature verification generates prohibitively large ZK proofs
+* **Efficiency**: BLS signatures are more efficient in zero-knowledge circuits
+* **Aggregation**: BLS naturally supports signature aggregation for consensus
+* **BN254 Compatibility**: BLS on BN254 curve is optimized for ZK proof systems
+
+> **Note**: Development has shifted focus to BLS consensus mechanisms due to proof size constraints with ECDSA. BLS consensus is part of the project milestones and will be integrated with the deposits circuit to provide complete trade validation in a single ZK proof.
 
 ## Inputs
 

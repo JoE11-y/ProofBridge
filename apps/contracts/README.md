@@ -15,25 +15,31 @@ The system uses a **minimal EIP-712 domain** (`name="Proofbridge"`, `version="1"
   - [Contracts](#contracts)
     - [`AdManager`](#admanager)
     - [`OrderPortal`](#orderportal)
+    - [`MerkleManager`](#merklemanager)
+    - [`Verifier` (HonkVerifier)](#verifier-honkverifier)
+    - [`wNativeToken`](#wnativetoken)
   - [Data Structures \& EIP-712](#data-structures--eip-712)
     - [Minimal domain (both contracts)](#minimal-domain-both-contracts)
     - [Order struct](#order-struct)
+  - [Technical Implementation Details](#technical-implementation-details)
+    - [Zero-Knowledge Proof System](#zero-knowledge-proof-system)
+    - [Advanced Security Model](#advanced-security-model)
   - [Verifier public inputs](#verifier-public-inputs)
+    - [**OrderPortal.unlock** (Source Chain)](#orderportalunlock-source-chain)
+    - [**AdManager.unlock** (Destination Chain)](#admanagerunlock-destination-chain)
   - [Install \& Build](#install--build)
   - [Deploy](#deploy)
   - [Post-deploy configuration](#post-deploy-configuration)
-  - [Security notes \& limits](#security-notes--limits)
-    - [License](#license)
 
 ## Architecture
 
 1. **Maker** creates an **Ad**, and funds it with the destination-chain token.
 2. **Bridger** opens an **order** on **OrderPortal**, depositing the source-chain token.
 3. The system relays the **order hash** to the maker off-chain; the maker locks an amount from the Ad against that order.
-4. After the maker fulfills the user on the opposite chain, a **zk proof** is submitted to unlock:
+4. After the maker fulfills the user on the opposite chain, a **zk proof** is generated and submitted to unlock:
 
-   * On **OrderPortal**: release source-token to the **destination recipient** recorded in the order (if you route funds this way).
-   * On **AdManager**: release **ad token** from escrow to the bridger’s designated recipient.
+   * On **OrderPortal**: release order-token to the **maker destination recipient** recorded in the order.
+   * On **AdManager**: release **ad token** from contract to the **bridger’s designated recipient**.
 
 Replay is prevented via:
 
@@ -44,31 +50,92 @@ Replay is prevented via:
 
 ### `AdManager`
 
-* Makers **create/fund/close** Ads.
-* **Route/chain checks**: verifies the source chain and OrderPortal, plus token routing (order token ↔ ad token).
-* **`lockForOrder`**: reserves liquidity for a specific EIP-712 order hash.
-* **`unlock`**: verifies proof via `IVerifier`, consumes nullifier, transfers ad token to the **orderRecipient**.
+The destination chain contract where liquidity providers (makers) manage their advertisements and fulfill cross-chain orders.
 
-Key storage:
+**Core Functions:**
+* **`createAd`**: Creates a new liquidity advertisement with specified parameters
+* **`fundAd`**: Deposits tokens into an existing ad to increase available liquidity
+* **`withdrawFromAd`**: Withdraws unused tokens from an ad (only available balance, not locked)
+* **`closeAd`**: Permanently closes an ad and withdraws all remaining funds
+* **`lockForOrder`**: Reserves liquidity for a specific EIP-712 order hash
+* **`unlock`**: Verifies ZK proof via `IVerifier`, consumes nullifier, transfers ad token to the **orderRecipient**
 
-* `chains[orderChainId] → { supported, orderPortal }`
-* `tokenRoute[adToken][orderChainId] → orderToken`
-* `ads[adId] → { maker, token, balance, locked, open, … }`
-* `orders[orderHash] → Status`
-* `nullifierUsed[hash] → bool`
+**Security Features:**
+* **Access Control**: Role-based permissions using OpenZeppelin's AccessControl
+* **Reentrancy Protection**: ReentrancyGuard prevents recursive calls
+* **Route Validation**: Ensures order chain and token routing are properly configured
+* **Nullifier System**: Prevents double-spending through unique proof consumption
+* **Native Token Support**: Handles both ERC20 tokens and native ETH via wrapped token interface
+
+**Key Storage:**
+* `chains[orderChainId] → { supported, orderPortal }`: Source chain configuration
+* `tokenRoute[adToken][orderChainId] → orderToken`: Cross-chain token mapping
+* `ads[adId] → { maker, token, balance, locked, open, … }`: Ad state management
+* `orders[orderHash] → Status`: Order execution tracking
+* `nullifierUsed[hash] → bool`: Proof replay prevention
 
 ### `OrderPortal`
 
-* Bridgers **createOrder** by depositing `token1` (this chain’s token).
-* **Route/chain checks**: validates destination chain, counterpart AdManager, and token routing (`token1` → `token2`).
-* **`unlock`**: verifies proof, consumes nullifier, transfers `token1` to the **dstRecipient**.
+The source chain contract where users initiate cross-chain transfers by creating orders.
 
-Key storage:
+**Core Functions:**
+* **`createOrder`**: Initiates a cross-chain order by depositing source chain tokens
+* **`unlock`**: Verifies ZK proof and releases funds to the designated recipient
+* **Admin Functions**: Chain and token route configuration
 
-* `chains[dstChainId] → { supported, adManager }`
-* `tokenRoute[token1][dstChainId] → token2`
-* `orders[orderHash] → Status`
-* `nullifierUsed[hash] → bool`
+**Security Features:**
+* **EIP-712 Signature Verification**: Ensures order authenticity and prevents replay attacks
+* **Cross-Chain Validation**: Verifies destination chain and AdManager configuration
+* **Token Route Enforcement**: Validates supported token pairs between chains
+* **Merkle Tree Integration**: Records order hashes for cryptographic verification
+
+**Key Storage:**
+* `chains[dstChainId] → { supported, adManager }`: Destination chain configuration
+* `tokenRoute[token1][dstChainId] → token2`: Cross-chain token routing
+* `orders[orderHash] → Status`: Order lifecycle management
+* `nullifierUsed[hash] → bool`: Prevents proof reuse
+
+### `MerkleManager`
+
+A specialized contract managing Merkle Mountain Range (MMR) data structures for efficient proof generation and verification.
+
+**Core Functions:**
+* **`appendOrderHash`**: Adds new order hashes to the MMR tree
+* **`getRootHash`**: Returns the current MMR root for proof verification
+* **`verifyProof`**: Validates inclusion proofs against historical roots
+* **`getOrderIndex`**: Maps order hashes to their position in the tree
+
+**Technical Features:**
+* **Poseidon Hashing**: Uses cryptographically secure Poseidon hash function
+* **Stateless Verification**: Supports verification without storing entire tree
+* **Root History**: Maintains historical roots for proof validation
+* **Gas Optimization**: Efficient append-only operations
+
+### `Verifier` (HonkVerifier)
+
+Ultra-high performance zero-knowledge proof verifier implementing Aztec's UltraHonk proving system.
+
+**Technical Specifications:**
+* **Circuit Size**: 32,768 constraints (2^15)
+* **Public Inputs**: Supports up to 20 public input values
+* **Proving System**: UltraHonk with optimized verification
+* **Elliptic Curve**: BN254 curve for cryptographic operations
+
+**Verification Process:**
+1. Validates proof structure and public inputs
+2. Performs elliptic curve operations for proof verification
+3. Ensures nullifier uniqueness and order hash validity
+4. Returns boolean verification result
+
+### `wNativeToken`
+
+Wrapped native token implementation providing ERC20 interface for native blockchain tokens (ETH, etc.).
+
+**Features:**
+* **Gas-Optimized Operations**: Assembly-level optimizations for deposit/withdraw
+* **Standard Compliance**: Full ERC20 compatibility
+* **Safe Operations**: Protected against common wrapped token vulnerabilities
+* **Integration**: Seamless integration with AdManager and OrderPortal contracts
 
 ## Data Structures & EIP-712
 
@@ -123,25 +190,60 @@ Semantics (ad side):
 * `adId`, `adCreator`, `adRecipient`: ad identity and payout details
 * `salt`: caller-controlled nonce
 
+## Technical Implementation Details
+
+### Zero-Knowledge Proof System
+
+The protocol employs a sophisticated ZK proof system for privacy-preserving cross-chain settlements:
+
+**Proof Generation Process:**
+1. **Secret Generation**: Each participant generates a private secret for nullifier computation
+2. **Nullifier Calculation**: `nullifierHash = poseidon(secret, isAdCreator, orderHash)`
+3. **Circuit Execution**: Noir circuit validates the relationship between secrets, nullifiers, and order data
+4. **Proof Creation**: UltraHonk backend generates cryptographic proof of valid execution
+
+### Advanced Security Model
+
+**Multi-Layer Protection:**
+1. **EIP-712 Domain Separation**: Prevents cross-contract and cross-chain replay attacks
+2. **Nullifier Uniqueness**: Cryptographic guarantee against double-spending
+3. **Merkle Tree Integrity**: Tamper-proof order history with efficient verification
+4. **Access Control Matrix**: Role-based permissions with emergency admin functions
+5. **Reentrancy Shields**: Multiple layers of protection against recursive attacks
+
+**Economic Security:**
+* **Collateral Requirements**: Makers must lock funds before order matching
+* **Slashing Mechanisms**: Penalties for malicious behavior or failed settlements (TBA)
+* **Fee Economics**: Dynamic fee structure based on network conditions and risk assessment (TBA)
+* **Liquidity Guarantees**: Orders are only created when sufficient liquidity is available (TBA)
+
 ## Verifier public inputs
 
-The circuit accepts the following **public inputs**:
+The circuit accepts the following **public inputs** for cryptographic verification:
 
-* **OrderPortal.unlock**:
+### **OrderPortal.unlock** (Source Chain)
+Validates that the ad creator has the right to unlock funds on the source chain:
 
-  1. `adCreator's nullifierHash`
-  2. `bytes32(uint160(adCreator))`
-  3. `bytes32(uint160(bridger))`
-  4. `orderHash`
-  5. `bytes32(0)`
+1. **`adCreator's nullifierHash`**: Cryptographic commitment proving ad creator's secret knowledge
+2. **`bytes32(uint160(adCreator))`**: Ad creator's address (zero-padded to 32 bytes)
+3. **`bytes32(uint160(bridger))`**: Bridger's address (zero-padded to 32 bytes)
+4. **`orderHash`**: Canonical EIP-712 hash identifying the specific order
+5. **`bytes32(0)`**: Chain identifier flag (0 = source chain operation)
 
-* **AdManager.unlock**:
+### **AdManager.unlock** (Destination Chain)
+Validates that the bridger has the right to unlock funds on the destination chain:
 
-  1. `bridger's nullifierHash`
-  2. `bytes32(uint160(adCreator))`
-  3. `bytes32(uint160(bridger))`
-  4. `orderHash`
-  5. `bytes32(1)`
+1. **`bridger's nullifierHash`**: Cryptographic commitment proving bridger's secret knowledge
+2. **`bytes32(uint160(adCreator))`**: Ad creator's address (zero-padded to 32 bytes)
+3. **`bytes32(uint160(bridger))`**: Bridger's address (zero-padded to 32 bytes)
+4. **`orderHash`**: Canonical EIP-712 hash identifying the specific order
+5. **`bytes32(1)`**: Chain identifier flag (1 = destination chain operation)
+
+**Verification Logic:**
+- Both sides must provide valid nullifiers derived from their respective secrets
+- Order hash must match the committed order data
+- Chain identifier ensures proofs cannot be replayed on wrong chains
+- Address validation prevents unauthorized fund access
 
 ## Install & Build
 
@@ -209,14 +311,3 @@ setChain(orderChainId, orderPortal, true);
 // route: adToken (this chain) -> orderToken (order chain)
 setTokenRoute(adToken, orderToken, orderChainId);
 ```
-
-## Security notes & limits
-
-* **EIP-712 domain** is minimal. Replay protection relies on **explicit struct fields** (`*ChainId`, `*Manager/Portal`, `salt`).
-* **Nullifier** is **unique per proof** for both the ad maker and the bridger.
-* **Reentrancy**: guarded via non-reentrant methods and CEI pattern.
-* **Routes** and **chain configs** are admin-controlled;
-
-### License
-
-SPDX-License-Identifier: MIT

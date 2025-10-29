@@ -12,7 +12,12 @@ import { privateKeyToAccount } from 'viem/accounts';
 import BigNumber from 'bignumber.js';
 import { randomUUID } from 'crypto';
 import { getTime } from 'date-fns';
-import { sepolia, hederaTestnet } from 'viem/chains';
+import {
+  sepolia,
+  hederaTestnet,
+  polygonAmoy,
+  optimismSepolia,
+} from 'viem/chains';
 import {
   T_AdManagerOrderParams,
   T_CloseAdRequest,
@@ -69,6 +74,16 @@ export class ViemService {
       chain = ethLocalnet;
     } else if (id === hederaLocalnet.id) {
       chain = hederaLocalnet;
+    } else if (id === polygonAmoy.id) {
+      chain = polygonAmoy;
+      if (env.evmRpcApiKey != '') {
+        rpc_url = `https://polygon-mumbai.g.alchemy.com/v2/${env.evmRpcApiKey}`;
+      }
+    } else if (id === optimismSepolia.id) {
+      chain = optimismSepolia;
+      if (env.evmRpcApiKey != '') {
+        rpc_url = `https://opt-sepolia.g.alchemy.com/v2/${env.evmRpcApiKey}`;
+      }
     } else {
       throw new Error(`Unsupported chainId: ${chainId}`);
     }
