@@ -108,12 +108,24 @@ export const seedToken = async (
   symbol = 'ETH',
   address?: string,
 ) => {
-  return prisma.token.create({
-    data: {
+  return prisma.token.upsert({
+    where: {
+      chainUid_address: {
+        chainUid: chainUuid,
+        address: address ?? randomAddress(),
+      },
+    },
+    create: {
       chainUid: chainUuid,
       symbol,
       name: name,
       address: address ?? randomAddress(),
+      decimals: 18,
+      kind: 'ERC20',
+    },
+    update: {
+      symbol,
+      name: name,
       decimals: 18,
       kind: 'ERC20',
     },
@@ -135,8 +147,11 @@ export const seedChain = async (
   const ad = params?.ad ?? randomAddress();
   const op = params?.op ?? randomAddress();
 
-  return prisma.chain.create({
-    data: {
+  return prisma.chain.upsert({
+    where: {
+      chainId: chainId,
+    },
+    create: {
       name,
       chainId: chainId,
       adManagerAddress: ad,
@@ -146,6 +161,11 @@ export const seedChain = async (
           chainId: chainId.toString(),
         },
       },
+    },
+    update: {
+      name,
+      adManagerAddress: ad,
+      orderPortalAddress: op,
     },
     select: { id: true, name: true, chainId: true },
   });

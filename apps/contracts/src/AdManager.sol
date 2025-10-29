@@ -16,9 +16,11 @@ import {EfficientHashLib} from "solady/utils/EfficientHashLib.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IVerifier} from "./Verifier.sol";
 import {IMerkleManager} from "./MerkleManager.sol";
+import {IWNativeToken, SafeNativeToken} from "./wNativeToken.sol";
 
 contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     using SafeERC20 for IERC20;
+    using SafeNativeToken for IWNativeToken;
 
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
@@ -42,6 +44,9 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     /// @notice Admin role identifier.
     bytes32 public constant ADMIN_ROLE = DEFAULT_ADMIN_ROLE;
 
+    /// @notice Native token address placeholder.
+    address public constant NATIVE_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
     /*//////////////////////////////////////////////////////////////
                                  STATE
     //////////////////////////////////////////////////////////////*/
@@ -51,6 +56,9 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
 
     /// @notice MerkleManager for chain
     IMerkleManager public immutable i_merkleManager;
+
+    /// @notice Wrapped native token
+    IWNativeToken public wNativeToken;
 
     /**
      * @notice Source-chain configuration (where orders originate).
@@ -324,15 +332,23 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @notice Deploys the AdManager and assigns the admin and verifier.
      * @param admin Address granted {ADMIN__ROLE}.
      * @param _verifier External zk-proof verifier contract.
+     * @param _merkleManager Merkle manager contract.
+     * @param _wNativeToken Wrapped native token contract.
      */
-    constructor(address admin, IVerifier _verifier, IMerkleManager _merkleManager) EIP712(_NAME, _VERSION) {
-        if (admin == address(0) || address(_verifier) == address(0) || address(_merkleManager) == address(0)) {
+    constructor(address admin, IVerifier _verifier, IMerkleManager _merkleManager, IWNativeToken _wNativeToken)
+        EIP712(_NAME, _VERSION)
+    {
+        if (
+            admin == address(0) || address(_verifier) == address(0) || address(_merkleManager) == address(0)
+                || address(_wNativeToken) == address(0)
+        ) {
             revert AdManager__ZeroAddress();
         }
         _grantRole(ADMIN_ROLE, admin);
         managers[admin] = true;
         i_verifier = _verifier;
         i_merkleManager = _merkleManager;
+        wNativeToken = _wNativeToken;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -430,7 +446,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         uint256 initialAmount,
         uint256 orderChainId,
         address adRecipient
-    ) external nonReentrant {
+    ) external payable nonReentrant {
         if (adToken == address(0)) revert AdManager__TokenZeroAddress();
         if (adRecipient == address(0)) revert AdManager__RecipientZero();
         if (initialAmount == 0) revert AdManager__ZeroAmount();
@@ -456,7 +472,14 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
             revert Admanager__InvalidSigner();
         }
 
-        IERC20(adToken).safeTransferFrom(msg.sender, address(this), initialAmount);
+        if (isNativeToken(adToken)) {
+            if (msg.value < initialAmount) {
+                revert AdManager__InsufficientLiquidity();
+            }
+            wNativeToken.safeDeposit(initialAmount);
+        } else {
+            IERC20(adToken).safeTransferFrom(msg.sender, address(this), initialAmount);
+        }
 
         ads[adId] = Ad({
             orderChainId: orderChainId,
@@ -488,7 +511,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         uint256 timeToExpire,
         string memory adId,
         uint256 amount
-    ) external nonReentrant {
+    ) external payable nonReentrant {
         Ad storage ad = __getAdOwned(adId, msg.sender);
         if (!ad.open) revert AdManager__AdClosed();
         if (amount == 0) revert AdManager__ZeroAmount();
@@ -505,7 +528,15 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
             revert Admanager__InvalidSigner();
         }
 
-        IERC20(ad.token).safeTransferFrom(msg.sender, address(this), amount);
+        if (isNativeToken(ad.token)) {
+            if (msg.value < amount) {
+                revert AdManager__InsufficientLiquidity();
+            }
+            wNativeToken.safeDeposit(amount);
+        } else {
+            IERC20(ad.token).safeTransferFrom(msg.sender, address(this), amount);
+        }
+
         ad.balance += amount;
         requestHashes[message] = true;
         emit AdFunded(adId, msg.sender, amount, ad.balance);
@@ -528,7 +559,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         string memory adId,
         uint256 amount,
         address to
-    ) external nonReentrant {
+    ) external payable nonReentrant {
         Ad storage ad = __getAdOwned(adId, msg.sender);
 
         bytes32 message = withdrawFromAdRequestHash(adId, amount, to, authToken, timeToExpire);
@@ -552,7 +583,12 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         }
 
         ad.balance -= amount;
-        IERC20(ad.token).safeTransfer(to, amount);
+
+        if (isNativeToken(ad.token)) {
+            wNativeToken.safeWithdrawTo(amount, to);
+        } else {
+            IERC20(ad.token).safeTransfer(to, amount);
+        }
 
         requestHashes[message] = true;
         emit AdWithdrawn(adId, msg.sender, amount, ad.balance);
@@ -566,6 +602,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      */
     function closeAd(bytes memory signature, bytes32 authToken, uint256 timeToExpire, string memory adId, address to)
         external
+        payable
         nonReentrant
     {
         Ad storage ad = __getAdOwned(adId, msg.sender);
@@ -588,7 +625,14 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
 
         ad.balance = 0;
         ad.open = false;
-        if (remaining > 0) IERC20(ad.token).safeTransfer(to, remaining);
+
+        if (remaining > 0) {
+            if (isNativeToken(ad.token)) {
+                wNativeToken.safeWithdrawTo(remaining, to);
+            } else {
+                IERC20(ad.token).safeTransfer(to, remaining);
+            }
+        }
 
         requestHashes[message] = true;
         emit AdClosed(adId, msg.sender);
@@ -663,7 +707,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         bytes32 nullifierHash,
         bytes32 targetRoot,
         bytes calldata proof
-    ) external nonReentrant {
+    ) external payable nonReentrant {
         bytes32 orderHash = _hashOrder(params, block.chainid, address(this));
 
         if (orders[orderHash] != Status.Open) revert AdManager__OrderNotOpen(orderHash);
@@ -694,7 +738,12 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
         // Pay recipient on this chain from the ad's escrowed token.
         Ad storage ad = ads[params.adId];
         ad.locked -= params.amount;
-        IERC20(ad.token).safeTransfer(params.orderRecipient, params.amount);
+
+        if (isNativeToken(ad.token)) {
+            wNativeToken.safeWithdrawTo(params.amount, params.orderRecipient);
+        } else {
+            IERC20(ad.token).safeTransfer(params.orderRecipient, params.amount);
+        }
 
         emit OrderUnlocked(orderHash, params.orderRecipient, nullifierHash);
     }
@@ -1121,4 +1170,16 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
 
         orderHash = _hashOrder(params, getChainID(), address(this));
     }
+
+    /**
+     * @notice Check if the given token address represents the native token.
+     * @param token The address of the token to check.
+     * @return bool True if the token is the native token, false otherwise.
+     */
+    function isNativeToken(address token) internal pure returns (bool) {
+        return token == NATIVE_TOKEN_ADDRESS;
+    }
+
+    receive() external payable {}
+    fallback() external payable {}
 }

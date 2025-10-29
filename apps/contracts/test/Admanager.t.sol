@@ -9,9 +9,10 @@ import {IVerifier} from "src/Verifier.sol";
 import {IMerkleManager} from "src/MerkleManager.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {IWNativeToken, WNativeToken} from "src/wNativeToken.sol";
 
 contract MockAdManager is AdManager {
-    constructor(address admin, IVerifier v, IMerkleManager m) AdManager(admin, v, m) {}
+    constructor(address admin, IVerifier v, IMerkleManager m, IWNativeToken t) AdManager(admin, v, m, t) {}
 
     function hashOrderPublic(OrderParams calldata p) external view returns (bytes32) {
         return _hashOrder(p, block.chainid, address(this));
@@ -23,6 +24,7 @@ contract AdManagerTest is Test {
     MockVerifier internal verifier;
     MerkleManager internal merkleManager;
     ERC20Mock internal adToken;
+    WNativeToken internal wNativeToken;
 
     address admin;
     uint256 adminPk;
@@ -35,6 +37,8 @@ contract AdManagerTest is Test {
     address adRecipient = makeAddr("adRecipient");
     address recipient = makeAddr("recipient");
     address other = makeAddr("other");
+
+    address internal constant NATIVE_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     // Common addresses
     address internal orderPortal = makeAddr("orderPortal");
@@ -59,7 +63,14 @@ contract AdManagerTest is Test {
         (admin, adminPk) = makeAddrAndKey("admin");
         verifier = new MockVerifier(true);
         merkleManager = new MerkleManager(admin);
-        adManager = new MockAdManager(admin, IVerifier(address(verifier)), IMerkleManager(address(merkleManager)));
+        wNativeToken = new WNativeToken("Wrapped Native Token", "WNATIVE");
+
+        adManager = new MockAdManager(
+            admin,
+            IVerifier(address(verifier)),
+            IMerkleManager(address(merkleManager)),
+            IWNativeToken(address(wNativeToken))
+        );
 
         vm.startPrank(admin);
         merkleManager.grantRole(merkleManager.MANAGER_ROLE(), address(adManager));
@@ -88,7 +99,7 @@ contract AdManagerTest is Test {
         p.salt = 123;
     }
 
-    function generateCreateAdRequestParams(string memory adId)
+    function generateCreateAdRequestParams(string memory adId, address adTokenAddr)
         internal
         view
         returns (bytes32 token, uint256 ttl, bytes memory sig)
@@ -96,7 +107,7 @@ contract AdManagerTest is Test {
         token = bytes32(vm.randomBytes(32));
         ttl = block.timestamp + 1 hours;
         bytes32 message =
-            adManager.createAdRequestHash(adId, address(adToken), initAmt, orderChainId, adRecipient, token, ttl);
+            adManager.createAdRequestHash(adId, adTokenAddr, initAmt, orderChainId, adRecipient, token, ttl);
 
         sig = sign(message, adminPk);
     }
@@ -309,7 +320,7 @@ contract AdManagerTest is Test {
     function test_createAd_rejectsZeroAdToken() public {
         string memory adId = "1";
         // get auth
-        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId);
+        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId, address(adToken));
 
         vm.prank(maker);
         adToken.approve(address(adManager), initAmt);
@@ -323,7 +334,7 @@ contract AdManagerTest is Test {
     function test_createAd_rejectsWhenNoRoute() public {
         string memory adId = "1";
         // get auth
-        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId);
+        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId, address(adToken));
 
         vm.prank(maker);
         adToken.approve(address(adManager), initAmt);
@@ -344,7 +355,7 @@ contract AdManagerTest is Test {
         adManager.setTokenRoute(address(adToken), orderToken, orderChainId);
         vm.stopPrank();
 
-        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId);
+        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId, address(adToken));
 
         vm.prank(maker);
         adToken.approve(address(adManager), initAmt);
@@ -375,6 +386,66 @@ contract AdManagerTest is Test {
         assertTrue(open);
     }
 
+    function test_createAd_with_native_token_success() public {
+        string memory adId = "nativeAd";
+
+        vm.startPrank(admin);
+        adManager.setChain(orderChainId, orderPortal, true);
+        adManager.setTokenRoute(NATIVE_TOKEN_ADDRESS, orderToken, orderChainId);
+        vm.stopPrank();
+
+        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId, NATIVE_TOKEN_ADDRESS);
+
+        vm.deal(maker, initAmt);
+
+        vm.prank(maker);
+        vm.expectEmit(true, true, true, true);
+        emit AdManager.AdCreated(adId, maker, NATIVE_TOKEN_ADDRESS, initAmt, orderChainId);
+        adManager.createAd{
+            value: initAmt
+        }(signature, authToken, timeToLive, adId, NATIVE_TOKEN_ADDRESS, initAmt, orderChainId, adRecipient);
+
+        (
+            uint256 linkedOrderChainId,
+            address _adRecipient,
+            address owner,
+            address token,
+            uint256 balance,
+            uint256 locked,
+            bool open
+        ) = adManager.ads(adId);
+
+        assertEq(linkedOrderChainId, orderChainId);
+        assertEq(_adRecipient, adRecipient);
+        assertEq(owner, maker);
+        assertEq(token, NATIVE_TOKEN_ADDRESS);
+        assertEq(balance, initAmt);
+        assertEq(locked, 0);
+        assertTrue(open);
+
+        uint256 wNativeBalance = wNativeToken.balanceOf(address(adManager));
+        assertEq(wNativeBalance, initAmt);
+    }
+
+    function test_createAd_with_native_token_fails_if_no_token_is_supplied() public {
+        string memory adId = "nativeAdFail";
+
+        vm.startPrank(admin);
+        adManager.setChain(orderChainId, orderPortal, true);
+        adManager.setTokenRoute(NATIVE_TOKEN_ADDRESS, orderToken, orderChainId);
+        vm.stopPrank();
+
+        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId, NATIVE_TOKEN_ADDRESS);
+
+        vm.deal(maker, initAmt);
+
+        vm.prank(maker);
+        vm.expectRevert(AdManager.AdManager__InsufficientLiquidity.selector);
+        adManager.createAd(
+            signature, authToken, timeToLive, adId, NATIVE_TOKEN_ADDRESS, initAmt, orderChainId, adRecipient
+        );
+    }
+
     /*//////////////////////////////////////////////////////////////
                         fundAd: maker only
     ////////////////////////////////////////////////////////////////*/
@@ -397,6 +468,9 @@ contract AdManagerTest is Test {
 
         vm.prank(maker);
         adManager.fundAd(signature, authToken, timeToLive, adId, fundAmt);
+
+        (,,,, uint256 balance,,) = adManager.ads(adId);
+        assertEq(balance, initAmt + fundAmt);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -434,6 +508,21 @@ contract AdManagerTest is Test {
         vm.prank(maker);
         vm.expectRevert(AdManager.AdManager__ZeroAmount.selector);
         adManager.fundAd(signature, authToken, timeToLive, adId, 0);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                       fundAd: with native token
+    ////////////////////////////////////////////////////////////////*/
+    function test_fundAd_withNativeToken() public {
+        test_createAd_with_native_token_success();
+        string memory adId = "nativeAd";
+        vm.deal(maker, fundAmt);
+        (authToken, timeToLive, signature) = generateFundAdRequestParams(adId, fundAmt);
+        vm.prank(maker);
+        adManager.fundAd{value: fundAmt}(signature, authToken, timeToLive, adId, fundAmt);
+        (,,,, uint256 balance,,) = adManager.ads(adId);
+
+        assertEq(balance, initAmt + fundAmt);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -798,6 +887,38 @@ contract AdManagerTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
+                    withdrawFromAd: with native token
+    ////////////////////////////////////////////////////////////////*/
+    function test_withdrawAd_withNativeToken() public {
+        test_fundAd_withNativeToken();
+        string memory adId = "nativeAd";
+        uint256 amount = 5 ether;
+        uint256 balBefore = recipient.balance;
+        (authToken, timeToLive, signature) = generateWithdrawFromAdRequestParams(adId, amount, recipient);
+
+        vm.prank(maker);
+        adManager.withdrawFromAd(signature, authToken, timeToLive, adId, amount, recipient);
+
+        uint256 balAfter = recipient.balance;
+        assertEq(balAfter - balBefore, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    withdrawFromAd: with native token fails when > available
+    ////////////////////////////////////////////////////////////////*/
+    function test_withdrawAd_native_fails_when_gtAvailable() public {
+        test_fundAd_withNativeToken();
+        string memory adId = "nativeAd";
+        uint256 available = initAmt + fundAmt;
+
+        (authToken, timeToLive, signature) = generateWithdrawFromAdRequestParams(adId, available + 1, recipient);
+
+        vm.prank(maker);
+        vm.expectRevert(AdManager.AdManager__InsufficientLiquidity.selector);
+        adManager.withdrawFromAd(signature, authToken, timeToLive, adId, available + 1, recipient);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                           closeAd: maker only
     ////////////////////////////////////////////////////////////////*/
     function test_closeAd_makerOnly() public {
@@ -866,6 +987,29 @@ contract AdManagerTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
+           closeAd: with native token transfers remaining and marks closed
+    ////////////////////////////////////////////////////////////////*/
+    function test_closeAd_withNativeToken_transfersRemaining_andMarksClosed() public {
+        test_createAd_with_native_token_success();
+
+        string memory adId = "nativeAd";
+        uint256 balBefore = recipient.balance;
+        (authToken, timeToLive, signature) = generateCloseAdRequestParams(adId, recipient);
+
+        vm.prank(maker);
+        adManager.closeAd(signature, authToken, timeToLive, adId, recipient);
+
+        uint256 balAfter = recipient.balance;
+        assertEq(balAfter - balBefore, initAmt, "remaining not transferred");
+
+        (,,,, uint256 balance, uint256 locked, bool open) = adManager.ads(adId);
+
+        assertEq(balance, 0, "balance not zeroed");
+        assertEq(locked, 0, "locked should be zero (no open locks)");
+        assertFalse(open, "ad not closed");
+    }
+
+    /*//////////////////////////////////////////////////////////////
      * unlock: rejects when order not open
      //////////////////////////////////////////////////////////////*/
     function test_unlock_rejects_orderNotOpen() public {
@@ -883,11 +1027,16 @@ contract AdManagerTest is Test {
         adManager.unlock(signature, authToken, timeToLive, p, bytes32(uint256(1)), bytes32(0), hex"");
     }
 
-    function _openOrder(string memory adId, uint256 amount, uint256 salt, address _bridger, address _recipient)
-        internal
-        returns (AdManager.OrderParams memory p, bytes32 orderHash)
-    {
+    function _openOrder(
+        string memory adId,
+        address adToken,
+        uint256 amount,
+        uint256 salt,
+        address _bridger,
+        address _recipient
+    ) internal returns (AdManager.OrderParams memory p, bytes32 orderHash) {
         p = _defaultParams(adId);
+        p.adChainToken = adToken;
         p.amount = amount;
         p.salt = salt;
         p.bridger = _bridger;
@@ -910,8 +1059,10 @@ contract AdManagerTest is Test {
         string memory adId = lastAdId;
 
         // Open two orders with different salts
-        (AdManager.OrderParams memory p1, bytes32 oh1) = _openOrder(adId, 80 ether, 777, bridger, recipient);
-        (AdManager.OrderParams memory p2, bytes32 oh2) = _openOrder(adId, 90 ether, 778, other, recipient);
+        (AdManager.OrderParams memory p1, bytes32 oh1) =
+            _openOrder(adId, address(adToken), 80 ether, 777, bridger, recipient);
+        (AdManager.OrderParams memory p2, bytes32 oh2) =
+            _openOrder(adId, address(adToken), 90 ether, 778, other, recipient);
 
         bytes32 nullifier = keccak256("N");
 
@@ -940,7 +1091,8 @@ contract AdManagerTest is Test {
         test_fundAd_makerOnly();
         string memory adId = lastAdId;
 
-        (AdManager.OrderParams memory p, bytes32 orderHash) = _openOrder(adId, 70 ether, 999, bridger, recipient);
+        (AdManager.OrderParams memory p, bytes32 orderHash) =
+            _openOrder(adId, address(adToken), 70 ether, 999, bridger, recipient);
 
         // Snapshot state
         (,,,,, uint256 lockedBefore,) = adManager.ads(p.adId);
@@ -974,7 +1126,8 @@ contract AdManagerTest is Test {
     function test_unlock_success_flow_updatesState_transfers_emits_andPreventsRepeat() public {
         test_fundAd_makerOnly();
         string memory adId = lastAdId;
-        (AdManager.OrderParams memory p, bytes32 orderHash) = _openOrder(adId, 60 ether, 111, bridger, recipient);
+        (AdManager.OrderParams memory p, bytes32 orderHash) =
+            _openOrder(adId, address(adToken), 60 ether, 111, bridger, recipient);
 
         // Balances and locked snapshot
         uint256 balBefore = adToken.balanceOf(p.orderRecipient);
@@ -1011,5 +1164,42 @@ contract AdManagerTest is Test {
         vm.prank(bridger);
         vm.expectRevert(abi.encodeWithSelector(AdManager.AdManager__OrderNotOpen.selector, orderHash));
         adManager.unlock(signature, authToken, timeToLive, p, bytes32("N1"), targetRoot, hex"");
+    }
+
+    /*//////////////////////////////////////////////////////////////
+     * unlock: with native token transfers ad.token to orderRecipient
+     //////////////////////////////////////////////////////////////*/
+    function test_unlock_withNativeToken_transfersToOrderRecipient() public {
+        test_createAd_with_native_token_success();
+        string memory adId = "nativeAd";
+        (AdManager.OrderParams memory p, bytes32 orderHash) =
+            _openOrder(adId, NATIVE_TOKEN_ADDRESS, 50 ether, 222, bridger, recipient);
+
+        uint256 balBefore = recipient.balance;
+        (,,,,, uint256 lockedBefore,) = adManager.ads(p.adId);
+
+        bytes32 targetRoot = bytes32(uint256(10));
+        (authToken, timeToLive, signature) = generateUnlockOrderRequestHash(adId, orderHash, targetRoot);
+
+        // get contract wrapped token balance before
+        uint256 contractBalBefore = wNativeToken.balanceOf(address(adManager));
+
+        // Verify success
+        vm.prank(bridger);
+        adManager.unlock(signature, authToken, timeToLive, p, bytes32("N2"), targetRoot, hex"");
+
+        // status
+        (AdManager.Status status) = adManager.orders(orderHash);
+        assertEq(uint256(status), uint256(AdManager.Status.Filled), "status not filled");
+
+        // locked reduced
+        (,,,,, uint256 lockedAfter,) = adManager.ads(p.adId);
+        assertEq(lockedAfter, lockedBefore - p.amount, "locked not reduced");
+
+        uint256 balAfter = recipient.balance;
+        assertEq(balAfter - balBefore, p.amount, "recipient not paid");
+
+        uint256 contractBalAfter = wNativeToken.balanceOf(address(adManager));
+        assertEq(contractBalBefore - contractBalAfter, p.amount, "contract balance not reduced");
     }
 }
