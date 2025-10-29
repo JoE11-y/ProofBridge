@@ -19,10 +19,11 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 import {MerkleManager} from "./MerkleManager.sol";
 import {IVerifier} from "./Verifier.sol";
 import {IMerkleManager} from "./MerkleManager.sol";
-import {console} from "forge-std/console.sol";
+import {IWNativeToken, SafeNativeToken} from "./wNativeToken.sol";
 
 contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     using SafeERC20 for IERC20;
+    using SafeNativeToken for IWNativeToken;
 
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
@@ -46,6 +47,9 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     /// @notice Admin role
     bytes32 public constant ADMIN_ROLE = DEFAULT_ADMIN_ROLE;
 
+    /// @notice Native token address placeholder.
+    address public constant NATIVE_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
     /*//////////////////////////////////////////////////////////////
                                  STATE
     //////////////////////////////////////////////////////////////*/
@@ -55,6 +59,9 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
 
     /// @notice MerkleManager for chain
     IMerkleManager public immutable i_merkleManager;
+
+    /// @notice Wrapped native token
+    IWNativeToken public wNativeToken;
 
     /**
      * @notice Configuration for supported destination chains.
@@ -235,6 +242,8 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     error OrderPortal__RequestHashedProcessed();
     /// @notice Thrown when trying to append an order fails
     error OrderPortal__MerkleManagerAppendFailed();
+    /// @notice Thrown when there is insufficient liquidity in deposits
+    error OrderPortal__InsufficientLiquidity();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -245,7 +254,9 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      * @param admin Address that receives `ADMIN_ROLE`.
      * @param _verifier External proof verifier contract.
      */
-    constructor(address admin, IVerifier _verifier, IMerkleManager _merkleManager) EIP712(_NAME, _VERSION) {
+    constructor(address admin, IVerifier _verifier, IMerkleManager _merkleManager, IWNativeToken _wNativeToken)
+        EIP712(_NAME, _VERSION)
+    {
         if (admin == address(0) || address(_verifier) == address(0) || address(_merkleManager) == address(0)) {
             revert OrderPortal__ZeroAddress();
         }
@@ -253,6 +264,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
         i_verifier = _verifier;
         i_merkleManager = _merkleManager;
         managers[admin] = true;
+        wNativeToken = _wNativeToken;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -345,6 +357,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      */
     function createOrder(bytes memory signature, bytes32 authToken, uint256 timeToExpire, OrderParams calldata params)
         external
+        payable
         nonReentrant
         returns (bytes32 orderHash)
     {
@@ -363,7 +376,14 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
             revert OrderPortal__InvalidSigner();
         }
 
-        IERC20(params.orderChainToken).safeTransferFrom(msg.sender, address(this), params.amount);
+        if (isNativeToken(params.orderChainToken)) {
+            if (msg.value < params.amount) {
+                revert OrderPortal__InsufficientLiquidity();
+            }
+            wNativeToken.safeDeposit(params.amount);
+        } else {
+            IERC20(params.orderChainToken).safeTransferFrom(msg.sender, address(this), params.amount);
+        }
 
         // append order hash
         if (!i_merkleManager.appendOrderHash(orderHash)) {
@@ -409,7 +429,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
         bytes32 nullifierHash,
         bytes32 targetRoot,
         bytes calldata proof
-    ) external nonReentrant {
+    ) external payable nonReentrant {
         bytes32 orderHash = _hashOrder(params, block.chainid, address(this));
 
         if (nullifierUsed[nullifierHash]) revert OrderPortal__NullifierUsed(nullifierHash);
@@ -437,8 +457,11 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
 
         requestHashes[message] = true;
 
-        // Payout to destination recipient on this chain
-        IERC20(params.orderChainToken).safeTransfer(params.adRecipient, params.amount);
+        if (isNativeToken(params.orderChainToken)) {
+            wNativeToken.safeWithdrawTo(params.amount, params.adRecipient);
+        } else {
+            IERC20(params.orderChainToken).safeTransfer(params.adRecipient, params.amount);
+        }
 
         emit OrderUnlocked(orderHash, params.adRecipient, nullifierHash);
     }
@@ -734,4 +757,16 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     function _hashTypedDataV4(bytes32 structHash) internal view virtual override returns (bytes32) {
         return MessageHashUtils.toTypedDataHash(_domainSeparatorProofbridge(), structHash);
     }
+
+    /**
+     * @notice Check if the given token address represents the native token.
+     * @param token The address of the token to check.
+     * @return bool True if the token is the native token, false otherwise.
+     */
+    function isNativeToken(address token) internal pure returns (bool) {
+        return token == NATIVE_TOKEN_ADDRESS;
+    }
+
+    receive() external payable {}
+    fallback() external payable {}
 }

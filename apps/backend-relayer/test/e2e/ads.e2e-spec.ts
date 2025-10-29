@@ -28,7 +28,7 @@ describe('Ads E2E', () => {
 
   it('POST /v1/ads requires auth', async () => {
     await request(app.getHttpServer())
-      .post('/v1/ads')
+      .post('/v1/ads/create')
       .send({ routeId: 'r', poolAmount: '100' })
       .expect(403);
   });
@@ -46,9 +46,13 @@ describe('Ads E2E', () => {
 
     // create
     const create = await request(app.getHttpServer())
-      .post('/v1/ads')
+      .post('/v1/ads/create')
       .set('Authorization', `Bearer ${access}`)
-      .send({ routeId: route.id, poolAmount: '1000000000000000000' }) // 1 ETH
+      .send({
+        routeId: route.id,
+        creatorDstAddress: userWallet.address,
+        fundAmount: '1000000000000000000',
+      }) // 1 ETH
       .expect(201);
 
     expect(create.body).toMatchObject({

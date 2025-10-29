@@ -10,9 +10,10 @@ import {MerkleManager, IMerkleManager} from "src/MerkleManager.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {IWNativeToken, WNativeToken} from "src/wNativeToken.sol";
 
 contract MockAdManager is AdManager {
-    constructor(address admin, IVerifier v, IMerkleManager m) AdManager(admin, v, m) {}
+    constructor(address admin, IVerifier v, IMerkleManager m, IWNativeToken t) AdManager(admin, v, m, t) {}
 
     string public lastId;
 
@@ -26,7 +27,7 @@ contract MockAdManager is AdManager {
 }
 
 contract MockOrderPortal is OrderPortal {
-    constructor(address admin, IVerifier v, IMerkleManager m) OrderPortal(admin, v, m) {}
+    constructor(address admin, IVerifier v, IMerkleManager m, IWNativeToken t) OrderPortal(admin, v, m, t) {}
 
     function hashOrderPublic(OrderParams calldata p) external view returns (bytes32) {
         return _hashOrder(p, block.chainid, address(this));
@@ -42,6 +43,8 @@ contract ProofBridge is Test {
     MerkleManager internal orderChainMerkleManager;
     ERC20Mock internal orderToken;
     ERC20Mock internal adToken;
+    IWNativeToken internal adChainWNativeToken;
+    IWNativeToken internal orderChainWNativeToken;
 
     address admin;
     uint256 adminPk;
@@ -102,7 +105,8 @@ contract ProofBridge is Test {
         vm.chainId(adChainId);
         adChainVerifier = new HonkVerifier();
         adChainMerkleManager = new MerkleManager(admin);
-        adManager = new MockAdManager(admin, adChainVerifier, adChainMerkleManager);
+        adChainWNativeToken = new WNativeToken("Wrapped Native Token", "WNATIVE");
+        adManager = new MockAdManager(admin, adChainVerifier, adChainMerkleManager, adChainWNativeToken);
         adToken = new ERC20Mock();
         // assign manager role
         vm.startPrank(admin);
@@ -113,7 +117,8 @@ contract ProofBridge is Test {
         vm.chainId(orderChainId);
         orderChainVerifier = new HonkVerifier();
         orderChainMerkleManager = new MerkleManager(admin);
-        orderPortal = new MockOrderPortal(admin, orderChainVerifier, orderChainMerkleManager);
+        orderChainWNativeToken = new WNativeToken("Wrapped Native Token", "WNATIVE");
+        orderPortal = new MockOrderPortal(admin, orderChainVerifier, orderChainMerkleManager, orderChainWNativeToken);
         orderToken = new ERC20Mock();
         // assign manager role
         vm.startPrank(admin);
