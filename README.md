@@ -31,6 +31,8 @@ This design enables **secure peer-to-peer asset transfers and data verification*
 
 The ProofBridge system is composed of four main layers, each working together to enable secure, peer-to-peer cross-chain transfers.
 
+**For detailed architecture diagrams, component descriptions, and data flow, see [architecture.md](./architecture.md)**
+
 ### Contracts
 
 * **AdManager (per chain):** Makers (liquidity providers) post and close liquidity ads on the origin chain. When a deposit is made, it is **appended as a new leaf in that chain’s Merkle Mountain Range (MMR) tree**. Each chain therefore maintains its own append-only Merkle structure, producing a verifiable root after every deposit. Assets are locked against signed **EIP-712 orders**, ensuring trade terms are cryptographically bound to a specific chain and contract.
@@ -60,6 +62,18 @@ The ProofBridge system is composed of four main layers, each working together to
 * **Automation:** By handling routine checks and repetitive tasks, the AI layer frees up makers to focus on strategy while ensuring a faster, smoother experience for bridgers.
 
 * **Future potential:** The AI layer will later expand to adaptive fee setting, predictive liquidity provisioning, and even operating as **co-pilot relayers** in a permissionless environment.
+
+## 📖 Component Documentation
+
+For detailed information about each component of the ProofBridge system, refer to the following documentation:
+
+* **[Contracts](./apps/contracts/README.md)** - Smart contract architecture, deployed addresses with explorer links, deployment guides, and cross-chain route configuration
+* **[Proof Circuits](./apps/proof_circuits/)** - Zero-knowledge proof circuits for cross-chain verification
+  * [Auth Circuits](./apps/proof_circuits/auth/README.md) - Authentication proof circuits using BLS signatures
+  * [Deposit Circuits](./apps/proof_circuits/deposits/README.md) - Deposit validation and Merkle proof circuits
+* **[Backend Relayer](./apps/backend-relayer/README.md)** - Relayer setup, configuration, and operation instructions
+* **[Frontend](./apps/frontend/README.md)** - User interface setup and development guide
+* **[MMR Package](./packages/proofbridge_mmr/README.md)** - Merkle Mountain Range implementation and usage
 
 ## 📍 Roadmap
 
