@@ -8,9 +8,6 @@
   "apps/contracts/lib/solady": {
     "rev": "208e4f31cfae26e4983eb95c3488a14fdc497ad7"
   },
-  "apps/contracts/lib/solidity-mmr": {
-    "rev": "f371a4c60634969082b67e71625fa18784a6e0af"
-  },
   "lib/forge-std": {
     "tag": {
       "name": "v1.10.0",

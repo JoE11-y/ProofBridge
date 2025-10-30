@@ -1,17 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { RaveLevel } from 'rave-level';
-import type { AbstractLevel } from 'abstract-level';
-import * as fs from 'fs';
-import * as path from 'path';
-
-export interface IStore {
-  get(key: string): Promise<string | undefined>;
-  getMany(keys: string[]): Promise<Map<string, string>>;
-  set(key: string, value: string): Promise<void>;
-  setMany(entries: Map<string, string>): Promise<void>;
-  delete(key: string): Promise<void>;
-  deleteMany(keys: string[]): Promise<void>;
-}
+import { RaveLevel } from "rave-level";
+import * as fs from "fs";
+import * as path from "path";
 
 type Key = string | Buffer | Uint8Array;
 type Val = string | Buffer | Uint8Array;
@@ -21,8 +10,8 @@ interface OpenRetryOpts {
   delayMs?: number; // default 1000
 }
 
-export default class LevelDB implements IStore {
-  private db: AbstractLevel<Key, Key, Val>;
+export default class LevelDB {
+  private db: RaveLevel<Key, Val>;
   private location: string;
   private opening?: Promise<void>;
 
@@ -31,19 +20,19 @@ export default class LevelDB implements IStore {
     fs.mkdirSync(this.location, { recursive: true });
 
     this.db = new RaveLevel<Key, Val>(this.location, {
-      valueEncoding: 'buffer',
+      valueEncoding: "buffer",
     });
   }
 
   static resolveLocation(base: string): string {
-    const instance = process.env.RENDER_INSTANCE_ID ?? 'local';
+    const instance = process.env.RENDER_INSTANCE_ID ?? "local";
     const loc = path.join(base, instance);
     fs.mkdirSync(loc, { recursive: true });
     return loc;
   }
 
   async init(opts: OpenRetryOpts = {}): Promise<void> {
-    if (this.db.status === 'open') return;
+    if (this.db.status === "open") return;
     if (!this.opening) this.opening = this.openWithRetry(opts);
     return this.opening;
   }
@@ -59,8 +48,8 @@ export default class LevelDB implements IStore {
       } catch (e: any) {
         console.log(e);
         if (
-          e?.code === 'LEVEL_LOCKED' ||
-          e?.code === 'LEVEL_DATABASE_NOT_OPEN' ||
+          e?.code === "LEVEL_LOCKED" ||
+          e?.code === "LEVEL_DATABASE_NOT_OPEN" ||
           /LOCK.*already held/i.test(String(e?.message))
         ) {
           await new Promise((r) => setTimeout(r, delayMs));
@@ -73,21 +62,21 @@ export default class LevelDB implements IStore {
   }
 
   isOpen(): boolean {
-    return this.db.status === 'open';
+    return this.db.status === "open";
   }
   isOperational(): boolean {
-    return this.db.status === 'open';
+    return this.db.status === "open";
   }
 
   async close(): Promise<void> {
-    if (this.db.status === 'open') {
+    if (this.db.status === "open") {
       await this.db.close();
     }
   }
 
   async get(key: Key): Promise<string | undefined> {
-    console.log('LevelDB get key:', key);
-    if (!this.isOperational()) throw new Error('Database not operational');
+    console.log("LevelDB get key:", key);
+    if (!this.isOperational()) throw new Error("Database not operational");
     try {
       const v = await this.db.get(key);
       return Buffer.isBuffer(v)
@@ -95,13 +84,13 @@ export default class LevelDB implements IStore {
         : Buffer.from(v as any).toString();
     } catch (err: any) {
       // abstract-level signals missing key with LEVEL_NOT_FOUND
-      if (err?.code === 'LEVEL_NOT_FOUND') return undefined;
+      if (err?.code === "LEVEL_NOT_FOUND") return undefined;
       throw err;
     }
   }
 
   async getMany(keys: Key[]): Promise<Map<string, string>> {
-    if (!this.isOperational()) throw new Error('Database not operational');
+    if (!this.isOperational()) throw new Error("Database not operational");
     const out = new Map<string, string>();
     const values = await (this.db as any).getMany(keys);
     for (let i = 0; i < keys.length; i++) {
@@ -115,14 +104,14 @@ export default class LevelDB implements IStore {
   }
 
   async set(key: Key, value: Val): Promise<void> {
-    if (!this.isOperational()) throw new Error('Database not operational');
+    if (!this.isOperational()) throw new Error("Database not operational");
     await this.db.put(key, value as any);
   }
 
   async setMany(entries: Map<Key, Val>): Promise<void> {
-    if (!this.isOperational()) throw new Error('Database not operational');
+    if (!this.isOperational()) throw new Error("Database not operational");
     const ops = Array.from(entries, ([key, value]) => ({
-      type: 'put' as const,
+      type: "put" as const,
       key,
       value,
     }));
@@ -130,13 +119,13 @@ export default class LevelDB implements IStore {
   }
 
   async delete(key: Key): Promise<void> {
-    if (!this.isOperational()) throw new Error('Database not operational');
+    if (!this.isOperational()) throw new Error("Database not operational");
     await this.db.del(key);
   }
 
   async deleteMany(keys: Key[]): Promise<void> {
-    if (!this.isOperational()) throw new Error('Database not operational');
-    const ops = keys.map((key) => ({ type: 'del' as const, key }));
+    if (!this.isOperational()) throw new Error("Database not operational");
+    const ops = keys.map((key) => ({ type: "del" as const, key }));
     await (this.db as any).batch(ops);
   }
 }

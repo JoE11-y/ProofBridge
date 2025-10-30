@@ -1,8 +1,24 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { poseidon2Hash } from '@zkpassport/poseidon2';
-import { IHasher, defaultHasherOptions } from '@accumulators/core';
 
-type HexString = string;
+export type HasherOptions = {
+  blockSizeBits: number;
+  shouldPad?: boolean;
+};
+
+export declare const defaultHasherOptions: HasherOptions;
+
+export type HexString = string;
+export declare const GENESIS_STRING = 'brave new world';
+export declare abstract class IHasher {
+  readonly options: HasherOptions;
+  constructor(options?: HasherOptions);
+  abstract hash(data: HexString[]): HexString;
+  isElementSizeValid: (element: HexString) => boolean;
+  static byteSize: (str: string) => number;
+  hashSingle: (data: string) => string;
+  getGenesis(): HexString;
+}
 
 const P =
   21888242871839275222246405745257275088548364400416034343698204186575808495617n;

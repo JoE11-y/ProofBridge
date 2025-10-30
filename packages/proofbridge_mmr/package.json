@@ -1,0 +1,55 @@
+{
+  "name": "proofbridge-mmr",
+  "version": "1.0.0",
+  "description": "Merkle Mountain Range implementation compatible with Solidity, using Poseidon2 hashing and LevelDB persistence",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "rm -rf test-mmr-data && ts-node tests/test-mmr.ts"
+  },
+  "keywords": [
+    "merkle",
+    "mmr",
+    "merkle-mountain-range",
+    "poseidon2",
+    "zero-knowledge",
+    "cryptography",
+    "blockchain",
+    "hedera",
+    "leveldb"
+  ],
+  "author": "Joseph Edoh",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoE11-y/proofbridge-mmr.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JoE11-y/proofbridge-mmr/issues"
+  },
+  "homepage": "https://github.com/JoE11-y/proofbridge-mmr#readme",
+  "dependencies": {
+    "@zkpassport/poseidon2": "^0.6.2",
+    "abstract-level": "^3.1.0",
+    "buffer-reverse": "^1.0.1",
+    "crypto-js": "^4.2.0",
+    "ethers": "^6.15.0",
+    "level": "^10.0.0",
+    "rave-level": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.13",
+    "js-sha3": "^0.9.3",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

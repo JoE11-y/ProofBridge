@@ -21,19 +21,7 @@ importers:
 
   apps/backend-relayer:
     dependencies:
-      '@accumulators/core':
-        specifier: ^4.2.3
-        version: 4.2.3
-      '@accumulators/hashers':
-        specifier: ^4.2.3
-        version: 4.2.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      '@accumulators/memory':
-        specifier: ^4.2.3
-        version: 4.2.3
       '@accumulators/merkle-mountain-range':
-        specifier: ^4.2.3
-        version: 4.2.3
-      '@accumulators/rocksdb':
         specifier: ^4.2.3
         version: 4.2.3
       '@aztec/bb.js':
@@ -253,9 +241,6 @@ importers:
       hex:
         specifier: ^0.1.0
         version: 0.1.0
-      mcl-wasm:
-        specifier: ^2.0.0
-        version: 2.0.0
 
   apps/frontend:
     dependencies:
@@ -388,9 +373,6 @@ packages:
 
   '@accumulators/merkle-mountain-range@4.2.3':
     resolution: {integrity: sha512-+JIaJobDF0EDGKb8kdeLAHBsJEbcYMpAwJH6ucOH6PQC1ju8elEXih7gVnObagsN1kcBzqAaB9GcYJPiNhWKbQ==}
-
-  '@accumulators/rocksdb@4.2.3':
-    resolution: {integrity: sha512-fVUI1hTVewylkmXhMH6DWwDVSQbhJ0cRYdoGhIY6i37UOY5dILnTTNvDGbDIml29s4xJZkTKZbnSI/O3XKgMVw==}
 
   '@adraffy/ens-normalize@1.10.1':
     resolution: {integrity: sha512-96Z2IP3mYmF1Xg2cDm8f1gWGf/HUVedQ3FMifV4kG/PQ4yEP51xDtRAEfhVNt5f/uzpNkZHwWQuUcu6D6K+Ekw==}
@@ -2677,11 +2659,6 @@ packages:
     resolution: {integrity: sha512-j2e+TsAxy7Ri+0h7dJqwasymgt0zHBWX4+nMk3XatyuqgHfdstBJ9wsMfbiGwE1O+QovRyPcVAqcViMYdyPaaw==}
     engines: {node: '>=18'}
 
-  abstract-leveldown@7.2.0:
-    resolution: {integrity: sha512-DnhQwcFEaYsvYDnACLZhMmCWd3rkOeEvglpa4q5i/5Jlm3UIsWaxVzuXvDLFCSCWRO3yy2/+V/G7FusFgejnfQ==}
-    engines: {node: '>=10'}
-    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
-
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
     engines: {node: '>= 0.6'}
@@ -3489,11 +3466,6 @@ packages:
   defaults@1.0.4:
     resolution: {integrity: sha512-eFuaLoy/Rxalv2kr+lqMlUnrDWV+3j4pljOIJgLIhI058IQfWJ7vXhyEIHu+HtC738klGALYxOKDO0bQP3tg8A==}
 
-  deferred-leveldown@7.0.0:
-    resolution: {integrity: sha512-QKN8NtuS3BC6m0B8vAnBls44tX1WXAFATUsJlruyAYbZpysWV3siH6o/i3g9DCHauzodksO60bdj5NazNbjCmg==}
-    engines: {node: '>=10'}
-    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
-
   define-data-property@1.1.4:
     resolution: {integrity: sha512-rBMvIzlpA8v6E+SJZoo++HAYqsLrkg7MSfIinMPFhmkorw7X+dOXVJQs+QT69zGkzMyfDnIMN2Wid1+NbL3T+A==}
     engines: {node: '>= 0.4'}
@@ -3633,11 +3605,6 @@ packages:
   encodeurl@2.0.0:
     resolution: {integrity: sha512-Q0n9HRi4m6JuGIV1eFlmvJB7ZEVxu93IrMyiMsGC0lrMJMWzRgx6WGquyfQgZVb31vhGgXnfmPNNXmxnOkRBrg==}
     engines: {node: '>= 0.8'}
-
-  encoding-down@7.1.0:
-    resolution: {integrity: sha512-ky47X5jP84ryk5EQmvedQzELwVJPjCgXDQZGeb9F6r4PdChByCGHTBrVcF3h8ynKVJ1wVbkxTsDC8zBROPypgQ==}
-    engines: {node: '>=10'}
-    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
 
   end-of-stream@1.4.5:
     resolution: {integrity: sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==}
@@ -4796,39 +4763,6 @@ packages:
       vue:
         optional: true
 
-  level-codec@10.0.0:
-    resolution: {integrity: sha512-QW3VteVNAp6c/LuV6nDjg7XDXx9XHK4abmQarxZmlRSDyXYk20UdaJTSX6yzVvQ4i0JyWSB7jert0DsyD/kk6g==}
-    engines: {node: '>=10'}
-    deprecated: Superseded by level-transcoder (https://github.com/Level/community#faq)
-
-  level-concat-iterator@3.1.0:
-    resolution: {integrity: sha512-BWRCMHBxbIqPxJ8vHOvKUsaO0v1sLYZtjN3K2iZJsRBYtp+ONsY6Jfi6hy9K3+zolgQRryhIn2NRZjZnWJ9NmQ==}
-    engines: {node: '>=10'}
-    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
-
-  level-errors@3.0.1:
-    resolution: {integrity: sha512-tqTL2DxzPDzpwl0iV5+rBCv65HWbHp6eutluHNcVIftKZlQN//b6GEnZDM2CvGZvzGYMwyPtYppYnydBQd2SMQ==}
-    engines: {node: '>=10'}
-    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
-
-  level-iterator-stream@5.0.0:
-    resolution: {integrity: sha512-wnb1+o+CVFUDdiSMR/ZymE2prPs3cjVLlXuDeSq9Zb8o032XrabGEXcTCsBxprAtseO3qvFeGzh6406z9sOTRA==}
-    engines: {node: '>=10'}
-
-  level-packager@6.0.1:
-    resolution: {integrity: sha512-8Ezr0XM6hmAwqX9uu8IGzGNkWz/9doyPA8Oo9/D7qcMI6meJC+XhIbNYHukJhIn8OGdlzQs/JPcL9B8lA2F6EQ==}
-    engines: {node: '>=10'}
-    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
-
-  level-rocksdb@5.0.0:
-    resolution: {integrity: sha512-nS/HcKFdzS/kzLIN2PYpeamesqgZVR3fz430/PpW0Q2NLVMPfvJogo0ndwwDotk0KBEq41V1J24B7OKDAG5/dw==}
-    engines: {node: '>=10.12.0'}
-    deprecated: Discontinued (https://github.com/Level/community#faq)
-
-  level-supports@2.1.0:
-    resolution: {integrity: sha512-E486g1NCjW5cF78KGPrMDRBYzPuueMZ6VBXHT6gC7A8UYWGiM14fGgp+s/L1oFfDWSPV/+SFkYCmZ0SiESkRKA==}
-    engines: {node: '>=10'}
-
   level-supports@4.0.1:
     resolution: {integrity: sha512-PbXpve8rKeNcZ9C1mUicC9auIYFyGpkV9/i6g76tLgANwWhtG2v7I4xNBUlkn3lE2/dZF3Pi0ygYGtLc4RXXdA==}
     engines: {node: '>=12'}
@@ -4844,11 +4778,6 @@ packages:
   level@10.0.0:
     resolution: {integrity: sha512-aZJvdfRr/f0VBbSRF5C81FHON47ZsC2TkGxbBezXpGGXAUEL/s6+GP73nnhAYRSCIqUNsmJjfeOF4lzRDKbUig==}
     engines: {node: '>=18'}
-
-  levelup@5.1.1:
-    resolution: {integrity: sha512-0mFCcHcEebOwsQuk00WJwjLI6oCjbBuEYdh/RaRqhjnyVlzqf41T1NnDtCedumZ56qyIh8euLFDqV1KfzTAVhg==}
-    engines: {node: '>=10'}
-    deprecated: Superseded by abstract-level (https://github.com/Level/community#faq)
 
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
@@ -5047,10 +4976,6 @@ packages:
   maybe-combine-errors@1.0.0:
     resolution: {integrity: sha512-eefp6IduNPT6fVdwPp+1NgD0PML1NU5P6j1Mj5nz1nidX8/sWY7119WL8vTAHgqfsY74TzW0w1XPgdYEKkGZ5A==}
     engines: {node: '>=10'}
-
-  mcl-wasm@2.0.0:
-    resolution: {integrity: sha512-VFw8jTwY9iJV6XQXPzq3nPK3roQ1sd48iyT35i//+7EVAi5Z+nyyI6l0/m0EmvMmjGTLLDBXtiWBVYJ/+oFgMA==}
-    engines: {node: '>=14.17'}
 
   media-query-parser@2.0.2:
     resolution: {integrity: sha512-1N4qp+jE0pL5Xv4uEcwVUhIkwdUO3S/9gML90nqKA7v7FcOS5vUtatfzok9S9U1EJU8dHWlcv95WLnKmmxZI9w==}
@@ -6165,11 +6090,6 @@ packages:
   reusify@1.1.0:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
-
-  rocksdb@5.2.1:
-    resolution: {integrity: sha512-SN9RRLfqDEGfZ6MgfjpQ4DIn3+TdN5ECKYHgeuPKFy6Yw0I9hYyE46giLidngjZU47JXUmWXJDZuU1CyEcf4Fw==}
-    engines: {node: '>=10.12.0'}
-    deprecated: Discontinued (https://github.com/Level/community#faq)
 
   router@2.2.0:
     resolution: {integrity: sha512-nLTrUKm2UyiL7rlhapu/Zl45FwNgkZGaCpZbIHajDYgwlJCOzLSk+cIPAnsEqV955GjILJnKbdQC1nVPz+gAYQ==}
@@ -7382,11 +7302,6 @@ snapshots:
     dependencies:
       '@accumulators/core': 4.2.3
       ulid: 2.4.0
-
-  '@accumulators/rocksdb@4.2.3':
-    dependencies:
-      '@accumulators/core': 4.2.3
-      level-rocksdb: 5.0.0
 
   '@adraffy/ens-normalize@1.10.1': {}
 
@@ -10880,15 +10795,6 @@ snapshots:
       maybe-combine-errors: 1.0.0
       module-error: 1.0.2
 
-  abstract-leveldown@7.2.0:
-    dependencies:
-      buffer: 6.0.3
-      catering: 2.1.1
-      is-buffer: 2.0.5
-      level-concat-iterator: 3.1.0
-      level-supports: 2.1.0
-      queue-microtask: 1.2.3
-
   accepts@2.0.0:
     dependencies:
       mime-types: 3.0.1
@@ -11778,11 +11684,6 @@ snapshots:
     dependencies:
       clone: 1.0.4
 
-  deferred-leveldown@7.0.0:
-    dependencies:
-      abstract-leveldown: 7.2.0
-      inherits: 2.0.4
-
   define-data-property@1.1.4:
     dependencies:
       es-define-property: 1.0.1
@@ -11924,13 +11825,6 @@ snapshots:
   encode-utf8@1.0.3: {}
 
   encodeurl@2.0.0: {}
-
-  encoding-down@7.1.0:
-    dependencies:
-      abstract-leveldown: 7.2.0
-      inherits: 2.0.4
-      level-codec: 10.0.0
-      level-errors: 3.0.1
 
   end-of-stream@1.4.5:
     dependencies:
@@ -13582,33 +13476,6 @@ snapshots:
     optionalDependencies:
       react: 19.1.0
 
-  level-codec@10.0.0:
-    dependencies:
-      buffer: 6.0.3
-
-  level-concat-iterator@3.1.0:
-    dependencies:
-      catering: 2.1.1
-
-  level-errors@3.0.1: {}
-
-  level-iterator-stream@5.0.0:
-    dependencies:
-      inherits: 2.0.4
-      readable-stream: 3.6.2
-
-  level-packager@6.0.1:
-    dependencies:
-      encoding-down: 7.1.0
-      levelup: 5.1.1
-
-  level-rocksdb@5.0.0:
-    dependencies:
-      level-packager: 6.0.1
-      rocksdb: 5.2.1
-
-  level-supports@2.1.0: {}
-
   level-supports@4.0.1: {}
 
   level-supports@6.2.0: {}
@@ -13623,15 +13490,6 @@ snapshots:
       abstract-level: 3.1.0
       browser-level: 3.0.0
       classic-level: 3.0.0
-
-  levelup@5.1.1:
-    dependencies:
-      catering: 2.1.1
-      deferred-leveldown: 7.0.0
-      level-errors: 3.0.1
-      level-iterator-stream: 5.0.0
-      level-supports: 2.1.0
-      queue-microtask: 1.2.3
 
   leven@3.1.0: {}
 
@@ -13807,10 +13665,6 @@ snapshots:
   math-intrinsics@1.1.0: {}
 
   maybe-combine-errors@1.0.0: {}
-
-  mcl-wasm@2.0.0:
-    dependencies:
-      '@types/node': 20.19.17
 
   media-query-parser@2.0.2:
     dependencies:
@@ -15045,12 +14899,6 @@ snapshots:
   retry@0.12.0: {}
 
   reusify@1.1.0: {}
-
-  rocksdb@5.2.1:
-    dependencies:
-      abstract-leveldown: 7.2.0
-      napi-macros: 2.2.2
-      node-gyp-build: 4.8.4
 
   router@2.2.0:
     dependencies:

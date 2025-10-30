@@ -776,7 +776,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @notice Return the latest merkle manager root
      */
     function getLatestMerkleRoot() external view returns (bytes32 root) {
-        root = i_merkleManager.getRootHash();
+        root = i_merkleManager.getRoot();
     }
 
     /**
@@ -791,7 +791,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @notice Returns merkle leaf count
      */
     function getMerkleLeafCount() external view returns (uint256 count) {
-        count = i_merkleManager.getLeafCount();
+        count = i_merkleManager.getWidth();
     }
 
     /*//////////////////////////////////////////////////////////////

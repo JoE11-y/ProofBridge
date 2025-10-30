@@ -19,7 +19,6 @@
     "@zkpassport/poseidon2": "^0.6.2",
     "ethereum-cryptography": "^3.2.0",
     "ethers": "^6.15.0",
-    "hex": "^0.1.0",
-    "mcl-wasm": "^2.0.0"
+    "hex": "^0.1.0"
   }
 }
