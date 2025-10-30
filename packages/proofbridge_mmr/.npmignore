@@ -37,10 +37,3 @@ Thumbs.db
 
 # Build artifacts
 *.tsbuildinfo
-
-# Documentation files (development only)
-PEAKBAGGING_FIX.md
-TEST_RESULTS.md
-PUBLISHING.md
-NPM_SETUP_COMPLETE.md
-QUICK_START_PUBLISHING.md

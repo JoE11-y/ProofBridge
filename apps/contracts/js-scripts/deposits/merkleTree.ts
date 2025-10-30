@@ -1,21 +1,33 @@
-import MemoryStore from "@accumulators/memory";
-import Mmr from "@accumulators/merkle-mountain-range";
 import { Fr } from "@aztec/bb.js";
-import { Poseidon2Hasher } from "./Poseidon2Hasher";
+const fs = require("fs");
+const path = require("path");
+import {
+  MerkleMountainRange as MMR,
+  LevelDB,
+  Poseidon2Hasher,
+} from "proofbridge-mmr";
 
 export class MerkleTree {
-  private store: MemoryStore;
-  private hasher: Poseidon2Hasher;
-  private mmr: Mmr;
+  private db: LevelDB;
+  private mmr: MMR;
   private elementIndexMap: Map<string, number> = new Map();
+  private hasher = new Poseidon2Hasher();
 
   constructor() {
-    this.store = new MemoryStore();
-    this.hasher = new Poseidon2Hasher();
-    this.mmr = new Mmr(this.store, this.hasher);
+    this.db = new LevelDB("./merkle_tree_db");
+  }
+
+  async clean() {
+    if (fs.existsSync("./merkle_tree_db")) {
+      fs.rmSync("./merkle_tree_db", { recursive: true, force: true });
+    }
   }
 
   async init(defaultLeaves: string[] = []) {
+    this.clean();
+    this.db.init();
+    this.mmr = new MMR("merkle_tree", this.db, this.hasher);
+
     for (const leaf of defaultLeaves) {
       await this.append(leaf);
     }
@@ -23,7 +35,7 @@ export class MerkleTree {
 
   async append(value: string) {
     const x = this.mod(value);
-    const { elementIndex } = await this.mmr.append(x.toString());
+    const elementIndex = await this.mmr.append(x.toString());
     this.elementIndexMap.set(x.toString(), elementIndex);
     return { elementIndex, x };
   }
@@ -37,8 +49,15 @@ export class MerkleTree {
 
   async genProof(elementIndex: number, orderHash: string) {
     const x = this.mod(orderHash);
-    const proof = await this.mmr.getProof(elementIndex);
-    const isValid = await this.mmr.verifyProof(proof, x.toString());
+    const proof = await this.mmr.getMerkleProof(elementIndex);
+    const isValid = this.mmr.verify(
+      proof.root,
+      proof.width,
+      elementIndex,
+      orderHash,
+      proof.peakBagging,
+      proof.siblings
+    );
     if (!isValid) {
       throw new Error("Invalid proof generated");
     }
@@ -46,7 +65,7 @@ export class MerkleTree {
   }
 
   async getRoot() {
-    return await this.mmr.rootHash.get();
+    return this.mmr.root;
   }
 
   private mod(n: string) {

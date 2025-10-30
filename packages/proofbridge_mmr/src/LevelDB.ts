@@ -46,7 +46,6 @@ export default class LevelDB {
         await this.db.open();
         return;
       } catch (e: any) {
-        console.log(e);
         if (
           e?.code === "LEVEL_LOCKED" ||
           e?.code === "LEVEL_DATABASE_NOT_OPEN" ||
@@ -75,7 +74,6 @@ export default class LevelDB {
   }
 
   async get(key: Key): Promise<string | undefined> {
-    console.log("LevelDB get key:", key);
     if (!this.isOperational()) throw new Error("Database not operational");
     try {
       const v = await this.db.get(key);
@@ -127,5 +125,24 @@ export default class LevelDB {
     if (!this.isOperational()) throw new Error("Database not operational");
     const ops = keys.map((key) => ({ type: "del" as const, key }));
     await (this.db as any).batch(ops);
+  }
+
+  async getAllKeysWithPrefix(prefix: string): Promise<string[]> {
+    if (!this.isOperational()) throw new Error("Database not operational");
+    const keys: string[] = [];
+
+    try {
+      for await (const key of this.db.keys({ gte: prefix })) {
+        const keyStr = key.toString();
+        // Stop when we've passed the prefix range
+        if (!keyStr.startsWith(prefix)) break;
+        keys.push(keyStr);
+      }
+    } catch (err) {
+      // Handle potential iteration errors
+      throw new Error(`Failed to scan keys with prefix "${prefix}": ${err}`);
+    }
+
+    return keys;
   }
 }

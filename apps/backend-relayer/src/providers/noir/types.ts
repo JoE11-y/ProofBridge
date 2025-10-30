@@ -1,8 +1,8 @@
-import { Proof } from '@accumulators/merkle-mountain-range';
+import { MerkleProof } from 'proofbridge-mmr';
 
 export type T_ProofParams = {
   isAdCreator: boolean;
-  merkleProof: Proof;
+  merkleProof: MerkleProof;
   orderHash: string;
   targetRoot: string;
   secret: string;

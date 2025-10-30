@@ -1,17 +1,19 @@
-import MemoryStore from "@accumulators/memory";
-import Mmr from "@accumulators/merkle-mountain-range";
 import { Barretenberg, Fr } from "@aztec/bb.js";
-import { Poseidon2Hasher } from "./Poseidon2Hasher";
 import { toBeHex, zeroPadValue } from "ethers";
+import {
+  MerkleMountainRange as MMR,
+  LevelDB,
+  Poseidon2Hasher,
+} from "proofbridge-mmr";
 
 async function run() {
   const bb = await Barretenberg.new();
 
-  const store = new MemoryStore();
+  const db = new LevelDB("./test-mmr-data");
+  await db.init();
 
   const hasher = new Poseidon2Hasher();
-
-  const mmr = new Mmr(store, hasher);
+  const mmr = new MMR("test-mmr", db, hasher);
 
   let lastElem = 0;
   let lastOrderHash = Fr.ZERO;
@@ -19,21 +21,30 @@ async function run() {
     let x = hex(i);
     let hash = await bb.poseidon2Hash([Fr.fromString(x)]);
     // console.log(hash.toString());
-    const { elementIndex } = await mmr.append(hash.toString());
+    const elementIndex = await mmr.append(hash.toString());
     if (elementIndex == 88929) {
       lastElem = elementIndex;
       lastOrderHash = hash;
     }
   }
 
-  const proof = await mmr.getProof(lastElem);
+  const proof = await mmr.getMerkleProof(lastElem);
 
   console.log(proof);
 
-  const root = await mmr.rootHash.get();
+  const root = mmr.root;
   console.log("root: ", root);
 
-  console.log(await mmr.verifyProof(proof, lastOrderHash.toString()));
+  console.log(
+    mmr.verify(
+      proof.root,
+      proof.width,
+      lastElem,
+      lastOrderHash.toString(),
+      proof.peakBagging,
+      proof.siblings
+    )
+  );
 }
 
 const hex = (n: number) => {

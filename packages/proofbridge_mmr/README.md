@@ -196,12 +196,6 @@ MIT
 
 ## Credits
 
-Here’s a much cleaner, well-structured **Credits** section you can drop straight into your README 👇
-
----
-
-## 🏗️ Credits
-
 This implementation builds on several open-source projects and specifications that shaped its design and cryptographic foundations:
 
 - **Solidity-MMR by [@wanseob](https://github.com/wanseob/solidity-mmr)**

@@ -3,6 +3,14 @@ import { Poseidon2Hasher } from "./Hasher";
 import LevelDB from "./LevelDB";
 import CryptoJS from "crypto-js";
 
+export type MerkleProof = {
+  elementIndex: number;
+  root: string;
+  width: number;
+  peakBagging: string[];
+  siblings: string[];
+};
+
 export class MerkleMountainRange {
   // Public state
   root: Buffer = Buffer.alloc(0);
@@ -163,7 +171,7 @@ export class MerkleMountainRange {
     this.hasher = hasher;
   }
 
-  async init(leaves: Array<Buffer | string> = []): Promise<void> {
+  async init(leaves: Array<string> = []): Promise<void> {
     await this.loadFromDB();
     for (const leaf of leaves) {
       await this.append(leaf);
@@ -213,7 +221,7 @@ export class MerkleMountainRange {
 
   // ---- Core ops -------------------------------------------------------------
 
-  async append(dataHash: Buffer | string): Promise<number> {
+  async append(dataHash: string): Promise<number> {
     // Ensure BN254 field compatibility
     const dataHashMod = MerkleMountainRange.fieldMod(dataHash);
 
@@ -250,6 +258,27 @@ export class MerkleMountainRange {
     await this.db.setMany(updates);
 
     return leafIndex;
+  }
+
+  // clearMMR
+  async clear(): Promise<void> {
+    try {
+      // Use prefix scan to catch all keys (handles corrupted state, orphaned data)
+      const prefix = `${this.mmrId}:`;
+      const allKeys = await this.db.getAllKeysWithPrefix(prefix);
+
+      if (allKeys.length > 0) {
+        await this.db.deleteMany(allKeys);
+      }
+
+      // Reset in-memory state only after successful DB deletion
+      this.root = Buffer.alloc(0);
+      this.size = 0;
+      this.width = 0;
+      this.hashes = {};
+    } catch (err) {
+      throw new Error(`Failed to clear MMR "${this.mmrId}": ${err}`);
+    }
   }
 
   hashLeaf(index: number, dataHash: Buffer | string): Buffer {
@@ -376,7 +405,7 @@ export class MerkleMountainRange {
     return [left, right];
   }
 
-  async getMerkleProof(index: number) {
+  async getMerkleProof(index: number): Promise<MerkleProof> {
     if (index > this.size) throw new Error("out of range");
     if (!this.isLeaf(index)) throw new Error("not a leaf");
 
@@ -408,21 +437,33 @@ export class MerkleMountainRange {
       siblings[height - 1] = sib;
     }
 
-    return { root, width, peakBagging, siblings };
+    // Convert to hex format for easier consumption
+    return {
+      elementIndex: index,
+      root: MerkleMountainRange.toHex(root),
+      width,
+      peakBagging: peakBagging.map((p) => MerkleMountainRange.toHex(p)),
+      siblings: siblings.map((s) => MerkleMountainRange.toHex(s)),
+    };
   }
 
   verify(
-    root: Buffer,
+    root: string,
     width: number,
     index: number,
-    valueHash: Buffer | string,
-    peaks: Buffer[],
-    siblings: Buffer[]
+    valueHash: string,
+    peaks: string[],
+    siblings: string[]
   ): boolean {
     const size = this.getSize(width);
     if (size < index) throw new Error("index is out of range");
 
-    if (!root.equals(this.peakBagging(width, peaks))) {
+    // Convert hex strings to buffers
+    const rootBuf = MerkleMountainRange.hexToBuf(root);
+    const peaksBuf = peaks.map((p) => MerkleMountainRange.hexToBuf(p));
+    const siblingsBuf = siblings.map((s) => MerkleMountainRange.hexToBuf(s));
+
+    if (!rootBuf.equals(this.peakBagging(width, peaksBuf))) {
       throw new Error("invalid root hash from the peaks");
     }
 
@@ -431,14 +472,14 @@ export class MerkleMountainRange {
     let targetPeak: Buffer | undefined;
     for (let i = 0; i < peakIdx.length; i++) {
       if (peakIdx[i] >= index) {
-        targetPeak = peaks[i];
+        targetPeak = peaksBuf[i];
         cursor = peakIdx[i];
         break;
       }
     }
     if (!targetPeak) throw new Error("target not found");
 
-    let h = siblings.length + 1;
+    let h = siblingsBuf.length + 1;
     const path = new Array<number>(h);
 
     while (h > 0) {
@@ -454,9 +495,9 @@ export class MerkleMountainRange {
       if (h === 0) {
         node = this.hashLeaf(cursor, valueHash);
       } else if (cursor - 1 === path[h - 1]) {
-        node = this.hashBranch(cursor, siblings[h - 1], node!);
+        node = this.hashBranch(cursor, siblingsBuf[h - 1], node!);
       } else {
-        node = this.hashBranch(cursor, node!, siblings[h - 1]);
+        node = this.hashBranch(cursor, node!, siblingsBuf[h - 1]);
       }
       h++;
     }

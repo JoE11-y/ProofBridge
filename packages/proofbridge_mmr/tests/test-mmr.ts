@@ -1,14 +1,15 @@
 import { MerkleMountainRange } from "../src/MMR";
 import { Poseidon2Hasher } from "../src/Hasher";
 import LevelDB from "../src/LevelDB";
-import { keccak256 } from "ethers";
+import { keccak256, toUtf8Bytes } from "ethers";
 
 /**
  * Helper function to hash data using keccak256 (to match Solidity test)
  */
-function hashData(data: string): Buffer {
-  const hash = keccak256(data);
-  return Buffer.from(hash, "hex");
+function hashData(data: string): string {
+  const bytes = toUtf8Bytes(data);
+  const hash = keccak256(bytes);
+  return hash;
 }
 
 /**
@@ -64,6 +65,7 @@ async function testMerkleMountainRange() {
     await mmr.append(hash9); // stored at index 16
 
     const hash10 = hashData("0x000a");
+
     let lastIndex = await mmr.append(hash10); // stored at index 17
 
     console.log(`last index: ${lastIndex}`);
@@ -72,17 +74,17 @@ async function testMerkleMountainRange() {
     const proof = await mmr.getMerkleProof(lastIndex);
 
     console.log("\n=== Proof for index 17 ===");
-    console.log("Root:", toHex(proof.root));
+    console.log("Root:", proof.root);
     console.log("Width:", proof.width);
 
     console.log("\nPeaks:");
     for (let i = 0; i < proof.peakBagging.length; i++) {
-      console.log(toHex(proof.peakBagging[i]));
+      console.log(proof.peakBagging[i]);
     }
 
     console.log("\nSiblings:");
     for (let i = 0; i < proof.siblings.length; i++) {
-      console.log(toHex(proof.siblings[i]));
+      console.log(proof.siblings[i]);
     }
 
     const isValid = mmr.verify(
