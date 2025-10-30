@@ -120,7 +120,7 @@ export class MMRService implements OnModuleDestroy {
       proof.width,
       elementIndex,
       x.toString(),
-      proof.peakBagging,
+      proof.peaks,
       proof.siblings,
     );
 
@@ -147,6 +147,7 @@ export class MMRService implements OnModuleDestroy {
         console.log(e);
       }
     }
+
     this.mmrCache.clear();
 
     if (this.db) {

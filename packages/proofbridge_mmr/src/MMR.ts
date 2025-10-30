@@ -7,7 +7,8 @@ export type MerkleProof = {
   elementIndex: number;
   root: string;
   width: number;
-  peakBagging: string[];
+  elementsCount: number;
+  peaks: string[];
   siblings: string[];
 };
 
@@ -437,12 +438,14 @@ export class MerkleMountainRange {
       siblings[height - 1] = sib;
     }
 
-    // Convert to hex format for easier consumption
+    const size = this.getSize(width);
+
     return {
       elementIndex: index,
       root: MerkleMountainRange.toHex(root),
       width,
-      peakBagging: peakBagging.map((p) => MerkleMountainRange.toHex(p)),
+      elementsCount: size,
+      peaks: peakBagging.map((p) => MerkleMountainRange.toHex(p)),
       siblings: siblings.map((s) => MerkleMountainRange.toHex(s)),
     };
   }

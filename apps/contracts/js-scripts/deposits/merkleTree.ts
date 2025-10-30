@@ -14,6 +14,7 @@ export class MerkleTree {
   private hasher = new Poseidon2Hasher();
 
   constructor() {
+    this.clean();
     this.db = new LevelDB("./merkle_tree_db");
   }
 
@@ -24,8 +25,8 @@ export class MerkleTree {
   }
 
   async init(defaultLeaves: string[] = []) {
-    this.clean();
-    this.db.init();
+    await this.db.init();
+
     this.mmr = new MMR("merkle_tree", this.db, this.hasher);
 
     for (const leaf of defaultLeaves) {
@@ -55,7 +56,7 @@ export class MerkleTree {
       proof.width,
       elementIndex,
       orderHash,
-      proof.peakBagging,
+      proof.peaks,
       proof.siblings
     );
     if (!isValid) {
@@ -65,7 +66,7 @@ export class MerkleTree {
   }
 
   async getRoot() {
-    return this.mmr.root;
+    return this.mmr.getHexRoot();
   }
 
   private mod(n: string) {
