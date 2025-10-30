@@ -14,6 +14,10 @@ The system uses a **minimal EIP-712 domain** (`name="Proofbridge"`, `version="1"
   - [Architecture](#architecture)
     - [System Overview](#system-overview)
     - [Flow](#flow)
+  - [Deployed Contracts](#deployed-contracts)
+    - [Ethereum Sepolia (Chain ID: 11155111)](#ethereum-sepolia-chain-id-11155111)
+    - [Hedera Testnet (Chain ID: 296)](#hedera-testnet-chain-id-296)
+    - [Supported Cross-Chain Routes](#supported-cross-chain-routes)
     - [Security](#security)
   - [Contracts](#contracts)
     - [`AdManager`](#admanager)
@@ -80,6 +84,48 @@ The system uses a **minimal EIP-712 domain** (`name="Proofbridge"`, `version="1"
 4. After the maker fulfills the user on the opposite chain, a **zk proof** is generated and submitted to unlock:
    * On **OrderPortal**: release order-token to the **maker destination recipient** recorded in the order.
    * On **AdManager**: release **ad token** from contract to the **bridger's designated recipient**.
+
+## Deployed Contracts
+
+ProofBridge is currently live on **Ethereum Sepolia** and **Hedera Testnet** with full cross-chain bridging capabilities.
+
+### Ethereum Sepolia (Chain ID: 11155111)
+
+| Contract            | Address                                      | Explorer                                                                                             |
+| ------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Verifier            | `0xDc930A3b5CC073092750aE7f4FF45409B2428592` | [View on Etherscan](https://sepolia.etherscan.io/address/0xDc930A3b5CC073092750aE7f4FF45409B2428592) |
+| MerkleManager       | `0x397E7356aF447B2754D8Ea0838d285FB78F2482d` | [View on Etherscan](https://sepolia.etherscan.io/address/0x397E7356aF447B2754D8Ea0838d285FB78F2482d) |
+| wNativeToken (WETH) | `0xf635e2661c950c7947a13d03e16076F7b5aA5DbE` | [View on Etherscan](https://sepolia.etherscan.io/address/0xf635e2661c950c7947a13d03e16076F7b5aA5DbE) |
+| AdManager           | `0x366D90CB2A8606A82164C717cF1889c3ed5aE1f4` | [View on Etherscan](https://sepolia.etherscan.io/address/0x366D90CB2A8606A82164C717cF1889c3ed5aE1f4) |
+| OrderPortal         | `0xF1C313faAD40ccAeDb4Fd3e7C838993569E2572C` | [View on Etherscan](https://sepolia.etherscan.io/address/0xF1C313faAD40ccAeDb4Fd3e7C838993569E2572C) |
+| wHBAR               | `0xc21EfAd8e69A5F549588188ED702D3D9152B5b32` | [View on Etherscan](https://sepolia.etherscan.io/address/0xc21EfAd8e69A5F549588188ED702D3D9152B5b32) |
+| ProofBridge Token   | `0x1B62aDdB315CC98ab4625ffA170c1BC5C75F9da7` | [View on Etherscan](https://sepolia.etherscan.io/address/0x1B62aDdB315CC98ab4625ffA170c1BC5C75F9da7) |
+
+### Hedera Testnet (Chain ID: 296)
+
+| Contract             | Address                                      | Explorer                                                                                            |
+| -------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Verifier             | `0xDbf6dA1aBD40f7b7eA7B935663D4F78325930e48` | [View on HashScan](https://hashscan.io/testnet/contract/0xDbf6dA1aBD40f7b7eA7B935663D4F78325930e48) |
+| MerkleManager        | `0xDc64ca5aaDe3a1e50e430D601Dd48AB393C079dB` | [View on HashScan](https://hashscan.io/testnet/contract/0xDc64ca5aaDe3a1e50e430D601Dd48AB393C079dB) |
+| wNativeToken (WHBAR) | `0xE20D422349257C4d423B77e3073b894d5dCa7Ab5` | [View on HashScan](https://hashscan.io/testnet/contract/0xE20D422349257C4d423B77e3073b894d5dCa7Ab5) |
+| AdManager            | `0x4e20100f3D46dDFfDD754056b1246ee839EFE95e` | [View on HashScan](https://hashscan.io/testnet/contract/0x4e20100f3D46dDFfDD754056b1246ee839EFE95e) |
+| OrderPortal          | `0xF3a91cA73b1F85D32585CBa052c3c11119a909E7` | [View on HashScan](https://hashscan.io/testnet/contract/0xF3a91cA73b1F85D32585CBa052c3c11119a909E7) |
+| wETH                 | `0x291b2e449Dd2C036142186Ab2Ef81DE6c68E00fe` | [View on HashScan](https://hashscan.io/testnet/contract/0x291b2e449Dd2C036142186Ab2Ef81DE6c68E00fe) |
+| ProofBridge Token    | `0x9318E8f8C1F7Bff8c00A062F80b391866fBE8d87` | [View on HashScan](https://hashscan.io/testnet/contract/0x9318E8f8C1F7Bff8c00A062F80b391866fBE8d87) |
+
+### Supported Cross-Chain Routes
+
+ProofBridge enables bidirectional bridging between Ethereum Sepolia and Hedera Testnet:
+
+**Native Token Bridging:**
+* **ETH (Sepolia) ↔ wETH (Hedera)** - Deposit ETH on Sepolia (automatically wrapped by contract), bridged to Hedera as wETH, and unwrapped back to ETH on withdrawal
+* **HBAR (Hedera) ↔ wHBAR (Sepolia)** - Deposit HBAR on Hedera (automatically wrapped by contract), bridged to Sepolia as wHBAR, and unwrapped back to HBAR on withdrawal
+
+
+**ERC20 Token Bridging:**
+* **ProofBridge Token** - Example ERC20 token demonstrating cross-chain token bridging capabilities
+
+> **Note:** The wNativeToken contracts automatically wrap native tokens (ETH/HBAR) on deposit and unwrap them on withdrawal, providing a seamless user experience.
 
 ### Security
 
