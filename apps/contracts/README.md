@@ -33,18 +33,55 @@ The system uses a **minimal EIP-712 domain** (`name="Proofbridge"`, `version="1"
 
 ## Architecture
 
-1. **Maker** creates an **Ad**, and funds it with the destination-chain token.
+### System Overview
+
+```
+                    CHAIN 1 (Ad Chain)                   CHAIN 2 (Order Chain)
+    ┌──────────────────────────────┐      ┌──────────────────────────────┐
+    │                              │      │                              │
+    │  ┌────────────────────┐      │      │      ┌────────────────────┐  │
+    │  │   AdManager        │◄─────┼──────┼──────┤   OrderPortal      │  │
+    │  └────────────────────┘      │      │      └────────────────────┘  │
+    │          │                   │      │                   │          │
+    │          │ MANAGER_ROLE      │      │      MANAGER_ROLE │          │
+    │          ▼                   │      │                   ▼          │
+    │  ┌────────────────────┐      │      │      ┌────────────────────┐  │
+    │  │  MerkleManager     │      │      │      │  MerkleManager     │  │
+    │  └────────────────────┘      │      │      └────────────────────┘  │
+    │          ▲                   │      │                   ▲          │
+    │          │ MANAGER_ROLE      │      │      MANAGER_ROLE │          │
+    │          │                   │      │                   │          │
+    │  ┌────────────────────┐      │      │      ┌────────────────────┐  │
+    │  │   OrderPortal      │──────┼──────┼─────►│   AdManager        │  │
+    │  └────────────────────┘      │      │      └────────────────────┘  │
+    │          │                   │      │                   │          │
+    │  ┌────────────────────┐      │      │      ┌────────────────────┐  │
+    │  │   WNativeToken     │      │      │      │   WNativeToken     │  │
+    │  └────────────────────┘      │      │      └────────────────────┘  │
+    │          │                   │      │                   │          │
+    │  ┌────────────────────┐      │      │      ┌────────────────────┐  │
+    │  │   Verifier         │      │      │      │   Verifier         │  │
+    │  └────────────────────┘      │      │      └────────────────────┘  │
+    │                              │      │                              │
+    └──────────────────────────────┘      └──────────────────────────────┘
+```
+
+### Flow
+
+1. **Maker** creates an **Ad** on AdManager, funding it with the destination-chain token.
 2. **Bridger** opens an **order** on **OrderPortal**, depositing the source-chain token.
 3. The system relays the **order hash** to the maker off-chain; the maker locks an amount from the Ad against that order.
 4. After the maker fulfills the user on the opposite chain, a **zk proof** is generated and submitted to unlock:
+   - On **OrderPortal**: release order-token to the **maker destination recipient** recorded in the order.
+   - On **AdManager**: release **ad token** from contract to the **bridger's designated recipient**.
 
-   * On **OrderPortal**: release order-token to the **maker destination recipient** recorded in the order.
-   * On **AdManager**: release **ad token** from contract to the **bridger’s designated recipient**.
+### Security
 
 Replay is prevented via:
-
-* **EIP-712 struct hash** that binds chain ids and contract addresses.
-* A **nullifier** recorded once per successful proof.
+- **EIP-712 struct hash** that binds chain ids and contract addresses.
+- A **nullifier** recorded once per successful proof.
+- **Bidirectional chain linking** ensures contracts only accept proofs from configured counterparts.
+- **MANAGER_ROLE** on MerkleManager restricts who can append order hashes.
 
 ## Contracts
 
@@ -248,18 +285,21 @@ Validates that the bridger has the right to unlock funds on the destination chai
 ## Install & Build
 
 ```bash
-# clone & enter
-git clone https://github.com/Explore-Beyond-Innovations/ProofBridge.git && cd ProofBridge/apps/contracts
+# Clone & enter
+git clone https://github.com/Explore-Beyond-Innovations/ProofBridge.git
+cd ProofBridge/apps/contracts
 
-# foundry
+# Install Foundry
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
 
-# deps
+# Install dependencies
 forge install
+npm install
 
-# build
+# Build contracts
 forge build
+```
 
 ## Testing
 
@@ -271,43 +311,78 @@ forge test -vvv
 
 ## Deploy
 
-A single script deploys **Verifier**, **AdManager**, and **OrderPortal**.
+### Automated Deployment (Recommended)
 
-`script/DeployProofbridge.s.sol`:
+Deploy to two chains with automated configuration:
+
+```bash
+# Setup
+export PRIVATE_KEY="0x..."
+cd js-scripts/deploy
+cp config.template.json config.json
+# Edit config.json - update admin addresses
+
+# Deploy with full setup
+npm run deploy -- --chain1 296 --chain2 84532
+```
+
+**What it does:**
+- ✅ Deploys all contracts on both chains
+- ✅ Grants MANAGER_ROLE to AdManager and OrderPortal
+- ✅ Links chains bidirectionally
+- ✅ Configures token routes
+
+See [QUICKSTART.md](./QUICKSTART.md) for quick deployment guide.
+
+See [js-scripts/deploy/README.md](./js-scripts/deploy/README.md) for detailed documentation.
+
+### Manual Deployment (Advanced)
+
+Use Foundry script for single-chain deployment:
 
 ```bash
 export PRIVATE_KEY=0xYOUR_KEY
-# optional overrides:
+# Optional overrides:
 # export ADMIN=0xAdminAddress
 # export VERIFIER=0xExistingVerifierAddress
 
 forge script script/DeployProofbridge.s.sol:DeployProofbridge \
   --rpc-url https://YOUR_RPC \
-  --broadcast
+  --broadcast --verify
 ```
 
-> To verify on a scanner, set `ETHERSCAN_API_KEY` and pass `--verify`.
+**Post-deployment:** Manually configure chains and token routes (see below).
 
-## Post-deploy configuration
+## Post-Deploy Configuration
 
-Run these **admin** calls to connect chains and tokens.
+If using manual deployment, run these **admin** calls to connect chains and tokens.
 
 **On OrderPortal (source chain):**
 
 ```solidity
-// enable destination chain and its AdManager address
+// Enable destination chain and its AdManager address
 setChain(dstChainId, dstAdManager, true);
 
-// route: token1 (this chain) -> token2 (destination)
+// Configure token route: token1 (this chain) -> token2 (destination)
 setTokenRoute(token1, dstChainId, token2);
 ```
 
 **On AdManager (destination chain):**
 
 ```solidity
-// enable order chain and its OrderPortal address
+// Enable order chain and its OrderPortal address
 setChain(orderChainId, orderPortal, true);
 
-// route: adToken (this chain) -> orderToken (order chain)
+// Configure token route: adToken (this chain) -> orderToken (order chain)
 setTokenRoute(adToken, orderToken, orderChainId);
 ```
+
+**On MerkleManager (both chains):**
+
+```solidity
+// Grant MANAGER_ROLE to AdManager and OrderPortal
+grantRole(MANAGER_ROLE, adManagerAddress);
+grantRole(MANAGER_ROLE, orderPortalAddress);
+```
+
+> **Note:** Automated deployment handles all configuration automatically.
