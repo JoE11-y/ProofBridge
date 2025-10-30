@@ -198,48 +198,48 @@ async function configureTokenRoutes(
   );
   console.log();
 
-  // // --- Sepolia AdManager Token Routes ---
-  // console.log(`→ Configuring Sepolia AdManager...\n`);
+  // --- Sepolia AdManager Token Routes ---
+  console.log(`→ Configuring Sepolia AdManager...\n`);
 
-  // // Route 1: Native ETH -> wETH ERC20 on Hedera
-  // console.log(`  → Native ETH -> wETH ERC20 (Hedera)`);
-  // await withRetry(
-  //   () =>
-  //     callContractFunction(
-  //       sepoliaContracts.adManager!,
-  //       "setTokenRoute",
-  //       [
-  //         tokens.sepolia.wNativeToken,
-  //         tokens.hedera.wEthErc20,
-  //         Number(HEDERA_CHAIN_ID),
-  //       ],
-  //       sepoliaConfig.rpc,
-  //       privateKey,
-  //       dryRun
-  //     ),
-  //   { maxRetries: 3, delayMs: 5000 }
-  // );
-  // await sleep(2000);
+  // Route 1: Native ETH -> wETH ERC20 on Hedera
+  console.log(`  → Native ETH -> wETH ERC20 (Hedera)`);
+  await withRetry(
+    () =>
+      callContractFunction(
+        sepoliaContracts.adManager!,
+        "setTokenRoute",
+        [
+          tokens.sepolia.wNativeToken,
+          tokens.hedera.wEthErc20,
+          Number(HEDERA_CHAIN_ID),
+        ],
+        sepoliaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
+  );
+  await sleep(2000);
 
-  // // Route 2: ProofBridge Sepolia -> ProofBridge Hedera
-  // console.log(`  → ProofBridge (Sepolia) -> ProofBridge (Hedera)`);
-  // await withRetry(
-  //   () =>
-  //     callContractFunction(
-  //       sepoliaContracts.adManager!,
-  //       "setTokenRoute",
-  //       [
-  //         tokens.sepolia.proofBridgeToken,
-  //         tokens.hedera.proofBridgeToken,
-  //         Number(HEDERA_CHAIN_ID),
-  //       ],
-  //       sepoliaConfig.rpc,
-  //       privateKey,
-  //       dryRun
-  //     ),
-  //   { maxRetries: 3, delayMs: 5000 }
-  // );
-  // await sleep(2000);
+  // Route 2: ProofBridge Sepolia -> ProofBridge Hedera
+  console.log(`  → ProofBridge (Sepolia) -> ProofBridge (Hedera)`);
+  await withRetry(
+    () =>
+      callContractFunction(
+        sepoliaContracts.adManager!,
+        "setTokenRoute",
+        [
+          tokens.sepolia.proofBridgeToken,
+          tokens.hedera.proofBridgeToken,
+          Number(HEDERA_CHAIN_ID),
+        ],
+        sepoliaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
+  );
+  await sleep(2000);
 
   // --- Sepolia OrderPortal Token Routes ---
   console.log(`\n→ Configuring Sepolia OrderPortal...\n`);
