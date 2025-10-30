@@ -16,11 +16,11 @@ import {EfficientHashLib} from "solady/utils/EfficientHashLib.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IVerifier} from "./Verifier.sol";
 import {IMerkleManager} from "./MerkleManager.sol";
-import {IWNativeToken, SafeNativeToken} from "./wNativeToken.sol";
+import {IwNativeToken, SafeNativeToken} from "./wNativeToken.sol";
 
 contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     using SafeERC20 for IERC20;
-    using SafeNativeToken for IWNativeToken;
+    using SafeNativeToken for IwNativeToken;
 
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
@@ -58,7 +58,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
     IMerkleManager public immutable i_merkleManager;
 
     /// @notice Wrapped native token
-    IWNativeToken public wNativeToken;
+    IwNativeToken public wNativeToken;
 
     /**
      * @notice Source-chain configuration (where orders originate).
@@ -335,7 +335,7 @@ contract AdManager is AccessControl, ReentrancyGuard, EIP712 {
      * @param _merkleManager Merkle manager contract.
      * @param _wNativeToken Wrapped native token contract.
      */
-    constructor(address admin, IVerifier _verifier, IMerkleManager _merkleManager, IWNativeToken _wNativeToken)
+    constructor(address admin, IVerifier _verifier, IMerkleManager _merkleManager, IwNativeToken _wNativeToken)
         EIP712(_NAME, _VERSION)
     {
         if (

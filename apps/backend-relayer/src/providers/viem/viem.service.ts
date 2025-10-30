@@ -70,6 +70,9 @@ export class ViemService {
       }
     } else if (id === hederaTestnet.id) {
       chain = hederaTestnet;
+      if (env.rpcUrlHedera) {
+        rpc_url = env.rpcUrlHedera;
+      }
     } else if (id === ethLocalnet.id) {
       chain = ethLocalnet;
     } else if (id === hederaLocalnet.id) {

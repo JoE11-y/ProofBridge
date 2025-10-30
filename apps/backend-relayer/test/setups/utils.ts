@@ -177,8 +177,10 @@ export const seedAdmin = async (
   password: string,
 ) => {
   const passwordHash = await hash(password);
-  return prisma.admin.create({
-    data: { email, passwordHash },
+  return prisma.admin.upsert({
+    where: { email },
+    create: { email, passwordHash },
+    update: { passwordHash },
   });
 };
 

@@ -51,7 +51,9 @@ export async function deployChain(
   dryRun: boolean = false
 ): Promise<DeploymentResult> {
   console.log(`\n${"=".repeat(60)}`);
-  console.log(`Deploying on ${chainConfig.name} (Chain ID: ${chainConfig.chainId})`);
+  console.log(
+    `Deploying on ${chainConfig.name} (Chain ID: ${chainConfig.chainId})`
+  );
   console.log(`${"=".repeat(60)}\n`);
 
   const signer = createSigner(chainConfig, privateKey);
@@ -100,7 +102,9 @@ export async function deployChain(
       result.contracts.merkleManager = chainConfig.contracts.merkleManager;
     } else if (!dryRun) {
       const MerkleManager = await getContractFactory("MerkleManager", signer);
-      console.log(`  Deploying MerkleManager with admin: ${chainConfig.admin}...`);
+      console.log(
+        `  Deploying MerkleManager with admin: ${chainConfig.admin}...`
+      );
       const merkleManager = await MerkleManager.deploy(chainConfig.admin);
       await merkleManager.waitForDeployment();
       const merkleManagerAddress = await merkleManager.getAddress();
@@ -115,16 +119,16 @@ export async function deployChain(
       await sleep(2000);
     }
 
-    // 3. Deploy or reuse WNativeToken
-    console.log("\n3. WNativeToken");
+    // 3. Deploy or reuse wNativeToken
+    console.log("\n3. wNativeToken");
     if (chainConfig.contracts.wNativeToken) {
       console.log(`  ✓ Reusing: ${chainConfig.contracts.wNativeToken}`);
       result.contracts.wNativeToken = chainConfig.contracts.wNativeToken;
     } else if (!dryRun) {
-      const WNativeToken = await getContractFactory("WNativeToken", signer);
+      const WNativeToken = await getContractFactory("wNativeToken", signer);
       const tokenName = `Wrapped ${chainConfig.nativeToken.symbol}`;
       const tokenSymbol = `W${chainConfig.nativeToken.symbol}`;
-      console.log(`  Deploying WNativeToken (${tokenName}, ${tokenSymbol})...`);
+      console.log(`  Deploying wNativeToken (${tokenName}, ${tokenSymbol})...`);
       const wNativeToken = await WNativeToken.deploy(tokenName, tokenSymbol);
       await wNativeToken.waitForDeployment();
       const wNativeTokenAddress = await wNativeToken.getAddress();
@@ -133,7 +137,7 @@ export async function deployChain(
 
       result.transactions.push({
         hash: wNativeToken.deploymentTransaction()?.hash || "",
-        type: "Deploy WNativeToken",
+        type: "Deploy wNativeToken",
         timestamp: Date.now(),
       });
       await sleep(2000);
@@ -220,7 +224,11 @@ export async function grantManagerRoles(
   const signer = createSigner(chainConfig, privateKey);
   const txHashes: string[] = [];
 
-  if (!contracts.merkleManager || !contracts.adManager || !contracts.orderPortal) {
+  if (
+    !contracts.merkleManager ||
+    !contracts.adManager ||
+    !contracts.orderPortal
+  ) {
     throw new Error("Missing required contract addresses for role grants");
   }
 
@@ -251,7 +259,10 @@ export async function grantManagerRoles(
     if (hasRoleAdManager) {
       console.log("  ✓ AdManager already has MANAGER_ROLE");
     } else {
-      const tx1 = await merkleManager.grantRole(MANAGER_ROLE, contracts.adManager);
+      const tx1 = await merkleManager.grantRole(
+        MANAGER_ROLE,
+        contracts.adManager
+      );
       console.log(`  Tx: ${tx1.hash}`);
       await waitForTransaction(tx1);
       txHashes.push(tx1.hash);
@@ -274,7 +285,10 @@ export async function grantManagerRoles(
     if (hasRoleOrderPortal) {
       console.log("  ✓ OrderPortal already has MANAGER_ROLE");
     } else {
-      const tx2 = await merkleManager.grantRole(MANAGER_ROLE, contracts.orderPortal);
+      const tx2 = await merkleManager.grantRole(
+        MANAGER_ROLE,
+        contracts.orderPortal
+      );
       console.log(`  Tx: ${tx2.hash}`);
       await waitForTransaction(tx2);
       txHashes.push(tx2.hash);
@@ -289,7 +303,10 @@ export async function grantManagerRoles(
 
     console.log(`\n✓ Manager roles granted on ${chainConfig.name}\n`);
   } catch (error) {
-    console.error(`\n✗ Failed to grant manager roles on ${chainConfig.name}:`, error);
+    console.error(
+      `\n✗ Failed to grant manager roles on ${chainConfig.name}:`,
+      error
+    );
     throw error;
   }
 

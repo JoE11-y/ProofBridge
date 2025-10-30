@@ -10,7 +10,7 @@ import {OrderPortal} from "src/OrderPortal.sol";
 import {IMerkleManager, MerkleManager} from "src/MerkleManager.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
-import {IWNativeToken, WNativeToken} from "src/wNativeToken.sol";
+import {IwNativeToken, wNativeToken} from "src/wNativeToken.sol";
 
 contract DeployProofbridge is Script {
     function _envOrAddress(string memory key, address fallback_) internal view returns (address out) {
@@ -59,13 +59,13 @@ contract DeployProofbridge is Script {
             console2.log("Reusing MerkleManager    :", address(merkleManager));
         }
 
-        IWNativeToken wNativeToken;
+        IwNativeToken _wNativeToken;
         address wNativeTokenMaybe = _envOrAddress("WNATIVE_TOKEN", address(0));
         if (wNativeTokenMaybe == address(0)) {
-            wNativeToken = new WNativeToken("Wrapped Native Token", "WNATIVE");
-            console2.log("Deployed WNATIVE Token :", address(wNativeToken));
+            _wNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE");
+            console2.log("Deployed WNATIVE Token :", address(_wNativeToken));
         } else {
-            wNativeToken = IWNativeToken(wNativeTokenMaybe);
+            _wNativeToken = IwNativeToken(wNativeTokenMaybe);
             console2.log("Reusing WNATIVE Token     :", wNativeTokenMaybe);
         }
 
@@ -74,7 +74,7 @@ contract DeployProofbridge is Script {
         if (adManagerMaybe != address(0)) {
             console2.log("Reusing AdManager     :", adManagerMaybe);
         } else {
-            AdManager adManager = new AdManager(admin, verifier, merkleManager, wNativeToken);
+            AdManager adManager = new AdManager(admin, verifier, merkleManager, _wNativeToken);
             console2.log("Deployed AdManager    :", address(adManager));
             adManagerMaybe = address(adManager);
         }
@@ -83,7 +83,7 @@ contract DeployProofbridge is Script {
         if (orderPortalMaybe != address(0)) {
             console2.log("Reusing OrderPortal     :", orderPortalMaybe);
         } else {
-            OrderPortal orderPortal = new OrderPortal(admin, verifier, merkleManager, wNativeToken);
+            OrderPortal orderPortal = new OrderPortal(admin, verifier, merkleManager, _wNativeToken);
             console2.log("Deployed OrderPortal :", address(orderPortal));
             orderPortalMaybe = address(orderPortal);
         }

@@ -10,11 +10,11 @@ import {IMerkleManager} from "src/MerkleManager.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {IWNativeToken, WNativeToken} from "src/wNativeToken.sol";
+import {IwNativeToken, wNativeToken} from "src/wNativeToken.sol";
 
 // Expose internal hash for assertions
 contract MockOrderPortal is OrderPortal {
-    constructor(address admin, IVerifier v, IMerkleManager m, IWNativeToken t) OrderPortal(admin, v, m, t) {}
+    constructor(address admin, IVerifier v, IMerkleManager m, IwNativeToken t) OrderPortal(admin, v, m, t) {}
 
     function hashOrderPublic(OrderParams calldata p) external view returns (bytes32) {
         return _hashOrder(p, getChainID(), address(this));
@@ -26,7 +26,7 @@ contract OrderPortalTest is Test {
     MockVerifier internal verifier;
     MerkleManager internal merkleManager;
     ERC20Mock internal orderToken;
-    WNativeToken internal wNativeToken;
+    wNativeToken internal _wNativeToken;
 
     address internal constant NATIVE_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
@@ -62,12 +62,12 @@ contract OrderPortalTest is Test {
         (admin, adminPk) = makeAddrAndKey("admin");
         verifier = new MockVerifier(true);
         merkleManager = new MerkleManager(admin);
-        wNativeToken = new WNativeToken("Wrapped Native Token", "WNT");
+        _wNativeToken = new wNativeToken("Wrapped Native Token", "WNT");
         portal = new MockOrderPortal(
             admin,
             IVerifier(address(verifier)),
             IMerkleManager(address(merkleManager)),
-            IWNativeToken(address(wNativeToken))
+            IwNativeToken(address(_wNativeToken))
         );
 
         vm.startPrank(admin);
@@ -414,7 +414,7 @@ contract OrderPortalTest is Test {
         // Balances
         vm.startPrank(bridger);
         uint256 balSenderBefore = bridger.balance;
-        uint256 balPortalBefore = wNativeToken.balanceOf(address(portal));
+        uint256 balPortalBefore = _wNativeToken.balanceOf(address(portal));
 
         // Expected hash (uses struct, chainid, and address(this))
         bytes32 expectedHash = portal.hashOrderPublic(p);
@@ -446,7 +446,7 @@ contract OrderPortalTest is Test {
 
         // Funds moved
         uint256 balSenderAfter = bridger.balance;
-        uint256 balPortalAfter = wNativeToken.balanceOf(address(portal));
+        uint256 balPortalAfter = _wNativeToken.balanceOf(address(portal));
         assertEq(balSenderBefore - balSenderAfter, p.amount, "sender not debited");
         assertEq(balPortalAfter - balPortalBefore, p.amount, "portal not credited");
     }
@@ -643,7 +643,7 @@ contract OrderPortalTest is Test {
         test_setNativeTokenRoute_setsAndEmits_whenSupported();
         (OrderPortal.OrderParams memory p, bytes32 orderHash) = _openOrderWithNativeToken(55 ether, 456);
 
-        uint256 balPortalBefore = wNativeToken.balanceOf(address(portal));
+        uint256 balPortalBefore = _wNativeToken.balanceOf(address(portal));
         uint256 balRecipientBefore = p.adRecipient.balance;
 
         bytes memory proof = hex"ABCD";
@@ -663,7 +663,7 @@ contract OrderPortalTest is Test {
         assertEq(uint256(status), uint256(OrderPortal.Status.Filled), "status not Filled");
 
         // Funds transferred from portal to dstRecipient
-        assertEq(wNativeToken.balanceOf(address(portal)), balPortalBefore - p.amount, "portal not debited");
+        assertEq(_wNativeToken.balanceOf(address(portal)), balPortalBefore - p.amount, "portal not debited");
         assertEq(p.adRecipient.balance, balRecipientBefore + p.amount, "recipient not credited");
     }
 }

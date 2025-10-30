@@ -19,11 +19,11 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 import {MerkleManager} from "./MerkleManager.sol";
 import {IVerifier} from "./Verifier.sol";
 import {IMerkleManager} from "./MerkleManager.sol";
-import {IWNativeToken, SafeNativeToken} from "./wNativeToken.sol";
+import {IwNativeToken, SafeNativeToken} from "./wNativeToken.sol";
 
 contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     using SafeERC20 for IERC20;
-    using SafeNativeToken for IWNativeToken;
+    using SafeNativeToken for IwNativeToken;
 
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
@@ -61,7 +61,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
     IMerkleManager public immutable i_merkleManager;
 
     /// @notice Wrapped native token
-    IWNativeToken public wNativeToken;
+    IwNativeToken public wNativeToken;
 
     /**
      * @notice Configuration for supported destination chains.
@@ -254,7 +254,7 @@ contract OrderPortal is AccessControl, ReentrancyGuard, EIP712 {
      * @param admin Address that receives `ADMIN_ROLE`.
      * @param _verifier External proof verifier contract.
      */
-    constructor(address admin, IVerifier _verifier, IMerkleManager _merkleManager, IWNativeToken _wNativeToken)
+    constructor(address admin, IVerifier _verifier, IMerkleManager _merkleManager, IwNativeToken _wNativeToken)
         EIP712(_NAME, _VERSION)
     {
         if (admin == address(0) || address(_verifier) == address(0) || address(_merkleManager) == address(0)) {

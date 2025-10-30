@@ -12,6 +12,9 @@ The system uses a **minimal EIP-712 domain** (`name="Proofbridge"`, `version="1"
 - [Proofbridge Contracts](#proofbridge-contracts)
   - [Contents](#contents)
   - [Architecture](#architecture)
+    - [System Overview](#system-overview)
+    - [Flow](#flow)
+    - [Security](#security)
   - [Contracts](#contracts)
     - [`AdManager`](#admanager)
     - [`OrderPortal`](#orderportal)
@@ -28,8 +31,11 @@ The system uses a **minimal EIP-712 domain** (`name="Proofbridge"`, `version="1"
     - [**OrderPortal.unlock** (Source Chain)](#orderportalunlock-source-chain)
     - [**AdManager.unlock** (Destination Chain)](#admanagerunlock-destination-chain)
   - [Install \& Build](#install--build)
+  - [Testing](#testing)
   - [Deploy](#deploy)
-  - [Post-deploy configuration](#post-deploy-configuration)
+    - [Automated Deployment (Recommended)](#automated-deployment-recommended)
+    - [Manual Deployment (Advanced)](#manual-deployment-advanced)
+  - [Post-Deploy Configuration](#post-deploy-configuration)
 
 ## Architecture
 
@@ -72,16 +78,17 @@ The system uses a **minimal EIP-712 domain** (`name="Proofbridge"`, `version="1"
 2. **Bridger** opens an **order** on **OrderPortal**, depositing the source-chain token.
 3. The system relays the **order hash** to the maker off-chain; the maker locks an amount from the Ad against that order.
 4. After the maker fulfills the user on the opposite chain, a **zk proof** is generated and submitted to unlock:
-   - On **OrderPortal**: release order-token to the **maker destination recipient** recorded in the order.
-   - On **AdManager**: release **ad token** from contract to the **bridger's designated recipient**.
+   * On **OrderPortal**: release order-token to the **maker destination recipient** recorded in the order.
+   * On **AdManager**: release **ad token** from contract to the **bridger's designated recipient**.
 
 ### Security
 
 Replay is prevented via:
-- **EIP-712 struct hash** that binds chain ids and contract addresses.
-- A **nullifier** recorded once per successful proof.
-- **Bidirectional chain linking** ensures contracts only accept proofs from configured counterparts.
-- **MANAGER_ROLE** on MerkleManager restricts who can append order hashes.
+
+* **EIP-712 struct hash** that binds chain ids and contract addresses.
+* A **nullifier** recorded once per successful proof.
+* **Bidirectional chain linking** ensures contracts only accept proofs from configured counterparts.
+* **MANAGER_ROLE** on MerkleManager restricts who can append order hashes.
 
 ## Contracts
 
@@ -90,6 +97,7 @@ Replay is prevented via:
 The destination chain contract where liquidity providers (makers) manage their advertisements and fulfill cross-chain orders.
 
 **Core Functions:**
+
 * **`createAd`**: Creates a new liquidity advertisement with specified parameters
 * **`fundAd`**: Deposits tokens into an existing ad to increase available liquidity
 * **`withdrawFromAd`**: Withdraws unused tokens from an ad (only available balance, not locked)
@@ -98,6 +106,7 @@ The destination chain contract where liquidity providers (makers) manage their a
 * **`unlock`**: Verifies ZK proof via `IVerifier`, consumes nullifier, transfers ad token to the **orderRecipient**
 
 **Security Features:**
+
 * **Access Control**: Role-based permissions using OpenZeppelin's AccessControl
 * **Reentrancy Protection**: ReentrancyGuard prevents recursive calls
 * **Route Validation**: Ensures order chain and token routing are properly configured
@@ -105,6 +114,7 @@ The destination chain contract where liquidity providers (makers) manage their a
 * **Native Token Support**: Handles both ERC20 tokens and native ETH via wrapped token interface
 
 **Key Storage:**
+
 * `chains[orderChainId] → { supported, orderPortal }`: Source chain configuration
 * `tokenRoute[adToken][orderChainId] → orderToken`: Cross-chain token mapping
 * `ads[adId] → { maker, token, balance, locked, open, … }`: Ad state management
@@ -116,17 +126,20 @@ The destination chain contract where liquidity providers (makers) manage their a
 The source chain contract where users initiate cross-chain transfers by creating orders.
 
 **Core Functions:**
+
 * **`createOrder`**: Initiates a cross-chain order by depositing source chain tokens
 * **`unlock`**: Verifies ZK proof and releases funds to the designated recipient
 * **Admin Functions**: Chain and token route configuration
 
 **Security Features:**
+
 * **EIP-712 Signature Verification**: Ensures order authenticity and prevents replay attacks
 * **Cross-Chain Validation**: Verifies destination chain and AdManager configuration
 * **Token Route Enforcement**: Validates supported token pairs between chains
 * **Merkle Tree Integration**: Records order hashes for cryptographic verification
 
 **Key Storage:**
+
 * `chains[dstChainId] → { supported, adManager }`: Destination chain configuration
 * `tokenRoute[token1][dstChainId] → token2`: Cross-chain token routing
 * `orders[orderHash] → Status`: Order lifecycle management
@@ -137,12 +150,14 @@ The source chain contract where users initiate cross-chain transfers by creating
 A specialized contract managing Merkle Mountain Range (MMR) data structures for efficient proof generation and verification.
 
 **Core Functions:**
+
 * **`appendOrderHash`**: Adds new order hashes to the MMR tree
 * **`getRootHash`**: Returns the current MMR root for proof verification
 * **`verifyProof`**: Validates inclusion proofs against historical roots
 * **`getOrderIndex`**: Maps order hashes to their position in the tree
 
 **Technical Features:**
+
 * **Poseidon Hashing**: Uses cryptographically secure Poseidon hash function
 * **Stateless Verification**: Supports verification without storing entire tree
 * **Root History**: Maintains historical roots for proof validation
@@ -153,12 +168,14 @@ A specialized contract managing Merkle Mountain Range (MMR) data structures for 
 Ultra-high performance zero-knowledge proof verifier implementing Aztec's UltraHonk proving system.
 
 **Technical Specifications:**
+
 * **Circuit Size**: 32,768 constraints (2^15)
 * **Public Inputs**: Supports up to 20 public input values
 * **Proving System**: UltraHonk with optimized verification
 * **Elliptic Curve**: BN254 curve for cryptographic operations
 
 **Verification Process:**
+
 1. Validates proof structure and public inputs
 2. Performs elliptic curve operations for proof verification
 3. Ensures nullifier uniqueness and order hash validity
@@ -169,6 +186,7 @@ Ultra-high performance zero-knowledge proof verifier implementing Aztec's UltraH
 Wrapped native token implementation providing ERC20 interface for native blockchain tokens (ETH, etc.).
 
 **Features:**
+
 * **Gas-Optimized Operations**: Assembly-level optimizations for deposit/withdraw
 * **Standard Compliance**: Full ERC20 compatibility
 * **Safe Operations**: Protected against common wrapped token vulnerabilities
@@ -234,6 +252,7 @@ Semantics (ad side):
 The protocol employs a sophisticated ZK proof system for privacy-preserving cross-chain settlements:
 
 **Proof Generation Process:**
+
 1. **Secret Generation**: Each participant generates a private secret for nullifier computation
 2. **Nullifier Calculation**: `nullifierHash = poseidon(secret, isAdCreator, orderHash)`
 3. **Circuit Execution**: Noir circuit validates the relationship between secrets, nullifiers, and order data
@@ -242,6 +261,7 @@ The protocol employs a sophisticated ZK proof system for privacy-preserving cros
 ### Advanced Security Model
 
 **Multi-Layer Protection:**
+
 1. **EIP-712 Domain Separation**: Prevents cross-contract and cross-chain replay attacks
 2. **Nullifier Uniqueness**: Cryptographic guarantee against double-spending
 3. **Merkle Tree Integrity**: Tamper-proof order history with efficient verification
@@ -249,6 +269,7 @@ The protocol employs a sophisticated ZK proof system for privacy-preserving cros
 5. **Reentrancy Shields**: Multiple layers of protection against recursive attacks
 
 **Economic Security:**
+
 * **Collateral Requirements**: Makers must lock funds before order matching
 * **Slashing Mechanisms**: Penalties for malicious behavior or failed settlements (TBA)
 * **Fee Economics**: Dynamic fee structure based on network conditions and risk assessment (TBA)
@@ -259,6 +280,7 @@ The protocol employs a sophisticated ZK proof system for privacy-preserving cros
 The circuit accepts the following **public inputs** for cryptographic verification:
 
 ### **OrderPortal.unlock** (Source Chain)
+
 Validates that the ad creator has the right to unlock funds on the source chain:
 
 1. **`adCreator's nullifierHash`**: Cryptographic commitment proving ad creator's secret knowledge
@@ -268,6 +290,7 @@ Validates that the ad creator has the right to unlock funds on the source chain:
 5. **`bytes32(0)`**: Chain identifier flag (0 = source chain operation)
 
 ### **AdManager.unlock** (Destination Chain)
+
 Validates that the bridger has the right to unlock funds on the destination chain:
 
 1. **`bridger's nullifierHash`**: Cryptographic commitment proving bridger's secret knowledge
@@ -277,10 +300,11 @@ Validates that the bridger has the right to unlock funds on the destination chai
 5. **`bytes32(1)`**: Chain identifier flag (1 = destination chain operation)
 
 **Verification Logic:**
-- Both sides must provide valid nullifiers derived from their respective secrets
-- Order hash must match the committed order data
-- Chain identifier ensures proofs cannot be replayed on wrong chains
-- Address validation prevents unauthorized fund access
+
+* Both sides must provide valid nullifiers derived from their respective secrets
+* Order hash must match the committed order data
+* Chain identifier ensures proofs cannot be replayed on wrong chains
+* Address validation prevents unauthorized fund access
 
 ## Install & Build
 
@@ -327,10 +351,11 @@ npm run deploy -- --chain1 296 --chain2 84532
 ```
 
 **What it does:**
-- ✅ Deploys all contracts on both chains
-- ✅ Grants MANAGER_ROLE to AdManager and OrderPortal
-- ✅ Links chains bidirectionally
-- ✅ Configures token routes
+
+* ✅ Deploys all contracts on both chains
+* ✅ Grants MANAGER_ROLE to AdManager and OrderPortal
+* ✅ Links chains bidirectionally
+* ✅ Configures token routes
 
 See [QUICKSTART.md](./QUICKSTART.md) for quick deployment guide.
 

@@ -178,8 +178,8 @@ Security and verification via:
 | Chain Pair         | Status        |
 | ------------------ | ------------- |
 | Hedera ↔ Ethereum  | ✅ Active      |
-| Hedera ↔ Polygon   | ✅ Active      |
-| Hedera ↔ Optimism  | ✅ Active      |
+| Hedera ↔ Polygon   | 🔄 In Progress |
+| Hedera ↔ Optimism  | 🔄 In Progress |
 | Hedera ↔ Scroll    | 🔄 In Progress |
 | Hedera ↔ Base      | 🔄 In Progress |
 | Hedera ↔ Arbitrum  | 🔄 In Progress |

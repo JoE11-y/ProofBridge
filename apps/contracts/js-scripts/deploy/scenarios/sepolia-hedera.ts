@@ -25,7 +25,12 @@ import {
   deployContract,
 } from "../core/deployer";
 import { linkChains, callContractFunction } from "../core/setup";
-import { saveDeployments, loadDeployments, sleep } from "../core/utils";
+import {
+  saveDeployments,
+  loadDeployments,
+  sleep,
+  withRetry,
+} from "../core/utils";
 
 // Constants
 const NATIVE_TOKEN = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -96,23 +101,31 @@ async function deployTokens(
 
   // Deploy wETH ERC20 on Hedera (to represent Sepolia native ETH)
   console.log(`  → Deploying wETH ERC20 on Hedera...`);
-  const wEthErc20Hedera = await deployContract(
-    "WNativeToken",
-    ["Wrapped ETH", "WETH"],
-    hederaConfig.rpc,
-    privateKey,
-    dryRun
+  const wEthErc20Hedera = await withRetry(
+    () =>
+      deployContract(
+        "MockERC20",
+        ["Wrapped ETH", "WETH", ethers.parseEther("1000000")],
+        hederaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
   );
   await sleep(2000);
 
   // Deploy wHBAR ERC20 on Sepolia (to represent Hedera native HBAR)
   console.log(`  → Deploying wHBAR ERC20 on Sepolia...`);
-  const wHbarErc20Sepolia = await deployContract(
-    "WNativeToken",
-    ["Wrapped HBAR", "WHBAR"],
-    sepoliaConfig.rpc,
-    privateKey,
-    dryRun
+  const wHbarErc20Sepolia = await withRetry(
+    () =>
+      deployContract(
+        "MockERC20",
+        ["Wrapped HBAR", "WHBAR", ethers.parseEther("1000000")],
+        sepoliaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
   );
   await sleep(2000);
 
@@ -120,22 +133,30 @@ async function deployTokens(
   console.log(`\n→ Phase 2: Deploying ProofBridge mock tokens...\n`);
 
   console.log(`  → Deploying ProofBridge token on Sepolia...`);
-  const pbTokenSepolia = await deployContract(
-    "mocks/MockERC20",
-    [],
-    sepoliaConfig.rpc,
-    privateKey,
-    dryRun
+  const pbTokenSepolia = await withRetry(
+    () =>
+      deployContract(
+        "MockERC20",
+        ["ProofBridge Token", "PBT", ethers.parseEther("1000000")],
+        sepoliaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
   );
   await sleep(2000);
 
   console.log(`  → Deploying ProofBridge token on Hedera...`);
-  const pbTokenHedera = await deployContract(
-    "mocks/MockERC20",
-    [],
-    hederaConfig.rpc,
-    privateKey,
-    dryRun
+  const pbTokenHedera = await withRetry(
+    () =>
+      deployContract(
+        "MockERC20",
+        ["ProofBridge Token", "PBT", ethers.parseEther("1000000")],
+        hederaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
   );
   await sleep(2000);
 
@@ -177,65 +198,89 @@ async function configureTokenRoutes(
   );
   console.log();
 
-  // --- Sepolia AdManager Token Routes ---
-  console.log(`→ Configuring Sepolia AdManager...\n`);
+  // // --- Sepolia AdManager Token Routes ---
+  // console.log(`→ Configuring Sepolia AdManager...\n`);
 
-  // Route 1: Native ETH -> wETH ERC20 on Hedera
-  console.log(`  → Native ETH -> wETH ERC20 (Hedera)`);
-  await callContractFunction(
-    sepoliaContracts.adManager!,
-    "setTokenRoute",
-    [tokens.sepolia.wNativeToken, tokens.hedera.wEthErc20, HEDERA_CHAIN_ID],
-    sepoliaConfig.rpc,
-    privateKey,
-    dryRun
-  );
-  await sleep(2000);
+  // // Route 1: Native ETH -> wETH ERC20 on Hedera
+  // console.log(`  → Native ETH -> wETH ERC20 (Hedera)`);
+  // await withRetry(
+  //   () =>
+  //     callContractFunction(
+  //       sepoliaContracts.adManager!,
+  //       "setTokenRoute",
+  //       [
+  //         tokens.sepolia.wNativeToken,
+  //         tokens.hedera.wEthErc20,
+  //         Number(HEDERA_CHAIN_ID),
+  //       ],
+  //       sepoliaConfig.rpc,
+  //       privateKey,
+  //       dryRun
+  //     ),
+  //   { maxRetries: 3, delayMs: 5000 }
+  // );
+  // await sleep(2000);
 
-  // Route 2: ProofBridge Sepolia -> ProofBridge Hedera
-  console.log(`  → ProofBridge (Sepolia) -> ProofBridge (Hedera)`);
-  await callContractFunction(
-    sepoliaContracts.adManager!,
-    "setTokenRoute",
-    [
-      tokens.sepolia.proofBridgeToken,
-      tokens.hedera.proofBridgeToken,
-      HEDERA_CHAIN_ID,
-    ],
-    sepoliaConfig.rpc,
-    privateKey,
-    dryRun
-  );
-  await sleep(2000);
+  // // Route 2: ProofBridge Sepolia -> ProofBridge Hedera
+  // console.log(`  → ProofBridge (Sepolia) -> ProofBridge (Hedera)`);
+  // await withRetry(
+  //   () =>
+  //     callContractFunction(
+  //       sepoliaContracts.adManager!,
+  //       "setTokenRoute",
+  //       [
+  //         tokens.sepolia.proofBridgeToken,
+  //         tokens.hedera.proofBridgeToken,
+  //         Number(HEDERA_CHAIN_ID),
+  //       ],
+  //       sepoliaConfig.rpc,
+  //       privateKey,
+  //       dryRun
+  //     ),
+  //   { maxRetries: 3, delayMs: 5000 }
+  // );
+  // await sleep(2000);
 
   // --- Sepolia OrderPortal Token Routes ---
   console.log(`\n→ Configuring Sepolia OrderPortal...\n`);
 
   // Route 1: wHBAR ERC20 (Sepolia) -> Native HBAR (Hedera)
   console.log(`  → wHBAR ERC20 (Sepolia) -> Native HBAR`);
-  await callContractFunction(
-    sepoliaContracts.orderPortal!,
-    "setTokenRoute",
-    [tokens.sepolia.wHbarErc20, HEDERA_CHAIN_ID, tokens.hedera.wNativeToken],
-    sepoliaConfig.rpc,
-    privateKey,
-    dryRun
+  await withRetry(
+    () =>
+      callContractFunction(
+        sepoliaContracts.orderPortal!,
+        "setTokenRoute",
+        [
+          tokens.sepolia.wHbarErc20,
+          Number(HEDERA_CHAIN_ID),
+          tokens.hedera.wNativeToken,
+        ],
+        sepoliaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
   );
   await sleep(2000);
 
   // Route 2: ProofBridge Sepolia -> ProofBridge Hedera
   console.log(`  → ProofBridge (Sepolia) -> ProofBridge (Hedera)`);
-  await callContractFunction(
-    sepoliaContracts.orderPortal!,
-    "setTokenRoute",
-    [
-      tokens.sepolia.proofBridgeToken,
-      HEDERA_CHAIN_ID,
-      tokens.hedera.proofBridgeToken,
-    ],
-    sepoliaConfig.rpc,
-    privateKey,
-    dryRun
+  await withRetry(
+    () =>
+      callContractFunction(
+        sepoliaContracts.orderPortal!,
+        "setTokenRoute",
+        [
+          tokens.sepolia.proofBridgeToken,
+          Number(HEDERA_CHAIN_ID),
+          tokens.hedera.proofBridgeToken,
+        ],
+        sepoliaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
   );
   await sleep(2000);
 
@@ -244,29 +289,41 @@ async function configureTokenRoutes(
 
   // Route 1: Native HBAR -> wHBAR ERC20 on Sepolia
   console.log(`  → Native HBAR -> wHBAR ERC20 (Sepolia)`);
-  await callContractFunction(
-    hederaContracts.adManager!,
-    "setTokenRoute",
-    [tokens.hedera.wNativeToken, tokens.sepolia.wHbarErc20, SEPOLIA_CHAIN_ID],
-    hederaConfig.rpc,
-    privateKey,
-    dryRun
+  await withRetry(
+    () =>
+      callContractFunction(
+        hederaContracts.adManager!,
+        "setTokenRoute",
+        [
+          tokens.hedera.wNativeToken,
+          tokens.sepolia.wHbarErc20,
+          Number(SEPOLIA_CHAIN_ID),
+        ],
+        hederaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
   );
   await sleep(2000);
 
   // Route 2: ProofBridge Hedera -> ProofBridge Sepolia
   console.log(`  → ProofBridge (Hedera) -> ProofBridge (Sepolia)`);
-  await callContractFunction(
-    hederaContracts.adManager!,
-    "setTokenRoute",
-    [
-      tokens.hedera.proofBridgeToken,
-      tokens.sepolia.proofBridgeToken,
-      SEPOLIA_CHAIN_ID,
-    ],
-    hederaConfig.rpc,
-    privateKey,
-    dryRun
+  await withRetry(
+    () =>
+      callContractFunction(
+        hederaContracts.adManager!,
+        "setTokenRoute",
+        [
+          tokens.hedera.proofBridgeToken,
+          tokens.sepolia.proofBridgeToken,
+          Number(SEPOLIA_CHAIN_ID),
+        ],
+        hederaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
   );
   await sleep(2000);
 
@@ -275,29 +332,41 @@ async function configureTokenRoutes(
 
   // Route 1: wETH ERC20 (Hedera) -> Native ETH (Sepolia)
   console.log(`  → wETH ERC20 (Hedera) -> Native ETH`);
-  await callContractFunction(
-    hederaContracts.orderPortal!,
-    "setTokenRoute",
-    [tokens.hedera.wEthErc20, SEPOLIA_CHAIN_ID, tokens.sepolia.wNativeToken],
-    hederaConfig.rpc,
-    privateKey,
-    dryRun
+  await withRetry(
+    () =>
+      callContractFunction(
+        hederaContracts.orderPortal!,
+        "setTokenRoute",
+        [
+          tokens.hedera.wEthErc20,
+          Number(SEPOLIA_CHAIN_ID),
+          tokens.sepolia.wNativeToken,
+        ],
+        hederaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
   );
   await sleep(2000);
 
   // Route 2: ProofBridge Hedera -> ProofBridge Sepolia
   console.log(`  → ProofBridge (Hedera) -> ProofBridge (Sepolia)`);
-  await callContractFunction(
-    hederaContracts.orderPortal!,
-    "setTokenRoute",
-    [
-      tokens.hedera.proofBridgeToken,
-      SEPOLIA_CHAIN_ID,
-      tokens.sepolia.proofBridgeToken,
-    ],
-    hederaConfig.rpc,
-    privateKey,
-    dryRun
+  await withRetry(
+    () =>
+      callContractFunction(
+        hederaContracts.orderPortal!,
+        "setTokenRoute",
+        [
+          tokens.hedera.proofBridgeToken,
+          Number(SEPOLIA_CHAIN_ID),
+          tokens.sepolia.proofBridgeToken,
+        ],
+        hederaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
   );
   await sleep(2000);
 }
@@ -330,10 +399,9 @@ export async function executeSepoliaHederaScenario(
 
     // Deploy Sepolia
     console.log(`\n→ Deploying to Sepolia (${sepoliaId})...\n`);
-    const result1 = await deployChain(
-      sepoliaConfig,
-      privateKey,
-      options.dryRun
+    const result1 = await withRetry(
+      () => deployChain(sepoliaConfig, privateKey, options.dryRun),
+      { maxRetries: 3, delayMs: 5000 }
     );
     sepoliaContracts = result1.contracts;
 
@@ -343,7 +411,10 @@ export async function executeSepoliaHederaScenario(
 
     // Deploy Hedera
     console.log(`\n→ Deploying to Hedera (${hederaId})...\n`);
-    const result2 = await deployChain(hederaConfig, privateKey, options.dryRun);
+    const result2 = await withRetry(
+      () => deployChain(hederaConfig, privateKey, options.dryRun),
+      { maxRetries: 3, delayMs: 5000 }
+    );
     hederaContracts = result2.contracts;
 
     if (!options.dryRun) {
@@ -352,17 +423,25 @@ export async function executeSepoliaHederaScenario(
 
     // Grant manager roles on both chains
     console.log(`\n→ Granting MANAGER_ROLE on both chains...\n`);
-    await grantManagerRoles(
-      sepoliaConfig,
-      sepoliaContracts,
-      privateKey,
-      options.dryRun
+    await withRetry(
+      () =>
+        grantManagerRoles(
+          sepoliaConfig,
+          sepoliaContracts,
+          privateKey,
+          options.dryRun
+        ),
+      { maxRetries: 3, delayMs: 5000 }
     );
-    await grantManagerRoles(
-      hederaConfig,
-      hederaContracts,
-      privateKey,
-      options.dryRun
+    await withRetry(
+      () =>
+        grantManagerRoles(
+          hederaConfig,
+          hederaContracts,
+          privateKey,
+          options.dryRun
+        ),
+      { maxRetries: 3, delayMs: 5000 }
     );
   }
 
@@ -393,16 +472,14 @@ export async function executeSepoliaHederaScenario(
   }
 
   // Deploy additional token contracts
-  const tokens = await deployTokens(
-    sepoliaConfig,
-    hederaConfig,
-    privateKey,
-    options.dryRun
+  const tokens = await withRetry(
+    () => deployTokens(sepoliaConfig, hederaConfig, privateKey, options.dryRun),
+    { maxRetries: 3, delayMs: 5000 }
   );
 
   // Fill in wNativeToken addresses from core deployment
-  tokens.sepolia.wNativeToken = sepoliaContracts.wNativeToken!;
-  tokens.hedera.wNativeToken = hederaContracts.wNativeToken!;
+  tokens.sepolia.wNativeToken = sepoliaConfig.nativeToken.address!;
+  tokens.hedera.wNativeToken = hederaConfig.nativeToken.address!;
 
   // SETUP MODE
   if (options.mode === "setup" || options.mode === "full") {
@@ -411,24 +488,32 @@ export async function executeSepoliaHederaScenario(
     console.log(`LINKING CHAINS`);
     console.log(`${"=".repeat(60)}\n`);
 
-    await linkChains(
-      sepoliaConfig,
-      sepoliaContracts,
-      hederaConfig,
-      hederaContracts,
-      privateKey,
-      options.dryRun
+    await withRetry(
+      () =>
+        linkChains(
+          sepoliaConfig,
+          sepoliaContracts,
+          hederaConfig,
+          hederaContracts,
+          privateKey,
+          options.dryRun
+        ),
+      { maxRetries: 3, delayMs: 5000 }
     );
 
     // Configure token routes
-    await configureTokenRoutes(
-      sepoliaConfig,
-      sepoliaContracts,
-      hederaConfig,
-      hederaContracts,
-      tokens,
-      privateKey,
-      options.dryRun
+    await withRetry(
+      () =>
+        configureTokenRoutes(
+          sepoliaConfig,
+          sepoliaContracts,
+          hederaConfig,
+          hederaContracts,
+          tokens,
+          privateKey,
+          options.dryRun
+        ),
+      { maxRetries: 3, delayMs: 5000 }
     );
   }
 

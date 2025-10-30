@@ -10,10 +10,8 @@ import {
   waitForTransaction,
   displayTxSummary,
   sleep,
-  isNativeToken,
   AD_MANAGER_ABI,
   ORDER_PORTAL_ABI,
-  createProvider,
 } from "./utils";
 
 /**
@@ -22,29 +20,39 @@ import {
  */
 export async function callContractFunction(
   contractAddress: string,
-  functionSignature: string,
+  functionName: string,
   args: any[],
   rpcUrl: string,
   privateKey: string,
   dryRun: boolean = false
 ): Promise<string | null> {
   if (dryRun) {
-    console.log(`  [DRY RUN] Would call ${functionSignature} on ${contractAddress}`);
+    console.log(`  [DRY RUN] Would call ${functionName} on ${contractAddress}`);
     return null;
   }
 
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const signer = new ethers.Wallet(privateKey, provider);
 
-  // Parse function signature and create ABI
-  const abi = [functionSignature];
+  // Use appropriate ABI based on function name
+  let abi: string[];
+  if (functionName === "setTokenRoute") {
+    // Check if it's AdManager or OrderPortal based on args length
+    if (args.length === 3 && typeof args[2] === "number") {
+      // AdManager: setTokenRoute(address adToken, address orderToken, uint256 orderChainId)
+      abi = AD_MANAGER_ABI;
+    } else {
+      // OrderPortal: setTokenRoute(address orderToken, uint256 adChainId, address adToken)
+      abi = ORDER_PORTAL_ABI;
+    }
+  } else {
+    throw new Error(`Unknown function: ${functionName}`);
+  }
+
   const contract = new ethers.Contract(contractAddress, abi, signer);
 
-  // Extract function name from signature
-  const functionName = functionSignature.split("(")[0].split(" ").pop()!;
-
   try {
-    const tx = await contract[functionName](...args);
+    const tx = await contract.setTokenRoute(...args);
     console.log(`  Tx: ${tx.hash}`);
     await waitForTransaction(tx);
     return tx.hash;
@@ -117,9 +125,47 @@ export async function linkChains(
       await sleep(2000);
     }
 
+    // Link Chain1 OrderPortal -> Chain2 AdManager
+    console.log(
+      `\n2. ${chain1Config.name} OrderPortal → ${chain2Config.name} AdManager`
+    );
+    const orderPortal1 = new ethers.Contract(
+      chain1Contracts.orderPortal!,
+      ORDER_PORTAL_ABI,
+      signer1
+    );
+
+    const chain1OrderPortalInfo = await orderPortal1.chains(
+      chain2Config.chainId
+    );
+
+    if (
+      chain1OrderPortalInfo.supported &&
+      chain1OrderPortalInfo.adManager.toLowerCase() ===
+        chain2Contracts.adManager!.toLowerCase()
+    ) {
+      console.log("  ✓ Already configured");
+    } else {
+      const tx2 = await orderPortal1.setChain(
+        chain2Config.chainId,
+        chain2Contracts.adManager!,
+        true
+      );
+      console.log(`  Tx: ${tx2.hash}`);
+      await waitForTransaction(tx2);
+      txHashes.push(tx2.hash);
+      displayTxSummary(
+        chain1Config.name,
+        "setChain on OrderPortal",
+        tx2.hash,
+        chain1Config.explorerUrl
+      );
+      await sleep(2000);
+    }
+
     // Link Chain2 AdManager -> Chain1 OrderPortal
     console.log(
-      `\n2. ${chain2Config.name} AdManager → ${chain1Config.name} OrderPortal`
+      `\n3. ${chain2Config.name} AdManager → ${chain1Config.name} OrderPortal`
     );
     const signer2 = createSigner(chain2Config, privateKey);
     const adManager2 = new ethers.Contract(
@@ -128,7 +174,6 @@ export async function linkChains(
       signer2
     );
 
-    // Check if already configured
     const chain2Info = await adManager2.chains(chain1Config.chainId);
     if (
       chain2Info.supported &&
@@ -137,18 +182,55 @@ export async function linkChains(
     ) {
       console.log("  ✓ Already configured");
     } else {
-      const tx2 = await adManager2.setChain(
+      const tx3 = await adManager2.setChain(
         chain1Config.chainId,
         chain1Contracts.orderPortal!,
         true
       );
-      console.log(`  Tx: ${tx2.hash}`);
-      await waitForTransaction(tx2);
-      txHashes.push(tx2.hash);
+      console.log(`  Tx: ${tx3.hash}`);
+      await waitForTransaction(tx3);
+      txHashes.push(tx3.hash);
       displayTxSummary(
         chain2Config.name,
         "setChain on AdManager",
-        tx2.hash,
+        tx3.hash,
+        chain2Config.explorerUrl
+      );
+      await sleep(2000);
+    }
+
+    // Link Chain2 OrderPortal -> Chain1 AdManager
+    console.log(
+      `\n4. ${chain2Config.name} OrderPortal → ${chain1Config.name} AdManager`
+    );
+    const orderPortal2 = new ethers.Contract(
+      chain2Contracts.orderPortal!,
+      ORDER_PORTAL_ABI,
+      signer2
+    );
+
+    const chain2OrderPortalInfo = await orderPortal2.chains(
+      chain1Config.chainId
+    );
+    if (
+      chain2OrderPortalInfo.supported &&
+      chain2OrderPortalInfo.adManager.toLowerCase() ===
+        chain1Contracts.adManager!.toLowerCase()
+    ) {
+      console.log("  ✓ Already configured");
+    } else {
+      const tx4 = await orderPortal2.setChain(
+        chain1Config.chainId,
+        chain1Contracts.adManager!,
+        true
+      );
+      console.log(`  Tx: ${tx4.hash}`);
+      await waitForTransaction(tx4);
+      txHashes.push(tx4.hash);
+      displayTxSummary(
+        chain2Config.name,
+        "setChain on OrderPortal",
+        tx4.hash,
         chain2Config.explorerUrl
       );
       await sleep(2000);
@@ -216,22 +298,15 @@ export async function configureTokenRoutes(
       console.log(`\nToken Route ${i + 1}/${tokenRoutes.length}`);
 
       // Determine which chain is which
-      const isChain1First =
-        route.chain1.chainId === chain1Config.chainId;
+      const isChain1First = route.chain1.chainId === chain1Config.chainId;
 
       if (!isChain1First && route.chain2.chainId !== chain1Config.chainId) {
-        console.log(
-          "  ⊘ Skipping - route doesn't involve these chains"
-        );
+        console.log("  ⊘ Skipping - route doesn't involve these chains");
         continue;
       }
 
-      const token1 = isChain1First
-        ? route.chain1.token
-        : route.chain2.token;
-      const token2 = isChain1First
-        ? route.chain2.token
-        : route.chain1.token;
+      const token1 = isChain1First ? route.chain1.token : route.chain2.token;
+      const token2 = isChain1First ? route.chain2.token : route.chain1.token;
       const isNative1 = isChain1First
         ? route.chain1.isNative
         : route.chain2.isNative;
@@ -239,33 +314,21 @@ export async function configureTokenRoutes(
         ? route.chain2.isNative
         : route.chain1.isNative;
 
-      console.log(
-        `  ${chain1Config.name}: ${isNative1 ? "Native" : token1}`
-      );
-      console.log(
-        `  ${chain2Config.name}: ${isNative2 ? "Native" : token2}`
-      );
+      console.log(`  ${chain1Config.name}: ${isNative1 ? "Native" : token1}`);
+      console.log(`  ${chain2Config.name}: ${isNative2 ? "Native" : token2}`);
 
       // For native tokens, use the wNativeToken address for routes
-      const routeToken1 = isNative1
-        ? chain1Contracts.wNativeToken!
-        : token1;
-      const routeToken2 = isNative2
-        ? chain2Contracts.wNativeToken!
-        : token2;
+      const routeToken1 = isNative1 ? chain1Contracts.wNativeToken! : token1;
+      const routeToken2 = isNative2 ? chain2Contracts.wNativeToken! : token2;
 
       // Chain1 AdManager: adToken (chain1) -> orderToken (chain2), orderChainId (chain2)
-      console.log(
-        `\n  Setting route on ${chain1Config.name} AdManager...`
-      );
+      console.log(`\n  Setting route on ${chain1Config.name} AdManager...`);
       const existingRoute1 = await adManager1.tokenRoute(
         routeToken1,
         chain2Config.chainId
       );
 
-      if (
-        existingRoute1.toLowerCase() === routeToken2.toLowerCase()
-      ) {
+      if (existingRoute1.toLowerCase() === routeToken2.toLowerCase()) {
         console.log("    ✓ Already configured");
       } else {
         const tx1 = await adManager1.setTokenRoute(
@@ -280,17 +343,13 @@ export async function configureTokenRoutes(
       }
 
       // Chain2 OrderPortal: orderToken (chain2) -> adChainId (chain1) -> adToken (chain1)
-      console.log(
-        `\n  Setting route on ${chain2Config.name} OrderPortal...`
-      );
+      console.log(`\n  Setting route on ${chain2Config.name} OrderPortal...`);
       const existingRoute2 = await orderPortal2.tokenRoute(
         routeToken2,
         chain1Config.chainId
       );
 
-      if (
-        existingRoute2.toLowerCase() === routeToken1.toLowerCase()
-      ) {
+      if (existingRoute2.toLowerCase() === routeToken1.toLowerCase()) {
         console.log("    ✓ Already configured");
       } else {
         const tx2 = await orderPortal2.setTokenRoute(
@@ -305,17 +364,13 @@ export async function configureTokenRoutes(
       }
 
       // Chain2 AdManager: adToken (chain2) -> orderToken (chain1), orderChainId (chain1)
-      console.log(
-        `\n  Setting route on ${chain2Config.name} AdManager...`
-      );
+      console.log(`\n  Setting route on ${chain2Config.name} AdManager...`);
       const existingRoute3 = await adManager2.tokenRoute(
         routeToken2,
         chain1Config.chainId
       );
 
-      if (
-        existingRoute3.toLowerCase() === routeToken1.toLowerCase()
-      ) {
+      if (existingRoute3.toLowerCase() === routeToken1.toLowerCase()) {
         console.log("    ✓ Already configured");
       } else {
         const tx3 = await adManager2.setTokenRoute(
@@ -330,17 +385,13 @@ export async function configureTokenRoutes(
       }
 
       // Chain1 OrderPortal: orderToken (chain1) -> adChainId (chain2) -> adToken (chain2)
-      console.log(
-        `\n  Setting route on ${chain1Config.name} OrderPortal...`
-      );
+      console.log(`\n  Setting route on ${chain1Config.name} OrderPortal...`);
       const existingRoute4 = await orderPortal1.tokenRoute(
         routeToken1,
         chain2Config.chainId
       );
 
-      if (
-        existingRoute4.toLowerCase() === routeToken2.toLowerCase()
-      ) {
+      if (existingRoute4.toLowerCase() === routeToken2.toLowerCase()) {
         console.log("    ✓ Already configured");
       } else {
         const tx4 = await orderPortal1.setTokenRoute(

@@ -2,13 +2,21 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { DeploymentConfig, DeploymentOptions, ContractAddresses } from "./core/types";
+import {
+  DeploymentConfig,
+  DeploymentOptions,
+  ContractAddresses,
+  DeploymentScenario,
+} from "./core/types";
 import { parseArgs } from "./core/utils";
 import { executeStandardScenario } from "./scenarios/standard";
 import { executeSepoliaHederaScenario } from "./scenarios/sepolia-hedera";
 
 const DEFAULT_CONFIG_PATH = path.join(__dirname, "config.json");
 const DEFAULT_DEPLOYMENTS_PATH = path.join(__dirname, "deployments.json");
+
+import * as dotenv from "dotenv";
+dotenv.config();
 
 /**
  * Load deployment configuration
@@ -104,14 +112,14 @@ function displaySummary(
   console.log(`Chain 1: ${config.chains[chain1Id].name} (${chain1Id})`);
   console.log(`  Verifier:       ${chain1Contracts.verifier}`);
   console.log(`  MerkleManager:  ${chain1Contracts.merkleManager}`);
-  console.log(`  WNativeToken:   ${chain1Contracts.wNativeToken}`);
+  console.log(`  wNativeToken:   ${chain1Contracts.wNativeToken}`);
   console.log(`  AdManager:      ${chain1Contracts.adManager}`);
   console.log(`  OrderPortal:    ${chain1Contracts.orderPortal}`);
 
   console.log(`\nChain 2: ${config.chains[chain2Id].name} (${chain2Id})`);
   console.log(`  Verifier:       ${chain2Contracts.verifier}`);
   console.log(`  MerkleManager:  ${chain2Contracts.merkleManager}`);
-  console.log(`  WNativeToken:   ${chain2Contracts.wNativeToken}`);
+  console.log(`  wNativeToken:   ${chain2Contracts.wNativeToken}`);
   console.log(`  AdManager:      ${chain2Contracts.adManager}`);
   console.log(`  OrderPortal:    ${chain2Contracts.orderPortal}`);
 
@@ -134,7 +142,7 @@ async function main(): Promise<void> {
     chain1: args.chain1 || "",
     chain2: args.chain2 || "",
     mode: (args.mode as any) || "full",
-    scenario: args.scenario || "standard",
+    scenario: (args.scenario as DeploymentScenario) || "standard",
     dryRun: args["dry-run"] === "true",
     skipConfirmation: args["skip-confirmation"] === "true",
     configPath: args.config,
@@ -199,7 +207,9 @@ async function main(): Promise<void> {
   console.log(`Dry Run: ${options.dryRun ? "YES" : "NO"}`);
 
   if (!options.skipConfirmation && !options.dryRun) {
-    console.log(`\nPress Ctrl+C to cancel, or waiting 5 seconds to continue...`);
+    console.log(
+      `\nPress Ctrl+C to cancel, or waiting 5 seconds to continue...`
+    );
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 
@@ -209,7 +219,11 @@ async function main(): Promise<void> {
 
     // Execute scenario
     if (options.scenario === "sepolia-hedera") {
-      const result = await executeSepoliaHederaScenario(config, options, privateKey);
+      const result = await executeSepoliaHederaScenario(
+        config,
+        options,
+        privateKey
+      );
       chain1Contracts = result.chain1Contracts;
       chain2Contracts = result.chain2Contracts;
 
@@ -219,10 +233,14 @@ async function main(): Promise<void> {
       console.log(`${"=".repeat(60)}\n`);
       console.log(`Sepolia:`);
       console.log(`  wHBAR ERC20:        ${result.tokens.sepolia.wHbarErc20}`);
-      console.log(`  ProofBridge Token:  ${result.tokens.sepolia.proofBridgeToken}`);
+      console.log(
+        `  ProofBridge Token:  ${result.tokens.sepolia.proofBridgeToken}`
+      );
       console.log(`\nHedera:`);
       console.log(`  wETH ERC20:         ${result.tokens.hedera.wEthErc20}`);
-      console.log(`  ProofBridge Token:  ${result.tokens.hedera.proofBridgeToken}`);
+      console.log(
+        `  ProofBridge Token:  ${result.tokens.hedera.proofBridgeToken}`
+      );
       console.log(`\n${"=".repeat(60)}\n`);
     } else {
       // Standard scenario

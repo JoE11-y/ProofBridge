@@ -160,16 +160,63 @@ export function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Retry configuration options
+ */
+export interface RetryOptions {
+  maxRetries?: number; // Default: 3
+  delayMs?: number; // Default: 5000 (5 seconds)
+  onRetry?: (error: Error, attempt: number) => void;
+}
+
+/**
+ * Retry an async operation with configurable delay and max attempts
+ * Useful for handling transient RPC failures
+ */
+export async function withRetry<T>(
+  operation: () => Promise<T>,
+  options: RetryOptions = {}
+): Promise<T> {
+  const { maxRetries = 3, delayMs = 5000, onRetry } = options;
+
+  let lastError: Error;
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+
+      if (attempt <= maxRetries) {
+        const retryMsg = `  ⚠ Attempt ${attempt} failed: ${lastError.message}`;
+        console.log(retryMsg);
+        console.log(`  ⏳ Retrying in ${delayMs / 1000}s... (${maxRetries - attempt + 1} retries left)`);
+
+        if (onRetry) {
+          onRetry(lastError, attempt);
+        }
+
+        await sleep(delayMs);
+      }
+    }
+  }
+
+  throw new Error(
+    `Operation failed after ${maxRetries + 1} attempts. Last error: ${lastError!.message}`
+  );
+}
+
+/**
  * Get contract factory from compiled artifacts
  */
 export async function getContractFactory(
   contractName: string,
   signer: ethers.Wallet
 ): Promise<ethers.ContractFactory> {
+  const contractFileName =
+    contractName === "HonkVerifier" ? "Verifier" : contractName;
   const artifactPath = path.join(
     __dirname,
-    "../../out",
-    `${contractName}.sol`,
+    "../../../out",
+    `${contractFileName}.sol`,
     `${contractName}.json`
   );
 

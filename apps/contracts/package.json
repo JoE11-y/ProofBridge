@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "ts-node js-scripts/deploy/deploy.ts",
-    "deploy:help": "ts-node js-scripts/deploy/deploy.ts --help"
+    "deploy": "npx tsx js-scripts/deploy/deploy.ts",
+    "deploy:help": "npx tsx js-scripts/deploy/deploy.ts --help"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,7 @@
   "dependencies": {
     "@noble/curves": "^2.0.0",
     "@zkpassport/poseidon2": "^0.6.2",
+    "dotenv": "^17.2.2",
     "ethereum-cryptography": "^3.2.0",
     "ethers": "^6.15.0",
     "hex": "^0.1.0",

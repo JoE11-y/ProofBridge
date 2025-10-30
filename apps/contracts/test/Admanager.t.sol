@@ -9,10 +9,10 @@ import {IVerifier} from "src/Verifier.sol";
 import {IMerkleManager} from "src/MerkleManager.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import {IWNativeToken, WNativeToken} from "src/wNativeToken.sol";
+import {IwNativeToken, wNativeToken} from "src/wNativeToken.sol";
 
 contract MockAdManager is AdManager {
-    constructor(address admin, IVerifier v, IMerkleManager m, IWNativeToken t) AdManager(admin, v, m, t) {}
+    constructor(address admin, IVerifier v, IMerkleManager m, IwNativeToken t) AdManager(admin, v, m, t) {}
 
     function hashOrderPublic(OrderParams calldata p) external view returns (bytes32) {
         return _hashOrder(p, block.chainid, address(this));
@@ -24,7 +24,7 @@ contract AdManagerTest is Test {
     MockVerifier internal verifier;
     MerkleManager internal merkleManager;
     ERC20Mock internal adToken;
-    WNativeToken internal wNativeToken;
+    wNativeToken internal _wNativeToken;
 
     address admin;
     uint256 adminPk;
@@ -63,13 +63,13 @@ contract AdManagerTest is Test {
         (admin, adminPk) = makeAddrAndKey("admin");
         verifier = new MockVerifier(true);
         merkleManager = new MerkleManager(admin);
-        wNativeToken = new WNativeToken("Wrapped Native Token", "WNATIVE");
+        _wNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE");
 
         adManager = new MockAdManager(
             admin,
             IVerifier(address(verifier)),
             IMerkleManager(address(merkleManager)),
-            IWNativeToken(address(wNativeToken))
+            IwNativeToken(address(_wNativeToken))
         );
 
         vm.startPrank(admin);
@@ -423,7 +423,7 @@ contract AdManagerTest is Test {
         assertEq(locked, 0);
         assertTrue(open);
 
-        uint256 wNativeBalance = wNativeToken.balanceOf(address(adManager));
+        uint256 wNativeBalance = _wNativeToken.balanceOf(address(adManager));
         assertEq(wNativeBalance, initAmt);
     }
 
@@ -1029,14 +1029,14 @@ contract AdManagerTest is Test {
 
     function _openOrder(
         string memory adId,
-        address adToken,
+        address _adToken,
         uint256 amount,
         uint256 salt,
         address _bridger,
         address _recipient
     ) internal returns (AdManager.OrderParams memory p, bytes32 orderHash) {
         p = _defaultParams(adId);
-        p.adChainToken = adToken;
+        p.adChainToken = _adToken;
         p.amount = amount;
         p.salt = salt;
         p.bridger = _bridger;
@@ -1182,7 +1182,7 @@ contract AdManagerTest is Test {
         (authToken, timeToLive, signature) = generateUnlockOrderRequestHash(adId, orderHash, targetRoot);
 
         // get contract wrapped token balance before
-        uint256 contractBalBefore = wNativeToken.balanceOf(address(adManager));
+        uint256 contractBalBefore = _wNativeToken.balanceOf(address(adManager));
 
         // Verify success
         vm.prank(bridger);
@@ -1199,7 +1199,7 @@ contract AdManagerTest is Test {
         uint256 balAfter = recipient.balance;
         assertEq(balAfter - balBefore, p.amount, "recipient not paid");
 
-        uint256 contractBalAfter = wNativeToken.balanceOf(address(adManager));
+        uint256 contractBalAfter = _wNativeToken.balanceOf(address(adManager));
         assertEq(contractBalBefore - contractBalAfter, p.amount, "contract balance not reduced");
     }
 }

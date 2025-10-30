@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {WETH} from "lib/solady/src/tokens/WETH.sol";
 
-interface IWNativeToken {
+interface IwNativeToken {
     function deposit() external payable;
     function withdraw(uint256 amount) external;
 }
@@ -12,13 +12,13 @@ library SafeNativeToken {
     uint256 private constant _RAW_CALL_GAS_LIMIT = 5000;
 
     /**
-     * @notice Safely deposits a specified amount of Native token into the IWNativeToken contract. Consumes less gas than regular `IWNativeToken.deposit`.
-     * @param nativeToken The IWNativeToken token contract.
-     * @param amount The amount of Native token to deposit into the IWNativeToken contract.
+     * @notice Safely deposits a specified amount of Native token into the IwNativeToken contract. Consumes less gas than regular `IwNativeToken.deposit`.
+     * @param nativeToken The IwNativeToken token contract.
+     * @param amount The amount of Native token to deposit into the IwNativeToken contract.
      */
-    function safeDeposit(IWNativeToken nativeToken, uint256 amount) internal {
+    function safeDeposit(IwNativeToken nativeToken, uint256 amount) internal {
         if (amount > 0) {
-            bytes4 selector = IWNativeToken.deposit.selector;
+            bytes4 selector = IwNativeToken.deposit.selector;
             assembly ("memory-safe") {
                 // solhint-disable-line no-inline-assembly
                 mstore(0, selector)
@@ -32,13 +32,13 @@ library SafeNativeToken {
     }
 
     /**
-     * @notice Safely withdraws a specified amount of wrapped Native token from the IWNativeToken contract. Consumes less gas than regular `IWNativeToken.withdraw`.
-     * @dev Uses inline assembly to interact with the IWNativeToken contract.
-     * @param nativeToken The IWNativeToken token contract.
-     * @param amount The amount of wrapped Native token to withdraw from the IWNativeToken contract.
+     * @notice Safely withdraws a specified amount of wrapped Native token from the IwNativeToken contract. Consumes less gas than regular `IwNativeToken.withdraw`.
+     * @dev Uses inline assembly to interact with the IwNativeToken contract.
+     * @param nativeToken The IwNativeToken token contract.
+     * @param amount The amount of wrapped Native token to withdraw from the IwNativeToken contract.
      */
-    function safeWithdraw(IWNativeToken nativeToken, uint256 amount) internal {
-        bytes4 selector = IWNativeToken.withdraw.selector;
+    function safeWithdraw(IwNativeToken nativeToken, uint256 amount) internal {
+        bytes4 selector = IwNativeToken.withdraw.selector;
         assembly ("memory-safe") {
             // solhint-disable-line no-inline-assembly
             mstore(0, selector)
@@ -52,13 +52,13 @@ library SafeNativeToken {
     }
 
     /**
-     * @notice Safely withdraws a specified amount of wrapped Native token from the IWNativeToken contract to a specified recipient.
-     * Consumes less gas then regular `IWNativeToken.withdraw`.
-     * @param nativeToken The IWNativeToken token contract.
-     * @param amount The amount of wrapped Native token to withdraw from the IWNativeToken contract.
+     * @notice Safely withdraws a specified amount of wrapped Native token from the IwNativeToken contract to a specified recipient.
+     * Consumes less gas then regular `IwNativeToken.withdraw`.
+     * @param nativeToken The IwNativeToken token contract.
+     * @param amount The amount of wrapped Native token to withdraw from the IwNativeToken contract.
      * @param to The recipient of the withdrawn Native token.
      */
-    function safeWithdrawTo(IWNativeToken nativeToken, uint256 amount, address to) internal {
+    function safeWithdrawTo(IwNativeToken nativeToken, uint256 amount, address to) internal {
         safeWithdraw(nativeToken, amount);
         if (to != address(this)) {
             assembly ("memory-safe") {
@@ -73,7 +73,7 @@ library SafeNativeToken {
     }
 }
 
-contract WNativeToken is WETH, IWNativeToken {
+contract wNativeToken is WETH, IwNativeToken {
     string private w_name;
     string private w_symbol;
 
@@ -93,12 +93,12 @@ contract WNativeToken is WETH, IWNativeToken {
         return w_symbol;
     }
 
-    function deposit() public payable virtual override(WETH, IWNativeToken) {
+    function deposit() public payable virtual override(WETH, IwNativeToken) {
         super.deposit();
         emit Deposit(msg.sender, msg.value);
     }
 
-    function withdraw(uint256 amount) public virtual override(WETH, IWNativeToken) {
+    function withdraw(uint256 amount) public virtual override(WETH, IwNativeToken) {
         super.withdraw(amount);
         emit Withdrawal(msg.sender, amount);
     }
