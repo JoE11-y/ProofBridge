@@ -14,20 +14,13 @@ export class MerkleTree {
   private hasher = new Poseidon2Hasher();
 
   constructor() {
-    this.clean();
     this.db = new LevelDB("./merkle_tree_db");
   }
 
-  async clean() {
-    if (fs.existsSync("./merkle_tree_db")) {
-      fs.rmSync("./merkle_tree_db", { recursive: true, force: true });
-    }
-  }
-
-  async init(defaultLeaves: string[] = []) {
+  async init(id: string, defaultLeaves: string[] = []) {
     await this.db.init();
 
-    this.mmr = new MMR("merkle_tree", this.db, this.hasher);
+    this.mmr = new MMR(id, this.db, this.hasher);
 
     for (const leaf of defaultLeaves) {
       await this.append(leaf);
@@ -78,8 +71,10 @@ export class MerkleTree {
 export async function merkleTree(leaves: string[]) {
   const tree = new MerkleTree();
 
+  const id = Math.random().toString(36).substring(2, 15);
+
   // Initialize tree with no leaves (all zeros)
-  await tree.init();
+  await tree.init(id);
 
   // Insert some leaves (from input)
   for (const leaf of leaves) {
