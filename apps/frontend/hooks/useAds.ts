@@ -24,7 +24,7 @@ import { useAccount, useWriteContract } from "wagmi";
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { getSingleToken, getTokens } from "@/services/tokens.service";
 import { IToken } from "@/types/tokens";
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits, parseEther, parseUnits } from "viem";
 
 export const useCreateAd = () => {
   const { writeContractAsync } = useWriteContract();
@@ -104,7 +104,7 @@ export const useCreateAd = () => {
             BigInt(response.orderChainId),
             response.adRecipient,
           ],
-          value: parseUnits(amount, token.decimals),
+          value: parseEther(amount),
         });
         const txReceipt = await waitForTransactionReceipt(config, {
           hash: txHash,
@@ -210,7 +210,7 @@ export const useFundAd = () => {
             response.adId,
             data.amountBigInt,
           ],
-          value: parseUnits(amount, token.decimals),
+          value: parseEther(amount),
         });
         const receipt = await waitForTransactionReceipt(config, {
           hash: txHash,

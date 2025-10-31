@@ -13,9 +13,16 @@ export const AD_MANAGER_ABI = [
         type: "address",
         internalType: "contract IMerkleManager",
       },
+      {
+        name: "_wNativeToken",
+        type: "address",
+        internalType: "contract IwNativeToken",
+      },
     ],
     stateMutability: "nonpayable",
   },
+  { type: "fallback", stateMutability: "payable" },
+  { type: "receive", stateMutability: "payable" },
   {
     type: "function",
     name: "ADMIN_ROLE",
@@ -35,6 +42,13 @@ export const AD_MANAGER_ABI = [
     name: "DOMAIN_TYPEHASH_MIN",
     inputs: [],
     outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "NATIVE_TOKEN_ADDRESS",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
     stateMutability: "view",
   },
   {
@@ -101,7 +115,7 @@ export const AD_MANAGER_ABI = [
       { name: "to", type: "address", internalType: "address" },
     ],
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
   },
   {
     type: "function",
@@ -129,7 +143,7 @@ export const AD_MANAGER_ABI = [
       { name: "adRecipient", type: "address", internalType: "address" },
     ],
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
   },
   {
     type: "function",
@@ -172,7 +186,7 @@ export const AD_MANAGER_ABI = [
       { name: "amount", type: "uint256", internalType: "uint256" },
     ],
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
   },
   {
     type: "function",
@@ -195,9 +209,23 @@ export const AD_MANAGER_ABI = [
   },
   {
     type: "function",
-    name: "getMerkleRoot",
+    name: "getHistoricalRoot",
+    inputs: [{ name: "index", type: "uint256", internalType: "uint256" }],
+    outputs: [{ name: "root", type: "bytes32", internalType: "bytes32" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getLatestMerkleRoot",
     inputs: [],
     outputs: [{ name: "root", type: "bytes32", internalType: "bytes32" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getMerkleLeafCount",
+    inputs: [],
+    outputs: [{ name: "count", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },
   {
@@ -463,7 +491,7 @@ export const AD_MANAGER_ABI = [
       { name: "proof", type: "bytes", internalType: "bytes" },
     ],
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
   },
   {
     type: "function",
@@ -480,6 +508,15 @@ export const AD_MANAGER_ABI = [
   },
   {
     type: "function",
+    name: "wNativeToken",
+    inputs: [],
+    outputs: [
+      { name: "", type: "address", internalType: "contract IwNativeToken" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "withdrawFromAd",
     inputs: [
       { name: "signature", type: "bytes", internalType: "bytes" },
@@ -490,7 +527,7 @@ export const AD_MANAGER_ABI = [
       { name: "to", type: "address", internalType: "address" },
     ],
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
   },
   {
     type: "function",
@@ -938,4 +975,4 @@ export const AD_MANAGER_ABI = [
     name: "StringTooLong",
     inputs: [{ name: "str", type: "string", internalType: "string" }],
   },
-]
+];

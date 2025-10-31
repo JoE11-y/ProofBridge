@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { ERC20_ABI } from "@/abis/ERC20.abi";
 import { getSingleToken, getTokens } from "@/services/tokens.service";
 import { AD_MANAGER_ABI } from "@/abis/AdManager.abi";
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits, parseEther, parseUnits } from "viem";
 
 export const useCreateTrade = () => {
   const account = useAccount();
@@ -131,7 +131,7 @@ export const useCreateTrade = () => {
               salt: BigInt(response.reqContractDetails.orderParams.salt),
             },
           ],
-          value: parseUnits(amount, token.decimals),
+          value: parseEther(amount),
         });
 
         const receipt = await waitForTransactionReceipt(config, {
