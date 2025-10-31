@@ -498,12 +498,14 @@ export class ViemService {
           functionName: 'getHistoricalRoot',
           args: [BigInt(i)],
         });
+        console.log('fetched root:', root);
         roots.push(root);
       } catch (err) {
         console.warn(`[historicalRoot] index=${i} failed:`, err);
         // don't break, just skip
       }
     }
+    console.log(roots);
 
     return roots;
   }
@@ -532,12 +534,14 @@ export class ViemService {
           functionName: 'getHistoricalRoot',
           args: [BigInt(i)],
         });
+        console.log('fetched root:', root);
         roots.push(root);
       } catch (err) {
         console.warn(`[historicalRoot] index=${i} failed:`, err);
         // don't break, just skip
       }
     }
+    console.log(roots);
 
     return roots;
   }
