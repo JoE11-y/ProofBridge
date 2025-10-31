@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -16,11 +18,9 @@ import {
 } from './dto/ad.dto';
 import { getAddress } from 'viem';
 import { AdStatus, Prisma } from '@prisma/client';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { ViemService } from '../../providers/viem/viem.service';
 import { randomUUID } from 'crypto';
-import { ErrorService } from '@libs/error.service';
-import { ResponseService } from '@libs/response.service';
 
 type AdQueryInput = {
   routeId?: string;
@@ -49,238 +49,269 @@ export class AdsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly viemService: ViemService,
-    private readonly errorService: ErrorService,
-    private readonly responseService: ResponseService,
   ) {}
 
   async list(query: QueryAdsDto) {
-    const take =
-      query.limit && query.limit > 0 && query.limit <= 100 ? query.limit : 25;
-    const cursor = query.cursor ? { id: query.cursor } : undefined;
+    try {
+      const take =
+        query.limit && query.limit > 0 && query.limit <= 100 ? query.limit : 25;
+      const cursor = query.cursor ? { id: query.cursor } : undefined;
 
-    const where: AdQueryInput = {};
+      const where: AdQueryInput = {};
 
-    if (query.routeId) where.routeId = query.routeId;
-    if (query.creatorAddress) where.creatorAddress = query.creatorAddress;
-    if (query.status) where.status = query.status;
-    if (query.adTokenId) where.adTokenId = query.adTokenId;
-    if (query.orderTokenId) where.orderTokenId = query.orderTokenId;
+      if (query.routeId) where.routeId = query.routeId;
+      if (query.creatorAddress) where.creatorAddress = query.creatorAddress;
+      if (query.status) where.status = query.status;
+      if (query.adTokenId) where.adTokenId = query.adTokenId;
+      if (query.orderTokenId) where.orderTokenId = query.orderTokenId;
 
-    const items = await this.prisma.ad.findMany({
-      where: {
-        ...where,
-        adToken: {
-          chain: query.adChainId ? { chainId: query.adChainId } : undefined,
-        },
-        orderToken: {
-          chain: query.orderChainId
-            ? { chainId: query.orderChainId }
-            : undefined,
-        },
-      },
-      orderBy: { id: 'asc' },
-      take: take + 1,
-      ...(cursor ? { cursor, skip: 1 } : {}),
-      select: {
-        id: true,
-        creatorAddress: true,
-        routeId: true,
-        adTokenId: true,
-        orderTokenId: true,
-        poolAmount: true,
-        minAmount: true,
-        maxAmount: true,
-        adToken: {
-          select: {
-            chain: { select: { chainId: true } },
-            address: true,
-            symbol: true,
-            name: true,
-            decimals: true,
-            kind: true,
+      const items = await this.prisma.ad.findMany({
+        where: {
+          ...where,
+          adToken: {
+            chain: query.adChainId ? { chainId: query.adChainId } : undefined,
+          },
+          orderToken: {
+            chain: query.orderChainId
+              ? { chainId: query.orderChainId }
+              : undefined,
           },
         },
-        orderToken: {
-          select: {
-            chain: { select: { chainId: true } },
-            address: true,
-            symbol: true,
-            name: true,
-            decimals: true,
-            kind: true,
+        orderBy: { id: 'asc' },
+        take: take + 1,
+        ...(cursor ? { cursor, skip: 1 } : {}),
+        select: {
+          id: true,
+          creatorAddress: true,
+          routeId: true,
+          adTokenId: true,
+          orderTokenId: true,
+          poolAmount: true,
+          minAmount: true,
+          maxAmount: true,
+          adToken: {
+            select: {
+              chain: { select: { chainId: true } },
+              address: true,
+              symbol: true,
+              name: true,
+              decimals: true,
+              kind: true,
+            },
           },
+          orderToken: {
+            select: {
+              chain: { select: { chainId: true } },
+              address: true,
+              symbol: true,
+              name: true,
+              decimals: true,
+              kind: true,
+            },
+          },
+          status: true,
+          metadata: true,
+          createdAt: true,
+          updatedAt: true,
+          route: true,
         },
-        status: true,
-        metadata: true,
-        createdAt: true,
-        updatedAt: true,
-        route: true,
-      },
-    });
+      });
 
-    // compute locksums for all returned ads
-    const ids = items.map((i) => i.id);
-    const lockSums = ids.length
-      ? await this.prisma.adLock.groupBy({
-          by: ['adId'],
-          where: { adId: { in: ids }, releasedAt: null },
-          _sum: { amount: true },
-        })
-      : [];
+      // compute locksums for all returned ads
+      const ids = items.map((i) => i.id);
+      const lockSums = ids.length
+        ? await this.prisma.adLock.groupBy({
+            by: ['adId'],
+            where: { adId: { in: ids }, releasedAt: null },
+            _sum: { amount: true },
+          })
+        : [];
 
-    const sumMap = new Map<string, Prisma.Decimal>();
-    lockSums.forEach((row) =>
-      sumMap.set(row.adId, row._sum.amount ?? new Prisma.Decimal(0)),
-    );
+      const sumMap = new Map<string, Prisma.Decimal>();
+      lockSums.forEach((row) =>
+        sumMap.set(row.adId, row._sum.amount ?? new Prisma.Decimal(0)),
+      );
 
-    let nextCursor: string | null = null;
-    if (items.length > take) {
-      const next = items.pop()!;
-      nextCursor = next.id;
+      let nextCursor: string | null = null;
+      if (items.length > take) {
+        const next = items.pop()!;
+        nextCursor = next.id;
+      }
+
+      const data = items.map((i) => {
+        const pool = i.poolAmount ?? new Prisma.Decimal(0); // if nullable
+        const locked = sumMap.get(i.id) ?? new Prisma.Decimal(0);
+
+        // Decimal math:
+        const available = pool.sub(locked);
+
+        const effectiveStatus =
+          i.status === 'CLOSED'
+            ? 'CLOSED'
+            : available.eq(0) // or: available.cmp(0) <= 0
+              ? 'EXHAUSTED'
+              : i.status;
+
+        return {
+          id: i.id,
+          creatorAddress: i.creatorAddress,
+          routeId: i.routeId,
+          adTokenId: i.adTokenId,
+          orderTokenId: i.orderTokenId,
+          poolAmount: i.poolAmount.toFixed(0),
+          availableAmount: available.toFixed(0),
+          minAmount: i.minAmount ? i.minAmount.toFixed(0) : null,
+          maxAmount: i.maxAmount ? i.maxAmount.toFixed(0) : null,
+          status: i.status != 'INACTIVE' ? effectiveStatus : i.status,
+          metadata: i.metadata ?? null,
+          createdAt: i.createdAt.toISOString(),
+          updatedAt: i.updatedAt.toISOString(),
+          adToken: {
+            name: i.adToken.name,
+            symbol: i.adToken.symbol,
+            address: i.adToken.address,
+            decimals: i.adToken.decimals,
+            chainId: i.adToken.chain.chainId.toString(),
+            kind: i.adToken.kind as string,
+          },
+          orderToken: {
+            name: i.orderToken.name,
+            symbol: i.orderToken.symbol,
+            address: i.orderToken.address,
+            decimals: i.orderToken.decimals,
+            chainId: i.orderToken.chain.chainId.toString(),
+            kind: i.orderToken.kind as string,
+          },
+        };
+      });
+      return { data, nextCursor };
+    } catch (e) {
+      if (e instanceof Error) {
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : HttpStatus.BAD_REQUEST;
+
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-
-    const data = items.map((i) => {
-      const pool = i.poolAmount ?? new Prisma.Decimal(0); // if nullable
-      const locked = sumMap.get(i.id) ?? new Prisma.Decimal(0);
-
-      // Decimal math:
-      const available = pool.sub(locked);
-
-      const effectiveStatus =
-        i.status === 'CLOSED'
-          ? 'CLOSED'
-          : available.eq(0) // or: available.cmp(0) <= 0
-            ? 'EXHAUSTED'
-            : i.status;
-
-      return {
-        id: i.id,
-        creatorAddress: i.creatorAddress,
-        routeId: i.routeId,
-        adTokenId: i.adTokenId,
-        orderTokenId: i.orderTokenId,
-        poolAmount: i.poolAmount.toFixed(0),
-        availableAmount: available.toFixed(0),
-        minAmount: i.minAmount ? i.minAmount.toFixed(0) : null,
-        maxAmount: i.maxAmount ? i.maxAmount.toFixed(0) : null,
-        status: i.status != 'INACTIVE' ? effectiveStatus : i.status,
-        metadata: i.metadata ?? null,
-        createdAt: i.createdAt.toISOString(),
-        updatedAt: i.updatedAt.toISOString(),
-        adToken: {
-          name: i.adToken.name,
-          symbol: i.adToken.symbol,
-          address: i.adToken.address,
-          decimals: i.adToken.decimals,
-          chainId: i.adToken.chain.chainId.toString(),
-          kind: i.adToken.kind as string,
-        },
-        orderToken: {
-          name: i.orderToken.name,
-          symbol: i.orderToken.symbol,
-          address: i.orderToken.address,
-          decimals: i.orderToken.decimals,
-          chainId: i.orderToken.chain.chainId.toString(),
-          kind: i.orderToken.kind as string,
-        },
-      };
-    });
-
-    return { data, nextCursor };
   }
 
   async getById(id: string) {
-    const ad = await this.prisma.ad.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        creatorAddress: true,
-        routeId: true,
-        adTokenId: true,
-        orderTokenId: true,
-        poolAmount: true,
-        minAmount: true,
-        maxAmount: true,
-        status: true,
-        metadata: true,
-        adToken: {
-          select: {
-            chain: { select: { chainId: true } },
-            address: true,
-            symbol: true,
-            name: true,
-            decimals: true,
-            kind: true,
+    try {
+      const ad = await this.prisma.ad.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          creatorAddress: true,
+          routeId: true,
+          adTokenId: true,
+          orderTokenId: true,
+          poolAmount: true,
+          minAmount: true,
+          maxAmount: true,
+          status: true,
+          metadata: true,
+          adToken: {
+            select: {
+              chain: { select: { chainId: true } },
+              address: true,
+              symbol: true,
+              name: true,
+              decimals: true,
+              kind: true,
+            },
           },
+          orderToken: {
+            select: {
+              chain: { select: { chainId: true } },
+              address: true,
+              symbol: true,
+              name: true,
+              decimals: true,
+              kind: true,
+            },
+          },
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      if (!ad) throw new NotFoundException('Ad not found');
+
+      const lockSum = await this.prisma.adLock.aggregate({
+        where: { adId: ad.id, releasedAt: null },
+        _sum: { amount: true },
+      });
+
+      const locked = lockSum._sum.amount ?? new Prisma.Decimal(0);
+
+      const available = ad.poolAmount.sub(locked);
+
+      const effectiveStatus =
+        ad.status === 'CLOSED'
+          ? 'CLOSED'
+          : available.eq(0)
+            ? 'EXHAUSTED'
+            : ad.status;
+
+      return {
+        id: ad.id,
+        creatorAddress: ad.creatorAddress,
+        routeId: ad.routeId,
+        adTokenId: ad.adTokenId,
+        orderTokenId: ad.orderTokenId,
+        poolAmount: ad.poolAmount.toFixed(0),
+        availableAmount: available.toFixed(0),
+        minAmount: ad.minAmount ? ad.minAmount.toFixed(0) : null,
+        maxAmount: ad.maxAmount ? ad.maxAmount.toFixed(0) : null,
+        status: ad.status != 'INACTIVE' ? effectiveStatus : ad.status,
+        adToken: {
+          name: ad.adToken.name,
+          symbol: ad.adToken.symbol,
+          address: ad.adToken.address,
+          decimals: ad.adToken.decimals,
+          chainId: ad.adToken.chain.chainId.toString(),
+          kind: ad.adToken.kind as string,
         },
         orderToken: {
-          select: {
-            chain: { select: { chainId: true } },
-            address: true,
-            symbol: true,
-            name: true,
-            decimals: true,
-            kind: true,
-          },
+          name: ad.orderToken.name,
+          symbol: ad.orderToken.symbol,
+          address: ad.orderToken.address,
+          decimals: ad.orderToken.decimals,
+          chainId: ad.orderToken.chain.chainId.toString(),
+          kind: ad.orderToken.kind as string,
         },
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-    if (!ad) throw new NotFoundException('Ad not found');
-
-    const lockSum = await this.prisma.adLock.aggregate({
-      where: { adId: ad.id, releasedAt: null },
-      _sum: { amount: true },
-    });
-
-    const locked = lockSum._sum.amount ?? new Prisma.Decimal(0);
-
-    const available = ad.poolAmount.sub(locked);
-
-    const effectiveStatus =
-      ad.status === 'CLOSED'
-        ? 'CLOSED'
-        : available.eq(0)
-          ? 'EXHAUSTED'
-          : ad.status;
-
-    return {
-      id: ad.id,
-      creatorAddress: ad.creatorAddress,
-      routeId: ad.routeId,
-      adTokenId: ad.adTokenId,
-      orderTokenId: ad.orderTokenId,
-      poolAmount: ad.poolAmount.toFixed(0),
-      availableAmount: available.toFixed(0),
-      minAmount: ad.minAmount ? ad.minAmount.toFixed(0) : null,
-      maxAmount: ad.maxAmount ? ad.maxAmount.toFixed(0) : null,
-      status: ad.status != 'INACTIVE' ? effectiveStatus : ad.status,
-      adToken: {
-        name: ad.adToken.name,
-        symbol: ad.adToken.symbol,
-        address: ad.adToken.address,
-        decimals: ad.adToken.decimals,
-        chainId: ad.adToken.chain.chainId.toString(),
-        kind: ad.adToken.kind as string,
-      },
-      orderToken: {
-        name: ad.orderToken.name,
-        symbol: ad.orderToken.symbol,
-        address: ad.orderToken.address,
-        decimals: ad.orderToken.decimals,
-        chainId: ad.orderToken.chain.chainId.toString(),
-        kind: ad.orderToken.kind as string,
-      },
-      metadata: ad.metadata ?? null,
-      createdAt: ad.createdAt.toISOString(),
-      updatedAt: ad.updatedAt.toISOString(),
-    };
+        metadata: ad.metadata ?? null,
+        createdAt: ad.createdAt.toISOString(),
+        updatedAt: ad.updatedAt.toISOString(),
+      };
+    } catch (e) {
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /* ---------- Creator actions ---------- */
 
-  async create(req: Request, res: Response, dto: CreateAdDto) {
+  async create(req: Request, dto: CreateAdDto) {
     try {
       const reqUser = req.user;
 
@@ -416,11 +447,25 @@ export class AdsService {
 
       return requestDetails;
     } catch (e) {
-      this.errorService.handleServerError(res, e, 'Ad creation faild');
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async fund(req: Request, res: Response, id: string, dto: FundAdDto) {
+  async fund(req: Request, id: string, dto: FundAdDto) {
     try {
       const reqUser = req.user;
 
@@ -514,16 +559,25 @@ export class AdsService {
 
       return reqContractDetails;
     } catch (e) {
-      this.errorService.handleServerError(res, e, 'Ad funding failed');
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async withdraw(
-    req: Request,
-    res: Response,
-    id: string,
-    dto: WithdrawalAdDto,
-  ) {
+  async withdraw(req: Request, id: string, dto: WithdrawalAdDto) {
     try {
       const reqUser = req.user;
 
@@ -632,11 +686,25 @@ export class AdsService {
 
       return reqContractDetails;
     } catch (e) {
-      this.errorService.handleServerError(res, e, 'Ad withdrawal failed');
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async update(req: Request, res: Response, id: string, dto: UpdateAdDto) {
+  async update(req: Request, id: string, dto: UpdateAdDto) {
     try {
       const reqUser = req.user;
 
@@ -695,11 +763,25 @@ export class AdsService {
         metadata: updated.metadata ?? null,
       };
     } catch (e) {
-      this.errorService.handleServerError(res, e, 'Ad update failed');
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async close(req: Request, res: Response, id: string, dto: CloseAdDto) {
+  async close(req: Request, id: string, dto: CloseAdDto) {
     try {
       const reqUser = req.user;
 
@@ -798,13 +880,26 @@ export class AdsService {
 
       return reqContractDetails;
     } catch (e) {
-      this.errorService.handleServerError(res, e, 'Ad closure failed');
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   async confirmChainAction(
     req: Request,
-    res: Response,
     adId: string,
     dto: ConfirmAdActionDto,
   ) {
@@ -894,10 +989,20 @@ export class AdsService {
         success: true,
       };
     } catch (e) {
-      this.errorService.handleServerError(
-        res,
-        e,
-        'Ad action confirmation failed',
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

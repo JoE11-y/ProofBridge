@@ -2,6 +2,8 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
 import {
@@ -17,70 +19,118 @@ export class ChainService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listChainsPublic(query: QueryChainsDto) {
-    const data = await this.listChains(query);
-    const rows = data.rows.map((c) => this.toPublic(c));
-    return { rows, nextCursor: data.nextCursor };
+    try {
+      const data = await this.listChains(query);
+      const rows = data.rows.map((c) => this.toPublic(c));
+      return { rows, nextCursor: data.nextCursor };
+    } catch (e) {
+      if (e instanceof Error) {
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : HttpStatus.BAD_REQUEST;
+
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async listChains(query: QueryChainsDto) {
-    const take = query.limit ?? 25;
-    const cursor = query.cursor ? { id: query.cursor } : undefined;
+    try {
+      const take = query.limit ?? 25;
+      const cursor = query.cursor ? { id: query.cursor } : undefined;
 
-    const where: {
-      name?: { contains: string; mode: 'insensitive' };
-      chainId?: bigint;
-    } = {};
+      const where: {
+        name?: { contains: string; mode: 'insensitive' };
+        chainId?: bigint;
+      } = {};
 
-    if (query.name) {
-      where.name = { contains: query.name, mode: 'insensitive' };
+      if (query.name) {
+        where.name = { contains: query.name, mode: 'insensitive' };
+      }
+      if (query.chainId) {
+        where.chainId = BigInt(query.chainId);
+      }
+
+      const rows = await this.prisma.chain.findMany({
+        where,
+        orderBy: { id: 'asc' },
+        take: take + 1,
+        ...(cursor ? { cursor, skip: 1 } : {}),
+        select: {
+          id: true,
+          name: true,
+          chainId: true,
+          mmrId: true,
+          adManagerAddress: true,
+          orderPortalAddress: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      let nextCursor: string | null = null;
+      if (rows.length > take) {
+        const next = rows.pop()!;
+        nextCursor = next.id;
+      }
+
+      return { rows, nextCursor };
+    } catch (e) {
+      if (e instanceof Error) {
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : HttpStatus.BAD_REQUEST;
+
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-    if (query.chainId) {
-      where.chainId = BigInt(query.chainId);
-    }
-
-    const rows = await this.prisma.chain.findMany({
-      where,
-      orderBy: { id: 'asc' },
-      take: take + 1,
-      ...(cursor ? { cursor, skip: 1 } : {}),
-      select: {
-        id: true,
-        name: true,
-        chainId: true,
-        mmrId: true,
-        adManagerAddress: true,
-        orderPortalAddress: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    let nextCursor: string | null = null;
-    if (rows.length > take) {
-      const next = rows.pop()!;
-      nextCursor = next.id;
-    }
-
-    return { rows, nextCursor };
   }
 
   async getByChainId(chainId: string) {
-    const chain = await this.prisma.chain.findUnique({
-      where: { chainId: BigInt(chainId) },
-      select: {
-        id: true,
-        name: true,
-        mmrId: true,
-        chainId: true,
-        adManagerAddress: true,
-        orderPortalAddress: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-    if (!chain) throw new NotFoundException('Chain not found');
+    try {
+      const chain = await this.prisma.chain.findUnique({
+        where: { chainId: BigInt(chainId) },
+        select: {
+          id: true,
+          name: true,
+          mmrId: true,
+          chainId: true,
+          adManagerAddress: true,
+          orderPortalAddress: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      if (!chain) throw new NotFoundException('Chain not found');
 
-    return this.toPublic(chain);
+      return this.toPublic(chain);
+    } catch (e) {
+      if (e instanceof Error) {
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : HttpStatus.BAD_REQUEST;
+
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async create(dto: CreateChainDto) {

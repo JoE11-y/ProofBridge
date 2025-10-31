@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -21,8 +23,6 @@ import { randomUUID } from 'crypto';
 import { Prisma, TradeStatus } from '@prisma/client';
 import { EncryptionService } from '@libs/encryption.service';
 import { uuidToBigInt } from '../../providers/viem/ethers/typedData';
-import { ErrorService } from '@libs/error.service';
-import { ResponseService } from '@libs/response.service';
 
 @Injectable()
 export class TradesService {
@@ -32,165 +32,57 @@ export class TradesService {
     private readonly merkleService: MMRService,
     private readonly proofService: ProofService,
     private readonly encryptionService: EncryptionService,
-    private readonly responseService: ResponseService,
-    private readonly errorService: ErrorService,
   ) {}
 
   async getById(id: string) {
-    const row = await this.prisma.trade.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        status: true,
-        amount: true,
-        adId: true,
-        routeId: true,
-        adCreatorAddress: true,
-        bridgerAddress: true,
-        createdAt: true,
-        updatedAt: true,
-        ad: {
-          select: { id: true, creatorAddress: true, routeId: true },
-        },
-        route: {
-          select: {
-            id: true,
-            adToken: {
-              select: {
-                id: true,
-                symbol: true,
-                chain: { select: { name: true, chainId: true } },
-                kind: true,
-                address: true,
-              },
-            },
-            orderToken: {
-              select: {
-                id: true,
-                symbol: true,
-                chain: { select: { name: true, chainId: true } },
-                kind: true,
-                address: true,
-              },
-            },
+    try {
+      const row = await this.prisma.trade.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          status: true,
+          amount: true,
+          adId: true,
+          routeId: true,
+          adCreatorAddress: true,
+          bridgerAddress: true,
+          createdAt: true,
+          updatedAt: true,
+          ad: {
+            select: { id: true, creatorAddress: true, routeId: true },
           },
-        },
-      },
-    });
-    if (!row) throw new NotFoundException('Trade not found');
-
-    const orderChainId = row.route.orderToken.chain.chainId.toString();
-    const adChainId = row.route.adToken.chain.chainId.toString();
-
-    return {
-      ...row,
-      amount: row.amount.toFixed(0),
-      adChainId: adChainId,
-      orderChainId: orderChainId,
-      route: {
-        ...row.route,
-        adToken: {
-          ...row.route.adToken,
-          chain: {
-            ...row.route.adToken.chain,
-            chainId: adChainId,
-          },
-          kind: row.route.adToken.kind as string,
-        },
-        orderToken: {
-          ...row.route.orderToken,
-          chain: {
-            ...row.route.orderToken.chain,
-            chainId: orderChainId,
-          },
-          kind: row.route.orderToken.kind as string,
-        },
-      },
-    };
-  }
-
-  async list(q: QueryTradesDto) {
-    const take = q.limit && q.limit > 0 && q.limit <= 100 ? q.limit : 25;
-    const cursor = q.cursor ? { id: q.cursor } : undefined;
-
-    const where: Prisma.TradeWhereInput = {};
-
-    if (q.routeId) where.routeId = q.routeId;
-    if (q.adId) where.adId = q.adId;
-    if (q.adCreatorAddress)
-      where.adCreatorAddress = getAddress(q.adCreatorAddress);
-    if (q.bridgerAddress) where.bridgerAddress = getAddress(q.bridgerAddress);
-
-    if (q.adTokenId || q.orderTokenId) {
-      where.route = {
-        ...(q.adTokenId && { adTokenId: q.adTokenId }),
-        ...(q.orderTokenId && { orderTokenId: q.orderTokenId }),
-      };
-    }
-
-    if (q.minAmount || q.maxAmount) {
-      where.amount = {
-        ...(q.minAmount ? { gte: BigInt(q.minAmount) } : {}),
-        ...(q.maxAmount ? { lte: BigInt(q.maxAmount) } : {}),
-      } as Prisma.DecimalFilter;
-    }
-
-    const rows = await this.prisma.trade.findMany({
-      where,
-      orderBy: { id: 'asc' },
-      take: take + 1,
-      ...(cursor ? { cursor, skip: 1 } : {}),
-      select: {
-        id: true,
-        status: true,
-        amount: true,
-        adId: true,
-        routeId: true,
-        adCreatorAddress: true,
-        bridgerAddress: true,
-        ad: {
-          select: { id: true, creatorAddress: true, routeId: true },
-        },
-        route: {
-          select: {
-            id: true,
-            adToken: {
-              select: {
-                id: true,
-                symbol: true,
-                chain: { select: { name: true, chainId: true } },
-                kind: true,
-                address: true,
+          route: {
+            select: {
+              id: true,
+              adToken: {
+                select: {
+                  id: true,
+                  symbol: true,
+                  chain: { select: { name: true, chainId: true } },
+                  kind: true,
+                  address: true,
+                },
               },
-            },
-            orderToken: {
-              select: {
-                id: true,
-                symbol: true,
-                chain: { select: { name: true, chainId: true } },
-                kind: true,
-                address: true,
+              orderToken: {
+                select: {
+                  id: true,
+                  symbol: true,
+                  chain: { select: { name: true, chainId: true } },
+                  kind: true,
+                  address: true,
+                },
               },
             },
           },
         },
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+      });
+      if (!row) throw new NotFoundException('Trade not found');
 
-    let nextCursor: string | null = null;
-    if (rows.length > take) {
-      const next = rows.pop()!;
-      nextCursor = next.id;
-    }
-
-    const cleanedRows = rows.map((row) => {
       const orderChainId = row.route.orderToken.chain.chainId.toString();
       const adChainId = row.route.adToken.chain.chainId.toString();
+
       return {
         ...row,
-        status: row.status as string,
         amount: row.amount.toFixed(0),
         adChainId: adChainId,
         orderChainId: orderChainId,
@@ -214,13 +106,155 @@ export class TradesService {
           },
         },
       };
-    });
+    } catch (e) {
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
-    return { data: cleanedRows, nextCursor };
+  async list(q: QueryTradesDto) {
+    try {
+      const take = q.limit && q.limit > 0 && q.limit <= 100 ? q.limit : 25;
+      const cursor = q.cursor ? { id: q.cursor } : undefined;
+
+      const where: Prisma.TradeWhereInput = {};
+
+      if (q.routeId) where.routeId = q.routeId;
+      if (q.adId) where.adId = q.adId;
+      if (q.adCreatorAddress)
+        where.adCreatorAddress = getAddress(q.adCreatorAddress);
+      if (q.bridgerAddress) where.bridgerAddress = getAddress(q.bridgerAddress);
+
+      if (q.adTokenId || q.orderTokenId) {
+        where.route = {
+          ...(q.adTokenId && { adTokenId: q.adTokenId }),
+          ...(q.orderTokenId && { orderTokenId: q.orderTokenId }),
+        };
+      }
+
+      if (q.minAmount || q.maxAmount) {
+        where.amount = {
+          ...(q.minAmount ? { gte: BigInt(q.minAmount) } : {}),
+          ...(q.maxAmount ? { lte: BigInt(q.maxAmount) } : {}),
+        } as Prisma.DecimalFilter;
+      }
+
+      const rows = await this.prisma.trade.findMany({
+        where,
+        orderBy: { id: 'asc' },
+        take: take + 1,
+        ...(cursor ? { cursor, skip: 1 } : {}),
+        select: {
+          id: true,
+          status: true,
+          amount: true,
+          adId: true,
+          routeId: true,
+          adCreatorAddress: true,
+          bridgerAddress: true,
+          ad: {
+            select: { id: true, creatorAddress: true, routeId: true },
+          },
+          route: {
+            select: {
+              id: true,
+              adToken: {
+                select: {
+                  id: true,
+                  symbol: true,
+                  chain: { select: { name: true, chainId: true } },
+                  kind: true,
+                  address: true,
+                },
+              },
+              orderToken: {
+                select: {
+                  id: true,
+                  symbol: true,
+                  chain: { select: { name: true, chainId: true } },
+                  kind: true,
+                  address: true,
+                },
+              },
+            },
+          },
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      let nextCursor: string | null = null;
+      if (rows.length > take) {
+        const next = rows.pop()!;
+        nextCursor = next.id;
+      }
+
+      const cleanedRows = rows.map((row) => {
+        const orderChainId = row.route.orderToken.chain.chainId.toString();
+        const adChainId = row.route.adToken.chain.chainId.toString();
+        return {
+          ...row,
+          status: row.status as string,
+          amount: row.amount.toFixed(0),
+          adChainId: adChainId,
+          orderChainId: orderChainId,
+          route: {
+            ...row.route,
+            adToken: {
+              ...row.route.adToken,
+              chain: {
+                ...row.route.adToken.chain,
+                chainId: adChainId,
+              },
+              kind: row.route.adToken.kind as string,
+            },
+            orderToken: {
+              ...row.route.orderToken,
+              chain: {
+                ...row.route.orderToken.chain,
+                chainId: orderChainId,
+              },
+              kind: row.route.orderToken.kind as string,
+            },
+          },
+        };
+      });
+
+      return { data: cleanedRows, nextCursor };
+    } catch (e) {
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   // creates a new trade along with ad lock
-  async create(req: Request, res: Response, dto: CreateTradeDto) {
+  async create(req: Request, dto: CreateTradeDto) {
     try {
       const reqUser = req.user;
 
@@ -396,11 +430,25 @@ export class TradesService {
 
       return result;
     } catch (e) {
-      this.errorService.handleServerError(res, e, 'Create trade failed');
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async params(req: Request, res: Response, tradeId: string) {
+  async params(req: Request, tradeId: string) {
     try {
       const reqUser = req.user;
       if (!reqUser) throw new UnauthorizedException('Not authenticated');
@@ -481,11 +529,25 @@ export class TradesService {
         salt: uuidToBigInt(trade.id).toString(),
       };
     } catch (e) {
-      this.errorService.handleServerError(res, e, 'Get trade params failed');
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async lockTrade(req: Request, res: Response, tradeId: string) {
+  async lockTrade(req: Request, tradeId: string) {
     try {
       const reqUser = req.user;
       if (!reqUser) throw new UnauthorizedException('Not authenticated');
@@ -612,11 +674,25 @@ export class TradesService {
 
       return reqContractDetails;
     } catch (e) {
-      this.errorService.handleServerError(res, e, 'Lock trade failed');
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async unlock(req: Request, res: Response, id: string, dto: UnlockTradeDto) {
+  async unlock(req: Request, id: string, dto: UnlockTradeDto) {
     try {
       const reqUser = req.user;
       if (!reqUser) throw new UnauthorizedException('Not authenticated');
@@ -819,13 +895,27 @@ export class TradesService {
 
       return requestContractDetails;
     } catch (e) {
-      this.errorService.handleServerError(res, e, 'Unlock trade failed');
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   async confirmChainAction(
     req: Request,
-    res: Response,
+
     tradeId: string,
     dto: ConfirmTradeActionDto,
   ) {
@@ -961,17 +1051,27 @@ export class TradesService {
         success: true,
       };
     } catch (e) {
-      this.errorService.handleServerError(
-        res,
-        e,
-        'Confirm trade action failed',
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   async confirmUnlockChainAction(
     req: Request,
-    res: Response,
+
     tradeId: string,
     dto: ConfirmTradeActionDto,
   ) {
@@ -1100,10 +1200,20 @@ export class TradesService {
         success: true,
       };
     } catch (e) {
-      this.errorService.handleServerError(
-        res,
-        e,
-        'Confirm unlock trade action failed',
+      if (e instanceof Error) {
+        if (e instanceof HttpException) throw e;
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : e.message.toLowerCase().includes('bad request')
+              ? HttpStatus.BAD_REQUEST
+              : HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

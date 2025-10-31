@@ -5,7 +5,6 @@ import {
   HttpStatus,
   Post,
   Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import { FaucetService } from './faucet.service';
@@ -17,7 +16,7 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 
 @ApiTags('Faucet')
 @Controller('v1/faucet')
@@ -38,11 +37,7 @@ export class FaucetController {
     description: 'Successfully minted and sent faucet tokens',
     type: FaucetResponseDto,
   })
-  async requestFaucet(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Body() dto: RequestFaucetDto,
-  ) {
-    return this.faucetService.requestFaucet(req, res, dto);
+  async requestFaucet(@Req() req: Request, @Body() dto: RequestFaucetDto) {
+    return this.faucetService.requestFaucet(req, dto);
   }
 }

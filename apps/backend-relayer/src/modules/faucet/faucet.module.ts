@@ -5,8 +5,6 @@ import { FaucetController } from './faucet.controller';
 import { FaucetService } from './faucet.service';
 import { ViemService } from '../../providers/viem/viem.service';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
-import { ErrorService } from '@libs/error.service';
-import { ResponseService } from '@libs/response.service';
 
 @Module({
   imports: [JwtModule.register({})],
@@ -17,8 +15,6 @@ import { ResponseService } from '@libs/response.service';
     ViemService,
     UserJwtGuard,
     JwtService,
-    ResponseService,
-    ErrorService,
   ],
 })
 export class FaucetModule {}

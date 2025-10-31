@@ -6,6 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { env } from '@libs/configs';
 import { MMRService } from './modules/mmr/mmr.service';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
   const PORT = parseInt(String(env.port), 10) || 2005;
@@ -30,6 +31,7 @@ async function bootstrap() {
   app.use(morgan('tiny'));
   app.use(express.json({ limit: 5 << 20 }));
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   const swaggerOptions = new DocumentBuilder()
     .setTitle('Proof Relayer API')

@@ -3,26 +3,23 @@ import {
   NotFoundException,
   UnauthorizedException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
 import { ViemService } from '../../providers/viem/viem.service';
 import { RequestFaucetDto, FaucetResponseDto } from './dto/faucet.dto';
-import { Request, Response } from 'express';
-import { ErrorService } from '@libs/error.service';
-import { ResponseService } from '@libs/response.service';
+import { Request } from 'express';
 
 @Injectable()
 export class FaucetService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly viemService: ViemService,
-    private readonly responseService: ResponseService,
-    private readonly errorService: ErrorService,
   ) {}
 
   async requestFaucet(
     req: Request,
-    res: Response,
     dto: RequestFaucetDto,
   ): Promise<FaucetResponseDto | undefined> {
     try {
@@ -82,8 +79,20 @@ export class FaucetService {
         chainId: token.chain.chainId.toString(),
         amount: '1000000',
       };
-    } catch (err) {
-      this.errorService.handleServerError(res, err, 'Faucet request failed');
+    } catch (e) {
+      if (e instanceof Error) {
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : HttpStatus.BAD_REQUEST;
+
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

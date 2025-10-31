@@ -7,8 +7,6 @@ import { ViemModule } from '../../providers/viem/viem.module';
 import { MMRService } from '../mmr/mmr.service';
 import { ProofModule } from '../../providers/noir/proof.module';
 import { EncryptionService } from '@libs/encryption.service';
-import { ErrorService } from '@libs/error.service';
-import { ResponseService } from '@libs/response.service';
 
 @Module({
   imports: [JwtModule.register({}), ViemModule, ProofModule],
@@ -19,8 +17,6 @@ import { ResponseService } from '@libs/response.service';
     MMRService,
     EncryptionService,
     JwtService,
-    ResponseService,
-    ErrorService,
   ],
 })
 export class TradesModule {}

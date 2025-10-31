@@ -9,7 +9,6 @@ import {
   Post,
   Query,
   Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import { TradesService } from './trade.service';
@@ -26,7 +25,7 @@ import {
   UnlockOrderResponseDto,
   UnlockTradeDto,
 } from './dto/trade.dto';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -67,12 +66,8 @@ export class TradesController {
       'Creates a new trade and returns the transaction data for blockchain execution',
     type: CreateTradeRequestContractResponseDto,
   })
-  async create(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Body() dto: CreateTradeDto,
-  ) {
-    return this.trades.create(req, res, dto);
+  async create(@Req() req: Request, @Body() dto: CreateTradeDto) {
+    return this.trades.create(req, dto);
   }
 
   @ApiBearerAuth()
@@ -83,12 +78,8 @@ export class TradesController {
     description: 'Trade parameters',
     type: OrderParamsResponseDto,
   })
-  params(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
-    return this.trades.params(req, res, id);
+  params(@Req() req: Request, @Param('id', new ParseUUIDPipe()) id: string) {
+    return this.trades.params(req, id);
   }
 
   @ApiBearerAuth()
@@ -101,12 +92,8 @@ export class TradesController {
       'Locks a trade for order and returns the transaction data for blockchain execution',
     type: LockForOrderResponseDto,
   })
-  lock(
-    @Req() req: Request,
-    @Res() res: Response,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
-    return this.trades.lockTrade(req, res, id);
+  lock(@Req() req: Request, @Param('id', new ParseUUIDPipe()) id: string) {
+    return this.trades.lockTrade(req, id);
   }
 
   @ApiBearerAuth()
@@ -121,11 +108,10 @@ export class TradesController {
   })
   unlock(
     @Req() req: Request,
-    @Res() res: Response,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UnlockTradeDto,
   ) {
-    return this.trades.unlock(req, res, id, dto);
+    return this.trades.unlock(req, id, dto);
   }
 
   @ApiBearerAuth()
@@ -140,11 +126,10 @@ export class TradesController {
   })
   confirmUnlockChainAction(
     @Req() req: Request,
-    @Res() res: Response,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ConfirmTradeActionDto,
   ) {
-    return this.trades.confirmUnlockChainAction(req, res, id, dto);
+    return this.trades.confirmUnlockChainAction(req, id, dto);
   }
 
   @ApiBearerAuth()
@@ -158,10 +143,9 @@ export class TradesController {
   })
   confirmChainAction(
     @Req() req: Request,
-    @Res() res: Response,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ConfirmTradeActionDto,
   ) {
-    return this.trades.confirmChainAction(req, res, id, dto);
+    return this.trades.confirmChainAction(req, id, dto);
   }
 }

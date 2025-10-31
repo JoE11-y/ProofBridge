@@ -1,5 +1,7 @@
 import {
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -17,80 +19,114 @@ export class TokenService {
   constructor(private readonly prisma: PrismaService) {}
 
   async list(query: QueryTokensDto) {
-    const take = query.limit ?? 100;
-    const cursor = query.cursor ? { id: query.cursor } : undefined;
-    const where: {
-      name?: { contains: string; mode: 'insensitive' };
-      chainUid?: string;
-      symbol?: { contains: string; mode: 'insensitive' };
-      address?: { contains: string; mode: 'insensitive' } | { equals: string };
-    } = {};
+    try {
+      const take = query.limit ?? 100;
+      const cursor = query.cursor ? { id: query.cursor } : undefined;
+      const where: {
+        name?: { contains: string; mode: 'insensitive' };
+        chainUid?: string;
+        symbol?: { contains: string; mode: 'insensitive' };
+        address?:
+          | { contains: string; mode: 'insensitive' }
+          | { equals: string };
+      } = {};
 
-    if (query.chainUid) {
-      where.chainUid = query.chainUid;
-    }
-
-    if (query.chainId) {
-      const chain = await this.prisma.chain.findFirst({
-        where: { chainId: BigInt(query.chainId) },
-        select: { id: true },
-      });
-      if (chain) {
-        where.chainUid = chain.id;
+      if (query.chainUid) {
+        where.chainUid = query.chainUid;
       }
-    }
 
-    if (query.symbol) {
-      where.symbol = { contains: query.symbol, mode: 'insensitive' };
-    }
-    if (query.address) {
-      where.address = { equals: query.address.toLowerCase() };
-    }
+      if (query.chainId) {
+        const chain = await this.prisma.chain.findFirst({
+          where: { chainId: BigInt(query.chainId) },
+          select: { id: true },
+        });
+        if (chain) {
+          where.chainUid = chain.id;
+        }
+      }
 
-    const rows = await this.prisma.token.findMany({
-      where,
-      orderBy: { id: 'asc' },
-      take: take + 1,
-      ...(cursor ? { cursor, skip: 1 } : {}),
-      select: {
-        id: true,
-        symbol: true,
-        name: true,
-        address: true,
-        decimals: true,
-        kind: true,
-        createdAt: true,
-        updatedAt: true,
-        chain: { select: { id: true, name: true, chainId: true } },
-      },
-    });
+      if (query.symbol) {
+        where.symbol = { contains: query.symbol, mode: 'insensitive' };
+      }
+      if (query.address) {
+        where.address = { equals: query.address.toLowerCase() };
+      }
 
-    let nextCursor: string | null = null;
-    if (rows.length > take) {
-      const next = rows.pop()!;
-      nextCursor = next.id;
+      const rows = await this.prisma.token.findMany({
+        where,
+        orderBy: { id: 'asc' },
+        take: take + 1,
+        ...(cursor ? { cursor, skip: 1 } : {}),
+        select: {
+          id: true,
+          symbol: true,
+          name: true,
+          address: true,
+          decimals: true,
+          kind: true,
+          createdAt: true,
+          updatedAt: true,
+          chain: { select: { id: true, name: true, chainId: true } },
+        },
+      });
+
+      let nextCursor: string | null = null;
+      if (rows.length > take) {
+        const next = rows.pop()!;
+        nextCursor = next.id;
+      }
+
+      return { data: rows.map((c) => this.serialize(c)), nextCursor };
+    } catch (e) {
+      if (e instanceof Error) {
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : HttpStatus.BAD_REQUEST;
+
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-
-    return { data: rows.map((c) => this.serialize(c)), nextCursor };
   }
 
   async getById(id: string) {
-    const row = await this.prisma.token.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        symbol: true,
-        name: true,
-        address: true,
-        decimals: true,
-        kind: true,
-        createdAt: true,
-        updatedAt: true,
-        chain: { select: { id: true, name: true, chainId: true } },
-      },
-    });
-    if (!row) throw new NotFoundException('Token not found');
-    return this.serialize(row as TokenRow);
+    try {
+      const row = await this.prisma.token.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          symbol: true,
+          name: true,
+          address: true,
+          decimals: true,
+          kind: true,
+          createdAt: true,
+          updatedAt: true,
+          chain: { select: { id: true, name: true, chainId: true } },
+        },
+      });
+      if (!row) throw new NotFoundException('Token not found');
+      return this.serialize(row as TokenRow);
+    } catch (e) {
+      if (e instanceof Error) {
+        const status = e.message.toLowerCase().includes('forbidden')
+          ? HttpStatus.FORBIDDEN
+          : e.message.toLowerCase().includes('not found')
+            ? HttpStatus.NOT_FOUND
+            : HttpStatus.BAD_REQUEST;
+
+        throw new HttpException(e.message, status);
+      }
+      throw new HttpException(
+        'Unknown error occurred',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async create(dto: CreateTokenDto) {
