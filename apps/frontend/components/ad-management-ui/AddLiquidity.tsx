@@ -56,17 +56,21 @@ export const AddLiquidity = () => {
 
   const handleCreateAd = async () => {
     try {
+      const token = tokens?.data?.find((value) => value.id === selectedTokenId);
+
       const response = await createAd({
         payload: {
           routeId: routes?.data[0]?.id!,
           creatorDstAddress: account.address!,
+
           maxAmount: parseUnits(
             max,
-            base_chain?.nativeCurrency?.decimals!
+            token?.decimals!
           ).toString(),
+
           minAmount: parseUnits(
             min,
-            base_chain?.nativeCurrency?.decimals!
+            token?.decimals!
           ).toString(),
 
           metadata: {
@@ -75,14 +79,14 @@ export const AddLiquidity = () => {
           },
           fundAmount: parseUnits(
             amount,
-            base_chain?.nativeCurrency?.decimals!
+            token?.decimals!
           ).toString(),
         },
-        token: tokens?.data?.find((value) => value.id === selectedTokenId)!,
+        token: token!,
       })
 
       toggleModal()
-    } catch (error) {}
+    } catch (error) { }
   }
 
   return (

@@ -1,4 +1,4 @@
-import { ORDER_PORTAL_ABI } from "@/abis/orderPortal.abi"
+import { ORDER_PORTAL_ABI } from "@/abis/orderPortal.abi";
 import {
   confirmTradeTx,
   confirmUnlockFunds,
@@ -7,30 +7,30 @@ import {
   getTradeParams,
   lockFunds,
   unlockFunds,
-} from "@/services/trades.service"
+} from "@/services/trades.service";
 import {
   ICreateTradeRequest,
   IGetTradesParams,
   IUnlockFundsRequest,
-} from "@/types/trades"
-import { config } from "@/utils/wagmi-config"
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { waitForTransactionReceipt } from "wagmi/actions"
-import { useAccount, useWriteContract, useSignTypedData } from "wagmi"
-import { toast } from "sonner"
-import { ERC20_ABI } from "@/abis/ERC20.abi"
-import { getSingleToken, getTokens } from "@/services/tokens.service"
-import { AD_MANAGER_ABI } from "@/abis/AdManager.abi"
-import { formatUnits, parseEther } from "viem"
+} from "@/types/trades";
+import { config } from "@/utils/wagmi-config";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { waitForTransactionReceipt } from "wagmi/actions";
+import { useAccount, useWriteContract, useSignTypedData } from "wagmi";
+import { toast } from "sonner";
+import { ERC20_ABI } from "@/abis/ERC20.abi";
+import { getSingleToken, getTokens } from "@/services/tokens.service";
+import { AD_MANAGER_ABI } from "@/abis/AdManager.abi";
+import { formatUnits, parseUnits } from "viem";
 
 export const useCreateTrade = () => {
-  const account = useAccount()
-  const { writeContractAsync } = useWriteContract()
+  const account = useAccount();
+  const { writeContractAsync } = useWriteContract();
   return useMutation({
     mutationKey: ["create-trade"],
     mutationFn: async (data: ICreateTradeRequest) => {
-      const response = await createTrade(data)
-      const token = await getSingleToken(data.orderTokenId)
+      const response = await createTrade(data);
+      const token = await getSingleToken(data.orderTokenId);
 
       if (token.kind === "ERC20") {
         const approveHash = await writeContractAsync({
@@ -42,11 +42,11 @@ export const useCreateTrade = () => {
             response.reqContractDetails.contractAddress,
             BigInt(response.reqContractDetails.orderParams.amount),
           ],
-        })
+        });
 
         const approveReceipt = await waitForTransactionReceipt(config, {
           hash: approveHash,
-        })
+        });
 
         if (approveReceipt.status === "success") {
           const txHash = await writeContractAsync({
@@ -78,31 +78,31 @@ export const useCreateTrade = () => {
                 salt: BigInt(response.reqContractDetails.orderParams.salt),
               },
             ],
-          })
+          });
 
           const receipt = await waitForTransactionReceipt(config, {
             hash: txHash,
-          })
+          });
           if (receipt.status === "success") {
             await confirmTradeTx({
               txHash: receipt.transactionHash,
               signature: response.reqContractDetails.signature,
               tradeId: response.tradeId,
-            })
+            });
           }
 
           if (receipt.status !== "success") {
-            throw Error("Transaction failed, Retry")
+            throw Error("Transaction failed, Retry");
           }
         }
 
         if (approveReceipt.status !== "success") {
-          throw Error("Transaction failed, Retry")
+          throw Error("Transaction failed, Retry");
         }
       }
 
       if (token.kind === "NATIVE") {
-        const amount = formatUnits(BigInt(data.amount), token.decimals)
+        const amount = formatUnits(BigInt(data.amount), token.decimals);
         const txHash = await writeContractAsync({
           address: response.reqContractDetails.contractAddress,
           chainId: Number(response.reqContractDetails.chainId),
@@ -131,30 +131,30 @@ export const useCreateTrade = () => {
               salt: BigInt(response.reqContractDetails.orderParams.salt),
             },
           ],
-          value: parseEther(amount),
-        })
+          value: parseUnits(amount, token.decimals),
+        });
 
         const receipt = await waitForTransactionReceipt(config, {
           hash: txHash,
-        })
+        });
         if (receipt.status === "success") {
           await confirmTradeTx({
             txHash: receipt.transactionHash,
             signature: response.reqContractDetails.signature,
             tradeId: response.tradeId,
-          })
+          });
         }
 
         if (receipt.status !== "success") {
-          throw Error("Transaction failed, Retry")
+          throw Error("Transaction failed, Retry");
         }
       }
 
-      return response
+      return response;
     },
 
     onSuccess: () => {
-      toast.success("Trade creation was successful")
+      toast.success("Trade creation was successful");
     },
     onError: function (error: any, variables, result, ctx) {
       toast.error(
@@ -164,17 +164,17 @@ export const useCreateTrade = () => {
         {
           description: "",
         }
-      )
+      );
     },
-  })
-}
+  });
+};
 
 export const useLockFunds = () => {
-  const { writeContractAsync } = useWriteContract()
+  const { writeContractAsync } = useWriteContract();
   return useMutation({
     mutationKey: ["lock-fund"],
     mutationFn: async (id: string) => {
-      const response = await lockFunds(id)
+      const response = await lockFunds(id);
 
       const txHash = await writeContractAsync({
         address: response.contractAddress,
@@ -199,28 +199,28 @@ export const useLockFunds = () => {
             salt: BigInt(response.orderParams.salt),
           },
         ],
-      })
+      });
 
       const receipt = await waitForTransactionReceipt(config, {
         hash: txHash,
-      })
+      });
       if (receipt.status === "success") {
         await confirmTradeTx({
           txHash: receipt.transactionHash,
           signature: response.signature,
           tradeId: id,
-        })
+        });
       }
 
       if (receipt.status !== "success") {
-        throw Error("Transaction failed, Retry")
+        throw Error("Transaction failed, Retry");
       }
 
-      return response
+      return response;
     },
 
     onSuccess: () => {
-      toast.success("Funds lock was successful")
+      toast.success("Funds lock was successful");
     },
     onError: function (error: any, variables, result, ctx) {
       toast.error(
@@ -230,19 +230,19 @@ export const useLockFunds = () => {
         {
           description: "",
         }
-      )
+      );
     },
-  })
-}
+  });
+};
 
 export const useUnLockFunds = () => {
-  const { writeContractAsync } = useWriteContract()
-  const { signTypedDataAsync } = useSignTypedData()
-  const account = useAccount()
+  const { writeContractAsync } = useWriteContract();
+  const { signTypedDataAsync } = useSignTypedData();
+  const account = useAccount();
   return useMutation({
     mutationKey: ["unlock-fund"],
     mutationFn: async (id: string) => {
-      const params = await getTradeParams(id)
+      const params = await getTradeParams(id);
       const signature = await signTypedDataAsync({
         types: {
           Order: [
@@ -281,9 +281,9 @@ export const useUnLockFunds = () => {
           name: "Proofbridge",
           version: "1",
         },
-      })
-      const response = await unlockFunds({ id, signature: signature })
-      const isBridger = account.address === params?.bridger
+      });
+      const response = await unlockFunds({ id, signature: signature });
+      const isBridger = account.address === params?.bridger;
 
       const txHash = await writeContractAsync({
         address: response.contractAddress,
@@ -311,28 +311,28 @@ export const useUnLockFunds = () => {
           response.targetRoot,
           response.proof,
         ],
-      })
+      });
 
       const receipt = await waitForTransactionReceipt(config, {
         hash: txHash,
-      })
+      });
       if (receipt.status === "success") {
         await confirmUnlockFunds({
           txHash: receipt.transactionHash,
           signature: response.signature,
           id,
-        })
+        });
       }
 
       if (receipt.status !== "success") {
-        throw Error("Transaction failed, Retry")
+        throw Error("Transaction failed, Retry");
       }
 
-      return response
+      return response;
     },
 
     onSuccess: () => {
-      toast.success("Funds released successfully")
+      toast.success("Funds released successfully");
     },
     onError: function (error: any, variables, result, ctx) {
       toast.error(
@@ -342,14 +342,14 @@ export const useUnLockFunds = () => {
         {
           description: "",
         }
-      )
+      );
     },
-  })
-}
+  });
+};
 
 export const useGetAllTrades = (params: IGetTradesParams) => {
   return useQuery({
     queryKey: ["trades", params],
     queryFn: () => getAllTrades(params),
-  })
-}
+  });
+};
