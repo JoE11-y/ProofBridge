@@ -4,6 +4,7 @@ import {
   Chain,
   createPublicClient,
   createWalletClient,
+  getAddress,
   http,
   keccak256,
   parseEther,
@@ -454,7 +455,11 @@ export class ViemService {
     data: T_FetchRoot,
   ): Promise<boolean> {
     const onChainRoots = await this.fetchOnChainRoots(isAdCreator, data);
-    return onChainRoots.includes(localRoot);
+    console.log(onChainRoots, localRoot);
+    // const formattedLocalRoot = localRoot.toLowerCase();
+    const formattedOnChainRoots = onChainRoots.map((root) => getAddress(root));
+    const formattedLocalRoot = getAddress(localRoot);
+    return formattedOnChainRoots.includes(formattedLocalRoot);
   }
 
   async fetchOnChainRoots(
