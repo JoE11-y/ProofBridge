@@ -47,6 +47,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
+  --font-mango: var(--font-mango);
   --font-mono: var(--font-geist-mono);
   --font-perfectly-nineties: var(--font-perfectly-nineties);
   --font-pixter: var(--font-pixter-display);

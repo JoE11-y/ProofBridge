@@ -10,7 +10,7 @@ ProofBridge introduces a decentralized bridge infrastructure where **users form 
 
 Key primitives include:
 
-* **Zero-Knowledge Proofs (ZKPs)**: Used to validate off-chain computation without revealing sensitive data.
+* **Zero-Knowledge Proofs (ZKPs)**: Used to validate off-chain computation and generate proofs.
 * **BLS Signatures** (in progress): Used to aggregate authentication proofs from both parties.
 * **Consensus by Counterparties**: Trade participants themselves serve as lightweight validators.
 * **Multi-chain Compatibility**: Designed for EVM chains and extensible to non-EVM networks.

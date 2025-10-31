@@ -23,25 +23,16 @@ import { toast } from "sonner"
 import { useAccount, useWriteContract } from "wagmi"
 import { waitForTransactionReceipt } from "wagmi/actions"
 import { getTokens } from "@/services/tokens.service"
+import { IToken } from "@/types/tokens"
 
 export const useCreateAd = () => {
   const { writeContractAsync } = useWriteContract()
   return useMutation({
     mutationKey: ["create-ad"],
-    mutationFn: async (data: ICreateAdRequest) => {
-      const response = await createAd(data)
-      const token = await getTokens({ chainId: String(response.chainId!) })
-      const approveHash = await writeContractAsync({
-        address: token.data[0].address,
-        abi: ERC20_ABI,
-        chainId: Number(response.chainId),
-        functionName: "approve",
-        args: [response.contractAddress, data.fundAmount],
-      })
-      const approveReceipt = await waitForTransactionReceipt(config, {
-        hash: approveHash,
-      })
-      if (approveReceipt.status === "success") {
+    mutationFn: async (data: { payload: ICreateAdRequest; token: IToken }) => {
+      const response = await createAd(data.payload)
+      const token = data.token
+      const performTx = async () => {
         const txHash = await writeContractAsync({
           address: response.contractAddress,
           abi: AD_MANAGER_ABI,
@@ -53,7 +44,7 @@ export const useCreateAd = () => {
             BigInt(response.timeToExpire),
             response.adId,
             response.adToken,
-            data.fundAmount,
+            data.payload.fundAmount,
             BigInt(response.orderChainId),
             response.adRecipient,
           ],
@@ -74,8 +65,26 @@ export const useCreateAd = () => {
           throw Error("Transaction failed, Retry")
         }
       }
-      if (approveReceipt.status === "reverted") {
-        throw Error("Transaction not approved")
+      if (token.kind === "ERC") {
+        const approveHash = await writeContractAsync({
+          address: token.address,
+          abi: ERC20_ABI,
+          chainId: Number(response.chainId),
+          functionName: "approve",
+          args: [response.contractAddress, data.payload.fundAmount],
+        })
+        const approveReceipt = await waitForTransactionReceipt(config, {
+          hash: approveHash,
+        })
+        if (approveReceipt.status === "success") {
+          await performTx()
+        }
+        if (approveReceipt.status === "reverted") {
+          throw Error("Transaction not approved")
+        }
+      }
+      if (token.kind === "NATIVE") {
+        await performTx()
       }
       return response
     },

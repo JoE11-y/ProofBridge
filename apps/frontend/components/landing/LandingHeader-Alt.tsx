@@ -13,16 +13,27 @@ export const LandingHeaderAlt = () => {
         <Logo />
         <ul className="md:flex items-center gap-14 hidden">
           <li className="signal-line-link">
-            <Link href={""}>Docs</Link>
+            <Link
+              href={"https://github.com/JoE11-y/ProofBridge"}
+              target="_blank"
+            >
+              Docs
+            </Link>
           </li>
           <li className="signal-line-link">
-            <Link href={""}>Community</Link>
+            <Link href={"https://x.com/Proof_bridge"} target="_blank">
+              Community
+            </Link>
           </li>
           <li className="signal-line-link">
-            <Link href={""}>blog</Link>
+            <Link href={"https://x.com/Proof_bridge"} target="_blank">
+              blog
+            </Link>
           </li>
           <li className="signal-line-link">
-            <Link href={""}>Contact</Link>
+            <Link href={"https://x.com/Proof_bridge"} target="_blank">
+              Contact
+            </Link>
           </li>
         </ul>
         <div className="md:block hidden">

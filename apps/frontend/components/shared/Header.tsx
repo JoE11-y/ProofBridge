@@ -16,10 +16,14 @@ export const Header = () => {
           </p>
         </div>
         <div className="flex items-center justify-between text-sm gap-5">
-          <Link href={"/"} className="hidden md:inline">
+          <Link
+            href={"https://github.com/JoE11-y/ProofBridge"}
+            className="hidden md:inline"
+            target="_blank"
+          >
             Docs
           </Link>
-          <Link href={"/"} className="hidden md:inline">
+          <Link href={"/bridge"} className="hidden md:inline">
             Bridge
           </Link>
           <ConnectWalletButton />
