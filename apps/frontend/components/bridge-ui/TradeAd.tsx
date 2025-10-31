@@ -54,15 +54,15 @@ export const TradeAd = ({ ...props }: IAd) => {
       setBalance_value(
         formatUnits(balance?.data?.value!, balance?.data?.decimals!)
       )
-    }
-  }, [balance, props])
-
-  useEffect(() => {
-    if (nativeBalance.data) {
+    } else if (nativeBalance.data) {
       setBalance_value(
         formatUnits(nativeBalance?.data?.value!, nativeBalance?.data?.decimals!)
       )
     }
+  }, [balance, nativeBalance, props])
+
+  useEffect(() => {
+
   }, [nativeBalance, props])
 
   const { mutateAsync, isPending } = useCreateTrade()
