@@ -7,6 +7,7 @@ import {
   User,
 } from "lucide-react"
 import { ReactNode } from "react"
+import { FaFaucet } from "react-icons/fa"
 
 export interface IRoute {
   icon?: ReactNode
@@ -37,13 +38,13 @@ export const app_routes: IRoute[] = [
   },
 
   {
-    label: "Profile",
-    path: "/profile",
-    icon: <User size={20} />,
+    label: "Faucet(Get Tokens)",
+    path: "/faucet",
+    icon: <FaFaucet size={20} />,
   },
-  {
-    label: "Settings",
-    path: "/settings",
-    icon: <Settings size={20} />,
-  },
+  // {
+  //   label: "Settings",
+  //   path: "/settings",
+  //   icon: <Settings size={20} />,
+  // },
 ]
