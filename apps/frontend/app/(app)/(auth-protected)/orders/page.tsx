@@ -103,14 +103,14 @@ const OrdersPage = () => {
               </div>
               <div>
                 <h3 className="text-xl md:text-2xl font-semibold">
-                  {(
-                    (Number(
-                      trades?.data?.filter((trade) => trade.status === "LOCKED")
-                        ?.length
-                    ) /
-                      Number(trades?.data?.length)) *
-                      100 || 0
-                  ).toFixed(2)}
+                  {trades?.data?.length
+                    ? (
+                      (trades.data.filter((trade) => trade.status === "LOCKED")
+                        .length /
+                        trades.data.length) *
+                      100
+                    ).toFixed(2)
+                    : "0.00"}
                   %
                 </h3>
                 <p className="text-sm ">Avg. completion</p>
