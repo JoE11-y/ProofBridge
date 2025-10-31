@@ -521,9 +521,10 @@ export class ViemService {
 
     const roots: string[] = [];
 
-    let failureCount = 0;
-    for (let i = 0; i < Number(leafCount) && failureCount < 2; i++) {
-      console.log(i);
+    const max = Number(leafCount);
+    console.log('Total roots to fetch:', max);
+
+    for (let i = 0; i < max; i++) {
       try {
         const root = await client.readContract({
           address: contractAddress,
@@ -531,12 +532,10 @@ export class ViemService {
           functionName: 'getHistoricalRoot',
           args: [BigInt(i)],
         });
-        console.log(root);
         roots.push(root);
-      } catch (error) {
-        console.error(`Failed to fetch historical root at index ${i}:`, error);
-        failureCount++;
-        continue;
+      } catch (err) {
+        console.warn(`[historicalRoot] index=${i} failed:`, err);
+        // don't break, just skip
       }
     }
 
