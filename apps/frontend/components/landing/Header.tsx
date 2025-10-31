@@ -27,16 +27,27 @@ export const LandingHeader = () => {
       <div className="w-full flex items-center justify-between text-sm">
         <ul className="md:flex hidden gap-4">
           <li>
-            <Link href={""}>Docs</Link>
+            <Link
+              href={"https://github.com/JoE11-y/ProofBridge"}
+              target="_blank"
+            >
+              Docs
+            </Link>
           </li>
           <li>
-            <Link href={""}>Community</Link>
+            <Link href={"https://x.com/Proof_bridge"} target="_blank">
+              Community
+            </Link>
           </li>
           <li>
-            <Link href={""}>Blog</Link>
+            <Link href={"https://x.com/Proof_bridge"} target="_blank">
+              Blog
+            </Link>
           </li>
           <li>
-            <Link href={""}>X/Twitter</Link>
+            <Link href={"https://x.com/Proof_bridge"} target="_blank">
+              X/Twitter
+            </Link>
           </li>
         </ul>
 

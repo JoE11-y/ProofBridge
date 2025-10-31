@@ -6,26 +6,26 @@ import { SpecialButton } from "../ui/SpecialButton"
 
 const features = [
   {
-    title: "Instant Liquidity Unlock",
-    desc: "Users lock ETH or other supported tokens on Ethereum and receive HBAR on Hedera",
-    img: "/assets/features/vault.png",
+    title: "P2P bridge",
+    desc: "Peer-to-Peer Cross-Chain Transactions. Direct interaction between users without intermediaries.",
+    img: "/bridge.png",
     explore: "First P2P bridge on Hedera",
   },
   {
     title: "ZK-Based Security",
-    desc: "Zero-knowledge proofs ensure the user’s L1 collateral is verified without revealing private data or bridging assets, enabling secure minting of xZB.",
+    desc: "Zero-Knowledge Proof Validation. Ensures correctness of computations and state transitions.",
     img: "/assets/features/shield.png",
     explore: "First P2P bridge on Hedera",
   },
   {
-    title: "Native HBAR Token",
-    desc: "xZB is a non-wrapped, USD-pegged stable token issued on Starknet. It’s backed 1:1 by locked collateral on Ethereum L1 and is instantly usable across DeFi applications for lending, trading, and staking.",
+    title: "Multi-Chain support",
+    desc: "Multi-Chain Compatibility. Supports Ethereum, EVM-compatible chains, and extensibility for non-EVM chains.",
     img: "/assets/features/tokens.png",
     explore: "First P2P bridge on Hedera",
   },
   {
-    title: "Trustless Architecture",
-    desc: "Powered by ZK-proofs, ZeroXBridge eliminates the need for multisigs, validators, or custodians, removing human risk and ensuring user-owned security.",
+    title: "Trustless Operations",
+    desc: "Removes reliance on custodians, relayers, or centralized sequencers.",
     img: "/assets/features/wall.png",
     explore: "First P2P bridge on Hedera",
   },
@@ -33,15 +33,15 @@ const features = [
 
 export const Features = () => {
   return (
-    <div className="relative overflow-hidden landing-features">
-      <div className="border-y-[1px] border-gray-400/20 grid md:grid-cols-3 grid-cols-1 mb-10">
+    <div className="relative overflow-hidden landing-features z-[5] md:bg-transparent bg-grey-1000">
+      <div className="border-y-[1px] border-gray-400/20 grid md:grid-cols-3 grid-cols-1 mb-0">
         <div className="p-4 py-6 md:p-8 md:py-12 md:border-r-[1px] md:border-gray-400/20 md:min-h-[60vh] min-h-[130px]">
           <p className="text-xs text-grey-200 uppercase">[ Game changer ]</p>
           <p className="md:text-5xl text-lg md:my-5 my-2 font-perfectly-nineties">
             Inside ProofBridge
           </p>
           <Link
-            href={"/"}
+            href={"/bridge"}
             className="text-primary uppercase text-lg md:text-[18px] hero-click-to-explore hero-caption relative"
           >
             <SpecialButton>Launch App</SpecialButton>
@@ -82,7 +82,7 @@ export const Features = () => {
                               First P2P bridge on Hedera
                             </p>
                           </div>
-                          <Link href={""}>
+                          <Link href={"/bridge"}>
                             <ArrowUpRight className="md:text-4xl text-2xl text-primary" />
                           </Link>
                         </div>
@@ -112,7 +112,7 @@ export const Features = () => {
                               First P2P bridge on Hedera
                             </p>
                           </div>
-                          <Link href={""}>
+                          <Link href={"/bridge"}>
                             <ArrowUpRight className="md:text-4xl text-2xl text-primary" />
                           </Link>
                         </div>

@@ -4,6 +4,7 @@ import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import { SplitText } from "gsap/SplitText"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { OurApproach } from "./Approach"
 gsap.registerPlugin(SplitText, ScrollTrigger)
 
 const textAnimation = (trigger: string, end?: string) => {
@@ -39,39 +40,13 @@ export const About = () => {
   })
   return (
     <div className="md:min-h-screen scrollbar-hide py-7 md:py-28 landing-about p-4 md:px-10 overflow-x-hidden">
-      <div className="">
-        <div className="grid md:grid-cols-4 md:gap-10">
-          <h3 className="text-[64px] md:leading-[44px] font-perfectly-nineties ">
-            Mission
-          </h3>
-          <div className="text-xs md:leading-5 text-primary">
-            <p>What is</p>
-            <p>ProofPlay?</p>
-          </div>
-          <div className="md:col-span-2 flex justify-end">
-            <div className="2xl:w-[80%]">
-              <p className="2xl:text-[28px] md:text-xl 2xl:leading-[35px] indent-[7rem] about-text">
-                {/* <span className="font-perfectly-nineties italic">
-                  ProofBridge
-                </span>{" "} */}
-                ProofBridge is a decentralized protocol that unlocks cross-chain
-                liquidity without requiring users to bridge or move their
-                original assets across chains. Instead of bridging assets, users
-                lock ETH or other supported tokens on Ethereum (L1) and
-                instantly receive HBAR tokens on Hedera. These tokens are
-                native, and backed 1:1 by the user&apos;s collateral locked on
-                Ethereum.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <OurApproach />
 
-      <div className="scrollbar-hide">
-        <h1 className="scrollbar-hide -mt-10 2xl:text-[75vmin] 2xl:leading-[88vmin] md:text-[65vmin] md:leading-[75vmin] text-[39vmin] font-perfectly-nineties italic opacity-10 about-big-text">
+      {/* <div className="scrollbar-hide">
+        <h1 className="scrollbar-hide -mt-10 md:-mt-32 2xl:text-[75vmin] 2xl:leading-[88vmin] md:text-[65vmin] md:leading-[75vmin] text-[39vmin] font-perfectly-nineties italic opacity-10 about-big-text">
           Bridge
         </h1>
-      </div>
+      </div> */}
     </div>
   )
 }
