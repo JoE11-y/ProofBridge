@@ -454,6 +454,7 @@ export class ViemService {
     isAdCreator: boolean,
     data: T_FetchRoot,
   ): Promise<boolean> {
+    console.log(data);
     const onChainRoots = await this.fetchOnChainRoots(isAdCreator, data);
     console.log(onChainRoots, localRoot);
     const formattedOnChainRoots = onChainRoots.map((root) => getAddress(root));
@@ -488,6 +489,7 @@ export class ViemService {
 
     let failureCount = 0;
     for (let i = 0; i < Number(leafCount) && failureCount < 2; i++) {
+      console.log(i);
       try {
         const root = await client.readContract({
           address: contractAddress,
@@ -495,6 +497,7 @@ export class ViemService {
           functionName: 'getHistoricalRoot',
           args: [BigInt(i)],
         });
+        console.log(root);
         roots.push(root);
       } catch (error) {
         console.error(`Failed to fetch historical root at index ${i}:`, error);
@@ -521,6 +524,7 @@ export class ViemService {
 
     let failureCount = 0;
     for (let i = 0; i < Number(leafCount) && failureCount < 2; i++) {
+      console.log(i);
       try {
         const root = await client.readContract({
           address: contractAddress,
@@ -528,6 +532,7 @@ export class ViemService {
           functionName: 'getHistoricalRoot',
           args: [BigInt(i)],
         });
+        console.log(root);
         roots.push(root);
       } catch (error) {
         console.error(`Failed to fetch historical root at index ${i}:`, error);
