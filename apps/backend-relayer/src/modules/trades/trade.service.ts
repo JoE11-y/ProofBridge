@@ -61,6 +61,7 @@ export class TradesService {
                   chain: { select: { name: true, chainId: true } },
                   kind: true,
                   address: true,
+                  decimals: true,
                 },
               },
               orderToken: {
@@ -70,6 +71,7 @@ export class TradesService {
                   chain: { select: { name: true, chainId: true } },
                   kind: true,
                   address: true,
+                  decimals: true,
                 },
               },
             },
@@ -178,6 +180,7 @@ export class TradesService {
                   chain: { select: { name: true, chainId: true } },
                   kind: true,
                   address: true,
+                  decimals: true,
                 },
               },
               orderToken: {
@@ -187,6 +190,7 @@ export class TradesService {
                   chain: { select: { name: true, chainId: true } },
                   kind: true,
                   address: true,
+                  decimals: true,
                 },
               },
             },
