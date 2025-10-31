@@ -12,7 +12,7 @@ import ScrambleTextPlugin from "gsap/ScrambleTextPlugin"
 gsap.registerPlugin(SplitText, ScrollTrigger, ScrambleTextPlugin)
 
 const textAnimation = (trigger: string, end?: string) => {
-  let split = SplitText.create(trigger, { type: "words, chars" })
+  const split = SplitText.create(trigger, { type: "words, chars" })
   // now animate the characters in a staggered fashion
   gsap.from(split.chars, {
     // duration: 1,

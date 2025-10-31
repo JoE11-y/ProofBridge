@@ -111,6 +111,7 @@ export const AddLiquidity = () => {
                 }}
                 onChange={(value: number) => {
                   setBase_chain(supported_chains[value])
+                  setSelectedTokenId("")
                 }}
                 onClear={() => setBase_chain(undefined)}
               />
@@ -161,6 +162,7 @@ export const AddLiquidity = () => {
                   setSelectedTokenId(value)
                 }}
                 onClear={() => setSelectedTokenId("")}
+                value={selectedTokenId}
               />
             </div>
           </div>
@@ -346,7 +348,12 @@ export const AddLiquidity = () => {
                     Quantity
                   </p>
                   <p>
-                    {amount} {"ETH"}
+                    {amount}{" "}
+                    {
+                      tokens?.data?.find(
+                        (value) => value.id === selectedTokenId
+                      )?.name
+                    }
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
@@ -354,7 +361,12 @@ export const AddLiquidity = () => {
                     Limits
                   </p>
                   <p>
-                    {min} - {max} {"ETH"}
+                    {min} - {max}{" "}
+                    {
+                      tokens?.data?.find(
+                        (value) => value.id === selectedTokenId
+                      )?.name
+                    }
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
