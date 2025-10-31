@@ -1,6 +1,7 @@
 import { Fr } from '@aztec/bb.js';
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from '@prisma/prisma.service';
+import * as fs from 'fs';
 import path from 'path';
 import {
   MerkleMountainRange as Mmr,
@@ -36,7 +37,7 @@ export class MMRService implements OnModuleDestroy {
 
   private async _startup(): Promise<void> {
     console.log('Checking if MMR needs rebuilding...');
-    const resolved = LevelDB.resolveLocation(DB_PATH);
+    const resolved = MMRService.resolveLocation(DB_PATH);
     this.db = new LevelDB(resolved);
     await this.db.init();
 
@@ -182,7 +183,7 @@ export class MMRService implements OnModuleDestroy {
     if (this.db && this.db.isOpen()) return;
 
     if (!this.db) {
-      const resolved = LevelDB.resolveLocation(DB_PATH);
+      const resolved = MMRService.resolveLocation(DB_PATH);
       this.db = new LevelDB(resolved);
     }
 
@@ -318,5 +319,12 @@ export class MMRService implements OnModuleDestroy {
   }
   private async setBootSentinel(): Promise<void> {
     await this.db!.set('boot.ok', new Date().toISOString());
+  }
+
+  static resolveLocation(base: string): string {
+    const instance = process.env.RENDER_INSTANCE_ID ?? 'local';
+    const loc = path.join(base, instance);
+    fs.mkdirSync(loc, { recursive: true });
+    return loc;
   }
 }

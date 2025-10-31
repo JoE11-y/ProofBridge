@@ -25,13 +25,6 @@ export default class LevelDB {
     });
   }
 
-  static resolveLocation(base: string): string {
-    const instance = "mmr_leveldb";
-    const loc = path.join(base, instance);
-    fs.mkdirSync(loc, { recursive: true });
-    return loc;
-  }
-
   async init(opts: OpenRetryOpts = {}): Promise<void> {
     if (this.db.status === "open") return;
     if (!this.opening) this.opening = this.openWithRetry(opts);
