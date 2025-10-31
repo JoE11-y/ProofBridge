@@ -46,6 +46,7 @@ contract ProofBridge is Test {
     IwNativeToken internal adChainWNativeToken;
     IwNativeToken internal orderChainWNativeToken;
     address public constant NATIVE_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    uint256 public constant W_DECIMALS = 18;
 
     address admin;
     uint256 adminPk;
@@ -106,7 +107,7 @@ contract ProofBridge is Test {
         vm.chainId(adChainId);
         adChainVerifier = new HonkVerifier();
         adChainMerkleManager = new MerkleManager(admin);
-        adChainWNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE");
+        adChainWNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE", W_DECIMALS);
         adManager = new MockAdManager(admin, adChainVerifier, adChainMerkleManager, adChainWNativeToken);
         adToken = new ERC20Mock();
         // assign manager role
@@ -118,7 +119,7 @@ contract ProofBridge is Test {
         vm.chainId(orderChainId);
         orderChainVerifier = new HonkVerifier();
         orderChainMerkleManager = new MerkleManager(admin);
-        orderChainWNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE");
+        orderChainWNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE", W_DECIMALS);
         orderPortal = new MockOrderPortal(admin, orderChainVerifier, orderChainMerkleManager, orderChainWNativeToken);
         orderToken = new ERC20Mock();
         // assign manager role

@@ -76,13 +76,15 @@ library SafeNativeToken {
 contract wNativeToken is WETH, IwNativeToken {
     string private w_name;
     string private w_symbol;
+    uint256 private immutable i_decimals;
 
     event Deposit(address indexed dst, uint256 wad);
     event Withdrawal(address indexed src, uint256 wad);
 
-    constructor(string memory _name, string memory _symbol) {
+    constructor(string memory _name, string memory _symbol, uint256 _decimals) {
         w_name = _name;
         w_symbol = _symbol;
+        i_decimals = _decimals;
     }
 
     function name() public view virtual override returns (string memory) {
@@ -101,5 +103,9 @@ contract wNativeToken is WETH, IwNativeToken {
     function withdraw(uint256 amount) public virtual override(WETH, IwNativeToken) {
         super.withdraw(amount);
         emit Withdrawal(msg.sender, amount);
+    }
+
+    function decimals() public view virtual override returns (uint8) {
+        return uint8(i_decimals);
     }
 }

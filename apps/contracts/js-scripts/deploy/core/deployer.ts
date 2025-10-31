@@ -129,7 +129,12 @@ export async function deployChain(
       const tokenName = `Wrapped ${chainConfig.nativeToken.symbol}`;
       const tokenSymbol = `W${chainConfig.nativeToken.symbol}`;
       console.log(`  Deploying wNativeToken (${tokenName}, ${tokenSymbol})...`);
-      const wNativeToken = await WNativeToken.deploy(tokenName, tokenSymbol);
+      const decimals = chainConfig.nativeToken.decimals;
+      const wNativeToken = await WNativeToken.deploy(
+        tokenName,
+        tokenSymbol,
+        decimals
+      );
       await wNativeToken.waitForDeployment();
       const wNativeTokenAddress = await wNativeToken.getAddress();
       result.contracts.wNativeToken = wNativeTokenAddress;

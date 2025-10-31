@@ -27,6 +27,7 @@ contract OrderPortalTest is Test {
     MerkleManager internal merkleManager;
     ERC20Mock internal orderToken;
     wNativeToken internal _wNativeToken;
+    uint256 constant W_DECIMALS = 18;
 
     address internal constant NATIVE_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
@@ -62,7 +63,7 @@ contract OrderPortalTest is Test {
         (admin, adminPk) = makeAddrAndKey("admin");
         verifier = new MockVerifier(true);
         merkleManager = new MerkleManager(admin);
-        _wNativeToken = new wNativeToken("Wrapped Native Token", "WNT");
+        _wNativeToken = new wNativeToken("Wrapped Native Token", "WNT", W_DECIMALS);
         portal = new MockOrderPortal(
             admin,
             IVerifier(address(verifier)),

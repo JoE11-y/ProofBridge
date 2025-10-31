@@ -11,8 +11,13 @@ export interface ContractAddresses {
 export interface NativeTokenConfig {
   symbol: string;
   address: string; // 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE for native
+  decimals: number;
 }
 
+export interface Tokens {
+  proofbridge: string;
+  wAltChainToken: string;
+}
 export interface ChainConfig {
   name: string;
   rpc: string;
@@ -21,6 +26,7 @@ export interface ChainConfig {
   privateKey?: string; // Optional: for deployment
   contracts: ContractAddresses;
   nativeToken: NativeTokenConfig;
+  tokens: Tokens;
   explorerUrl?: string;
 }
 
@@ -72,8 +78,8 @@ export interface SetupResult {
   }[];
 }
 
-export type DeploymentMode = 'deploy' | 'setup' | 'full';
-export type DeploymentScenario = 'standard' | 'sepolia-hedera';
+export type DeploymentMode = "deploy" | "setup" | "full";
+export type DeploymentScenario = "standard" | "sepolia-hedera";
 
 export interface DeploymentOptions {
   chain1: string;

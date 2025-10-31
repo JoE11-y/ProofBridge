@@ -12,9 +12,14 @@
         "adManager": "",
         "orderPortal": ""
       },
+      "tokens": {
+        "proofbridge": "",
+        "wAltChainToken": ""
+      },
       "nativeToken": {
         "symbol": "HBAR",
-        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        "decimals": 8
       },
       "explorerUrl": "https://hashscan.io/testnet"
     },
@@ -30,9 +35,14 @@
         "adManager": "",
         "orderPortal": ""
       },
+      "tokens": {
+        "proofbridge": "",
+        "wAltChainToken": ""
+      },
       "nativeToken": {
         "symbol": "ETH",
-        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        "decimals": 18
       },
       "explorerUrl": "https://sepolia.basescan.org"
     },
@@ -48,9 +58,14 @@
         "adManager": "",
         "orderPortal": ""
       },
+      "tokens": {
+        "proofbridge": "",
+        "wAltChainToken": ""
+      },
       "nativeToken": {
         "symbol": "ETH",
-        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        "decimals": 18
       },
       "explorerUrl": "https://sepolia.etherscan.io"
     },
@@ -66,9 +81,14 @@
         "adManager": "",
         "orderPortal": ""
       },
+      "tokens": {
+        "proofbridge": "",
+        "wAltChainToken": ""
+      },
       "nativeToken": {
         "symbol": "MATIC",
-        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        "decimals": 18
       },
       "explorerUrl": "https://www.oklink.com/amoy"
     },
@@ -84,9 +104,14 @@
         "adManager": "",
         "orderPortal": ""
       },
+      "tokens": {
+        "proofbridge": "",
+        "wAltChainToken": ""
+      },
       "nativeToken": {
         "symbol": "ETH",
-        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        "decimals": 18
       },
       "explorerUrl": "https://sepolia.arbiscan.io"
     }

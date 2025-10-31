@@ -18,6 +18,7 @@ import {
   DeploymentConfig,
   DeploymentOptions,
   ContractAddresses,
+  ChainConfig,
 } from "../core/types";
 import {
   deployChain,
@@ -84,8 +85,8 @@ function validateChains(
  * Deploy token contracts on both chains
  */
 async function deployTokens(
-  sepoliaConfig: any,
-  hederaConfig: any,
+  sepoliaConfig: ChainConfig,
+  hederaConfig: ChainConfig,
   privateKey: string,
   dryRun: boolean
 ): Promise<SepoliaHederaTokens> {
@@ -100,65 +101,99 @@ async function deployTokens(
   console.log(`→ Phase 1: Deploying ERC20 alternate tokens...\n`);
 
   // Deploy wETH ERC20 on Hedera (to represent Sepolia native ETH)
-  console.log(`  → Deploying wETH ERC20 on Hedera...`);
-  const wEthErc20Hedera = await withRetry(
-    () =>
-      deployContract(
-        "MockERC20",
-        ["Wrapped ETH", "WETH", ethers.parseEther("1000000")],
-        hederaConfig.rpc,
-        privateKey,
-        dryRun
-      ),
-    { maxRetries: 3, delayMs: 5000 }
-  );
-  await sleep(2000);
+  let wEthErc20Hedera = hederaConfig.tokens.wAltChainToken;
+  if (!wEthErc20Hedera) {
+    console.log(`  → Deploying wETH ERC20 on Hedera...`);
+    const ethDecimals = sepoliaConfig.nativeToken.decimals;
+    wEthErc20Hedera = await withRetry(
+      () =>
+        deployContract(
+          "MockERC20",
+          [
+            "Wrapped ETH",
+            "WETH",
+            ethers.parseEther("1000000"),
+            Number(ethDecimals),
+          ],
+          hederaConfig.rpc,
+          privateKey,
+          dryRun
+        ),
+      { maxRetries: 3, delayMs: 5000 }
+    );
+    await sleep(2000);
+  }
 
   // Deploy wHBAR ERC20 on Sepolia (to represent Hedera native HBAR)
   console.log(`  → Deploying wHBAR ERC20 on Sepolia...`);
-  const wHbarErc20Sepolia = await withRetry(
-    () =>
-      deployContract(
-        "MockERC20",
-        ["Wrapped HBAR", "WHBAR", ethers.parseEther("1000000")],
-        sepoliaConfig.rpc,
-        privateKey,
-        dryRun
-      ),
-    { maxRetries: 3, delayMs: 5000 }
-  );
-  await sleep(2000);
+  let wHbarErc20Sepolia = sepoliaConfig.tokens.wAltChainToken;
+  const hbarDecimals = hederaConfig.nativeToken.decimals;
+  if (!wHbarErc20Sepolia) {
+    wHbarErc20Sepolia = await withRetry(
+      () =>
+        deployContract(
+          "MockERC20",
+          [
+            "Wrapped HBAR",
+            "WHBAR",
+            ethers.parseEther("1000000"),
+            Number(hbarDecimals),
+          ],
+          sepoliaConfig.rpc,
+          privateKey,
+          dryRun
+        ),
+      { maxRetries: 3, delayMs: 5000 }
+    );
+    await sleep(2000);
+  }
 
   // Phase 3: Deploy ProofBridge mock tokens
   console.log(`\n→ Phase 2: Deploying ProofBridge mock tokens...\n`);
 
   console.log(`  → Deploying ProofBridge token on Sepolia...`);
-  const pbTokenSepolia = await withRetry(
-    () =>
-      deployContract(
-        "MockERC20",
-        ["ProofBridge Token", "PBT", ethers.parseEther("1000000")],
-        sepoliaConfig.rpc,
-        privateKey,
-        dryRun
-      ),
-    { maxRetries: 3, delayMs: 5000 }
-  );
-  await sleep(2000);
+  let pbTokenSepolia = sepoliaConfig.tokens.proofbridge;
+  if (!pbTokenSepolia) {
+    pbTokenSepolia = await withRetry(
+      () =>
+        deployContract(
+          "MockERC20",
+          [
+            "ProofBridge Token",
+            "PBT",
+            ethers.parseEther("1000000"),
+            Number(18),
+          ],
+          sepoliaConfig.rpc,
+          privateKey,
+          dryRun
+        ),
+      { maxRetries: 3, delayMs: 5000 }
+    );
+    await sleep(2000);
+  }
 
   console.log(`  → Deploying ProofBridge token on Hedera...`);
-  const pbTokenHedera = await withRetry(
-    () =>
-      deployContract(
-        "MockERC20",
-        ["ProofBridge Token", "PBT", ethers.parseEther("1000000")],
-        hederaConfig.rpc,
-        privateKey,
-        dryRun
-      ),
-    { maxRetries: 3, delayMs: 5000 }
-  );
-  await sleep(2000);
+  let pbTokenHedera = hederaConfig.tokens.proofbridge;
+  if (!pbTokenHedera) {
+    pbTokenHedera = await withRetry(
+      () =>
+        deployContract(
+          "MockERC20",
+          [
+            "ProofBridge Token",
+            "PBT",
+            ethers.parseEther("1000000"),
+            Number(18),
+          ],
+          hederaConfig.rpc,
+          privateKey,
+          dryRun
+        ),
+      { maxRetries: 3, delayMs: 5000 }
+    );
+    await sleep(2000);
+  }
 
   // Note: wNativeToken addresses come from core deployment
   return {

@@ -13,6 +13,8 @@ import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {IwNativeToken, wNativeToken} from "src/wNativeToken.sol";
 
 contract DeployProofbridge is Script {
+    uint256 constant W_DECIMALS = 18;
+
     function _envOrAddress(string memory key, address fallback_) internal view returns (address out) {
         try vm.envAddress(key) returns (address v) {
             out = v;
@@ -62,8 +64,8 @@ contract DeployProofbridge is Script {
         IwNativeToken _wNativeToken;
         address wNativeTokenMaybe = _envOrAddress("WNATIVE_TOKEN", address(0));
         if (wNativeTokenMaybe == address(0)) {
-            _wNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE");
-            console2.log("Deployed WNATIVE Token :", address(_wNativeToken));
+            _wNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE", W_DECIMALS);
+            console2.log("Deployed WNATIVE Token :", address(_wNativeToken), W_DECIMALS);
         } else {
             _wNativeToken = IwNativeToken(wNativeTokenMaybe);
             console2.log("Reusing WNATIVE Token     :", wNativeTokenMaybe);

@@ -25,6 +25,7 @@ contract AdManagerTest is Test {
     MerkleManager internal merkleManager;
     ERC20Mock internal adToken;
     wNativeToken internal _wNativeToken;
+    uint256 constant W_DECIMALS = 18;
 
     address admin;
     uint256 adminPk;
@@ -63,7 +64,7 @@ contract AdManagerTest is Test {
         (admin, adminPk) = makeAddrAndKey("admin");
         verifier = new MockVerifier(true);
         merkleManager = new MerkleManager(admin);
-        _wNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE");
+        _wNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE", W_DECIMALS);
 
         adManager = new MockAdManager(
             admin,
