@@ -116,6 +116,11 @@ export class MMRService implements OnModuleDestroy {
     console.log(mmrId);
 
     const mmr = this.getMmr(mmrId);
+    const width = mmr.width;
+    console.log(width);
+    console.log(mmr.getHexRoot());
+    console.log(mmr.getSize(width));
+
     const x = this.hashToField(orderHash);
 
     const elementIndex = exists.elementIndex;
