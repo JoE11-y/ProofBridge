@@ -346,7 +346,15 @@ const Action = ({
   type?: "incoming" | "outgoing"
 }) => {
   const { address } = useAccount()
+  const isBridger = address === rowData.bridgerAddress
+  const isCreator = address === rowData.adCreatorAddress
 
+  if (isBridger && rowData.bridgerClaimed) {
+    return <p>-</p>
+  }
+  if (isCreator && rowData.adCreatorClaimed) {
+    return <p>-</p>
+  }
   return (
     <>
       {rowData.status === "LOCKED" ? (

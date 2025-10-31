@@ -9,6 +9,7 @@ type StatusKind =
   | "EXHAUSTED"
   | "CLOSED"
   | "LOCKED"
+  | "COMPLETED"
 
 export const Status = ({
   status,
@@ -25,6 +26,7 @@ export const Status = ({
 
   const colorMap: Record<string, string> = {
     ACTIVE: "bg-primary text-black",
+    COMPLETED: "bg-primary text-black",
     PAUSED: "bg-amber-500 text-black",
     LOCKED: "bg-amber-300/10 text-amber-300",
     INACTIVE: "bg-grey-600 text-grey-200",

@@ -141,6 +141,8 @@ export interface ITrade {
     adToken: IToken
     orderToken: IToken
   }
+  adCreatorClaimed: boolean
+  bridgerClaimed: boolean
 }
 
 export interface ITradeParams {
