@@ -26,7 +26,7 @@ export default class LevelDB {
   }
 
   static resolveLocation(base: string): string {
-    const instance = process.env.RENDER_INSTANCE_ID ?? "local";
+    const instance = "mmr_leveldb";
     const loc = path.join(base, instance);
     fs.mkdirSync(loc, { recursive: true });
     return loc;

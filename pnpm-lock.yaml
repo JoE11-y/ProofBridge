@@ -100,8 +100,8 @@ importers:
         specifier: ^1.10.2
         version: 1.10.2(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(winston@3.17.0)
       proofbridge-mmr:
-        specifier: 1.0.7
-        version: 1.0.7(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+        specifier: 1.0.8
+        version: 1.0.8(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       rave-level:
         specifier: ^1.0.0
         version: 1.0.0
@@ -233,8 +233,8 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0
       proofbridge-mmr:
-        specifier: 1.0.7
-        version: 1.0.7(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+        specifier: 1.0.8
+        version: 1.0.8(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -5500,8 +5500,8 @@ packages:
     resolution: {integrity: sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A==}
     engines: {node: '>= 0.6.0'}
 
-  proofbridge-mmr@1.0.7:
-    resolution: {integrity: sha512-q0QG/a9rHLuRT0duLgiTDbT0CDGzVghHRPIjuboC2OvD86d3wt67+qmaejAdg7E8hCgwMHf1YqBKczjszJw5Bw==}
+  proofbridge-mmr@1.0.8:
+    resolution: {integrity: sha512-suS/pF7XtuyERUJYzlw789jtAietgHwz34GikA2R7d/ebnMX1Qb654Z5SzVhuxZLh4qqSJhcntUR3J2orS049w==}
 
   prop-types@15.8.1:
     resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
@@ -13662,7 +13662,7 @@ snapshots:
 
   process@0.11.10: {}
 
-  proofbridge-mmr@1.0.7(bufferutil@4.0.9)(utf-8-validate@5.0.10):
+  proofbridge-mmr@1.0.8(bufferutil@4.0.9)(utf-8-validate@5.0.10):
     dependencies:
       '@zkpassport/poseidon2': 0.6.2
       abstract-level: 3.1.1

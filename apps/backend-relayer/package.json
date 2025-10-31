@@ -48,7 +48,7 @@
     "level": "^10.0.0",
     "morgan": "^1.10.1",
     "nest-winston": "^1.10.2",
-    "proofbridge-mmr": "1.0.7",
+    "proofbridge-mmr": "1.0.8",
     "rave-level": "^1.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
