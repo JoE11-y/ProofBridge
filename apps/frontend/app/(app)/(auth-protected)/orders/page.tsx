@@ -127,7 +127,9 @@ const OrdersPage = () => {
           defaultActiveKey={"incoming"}
           items={items}
           type="line"
-          onChange={(activeKey: any) => setType(activeKey)}
+          onChange={(activeKey) =>
+            setType(activeKey as "incoming" | "outgoing")
+          }
         />
       </div>
     </div>
