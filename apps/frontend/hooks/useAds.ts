@@ -20,7 +20,7 @@ import {
 import { config } from "@/utils/wagmi-config"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { useAccount, useSendTransaction, useWriteContract } from "wagmi"
+import { useAccount, useWriteContract } from "wagmi"
 import { waitForTransactionReceipt } from "wagmi/actions"
 import { getSingleToken, getTokens } from "@/services/tokens.service"
 import { IToken } from "@/types/tokens"
@@ -28,7 +28,6 @@ import { formatUnits, parseEther } from "viem"
 
 export const useCreateAd = () => {
   const { writeContractAsync } = useWriteContract()
-  const { sendTransactionAsync } = useSendTransaction()
   return useMutation({
     mutationKey: ["create-ad"],
     mutationFn: async (data: { payload: ICreateAdRequest; token: IToken }) => {

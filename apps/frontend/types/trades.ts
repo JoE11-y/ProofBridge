@@ -7,6 +7,7 @@ export interface ICreateTradeRequest {
   routeId: string
   amount: string
   bridgerDstAddress: Address
+  orderTokenId: string
 }
 
 export interface ICreateTradeResponse {
