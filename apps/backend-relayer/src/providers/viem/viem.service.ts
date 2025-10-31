@@ -496,12 +496,12 @@ export class ViemService {
           address: contractAddress,
           abi: AD_MANAGER_ABI,
           functionName: 'getHistoricalRoot',
-          args: [BigInt(i)],
+          args: [i],
         });
         console.log('fetched root:', root);
         roots.push(root);
       } catch (err) {
-        console.warn(`[historicalRoot] index=${i} failed:`, err);
+        console.log(`[historicalRoot] index=${i} failed:`, err);
         // don't break, just skip
       }
     }
@@ -512,7 +512,6 @@ export class ViemService {
 
   async fetchOrderChainRoots(data: T_FetchRoot): Promise<string[]> {
     const { chainId, contractAddress } = data;
-
     const { client } = this.getClient(chainId.toString());
     const leafCount = await client.readContract({
       address: contractAddress,
@@ -532,12 +531,12 @@ export class ViemService {
           address: contractAddress,
           abi: ORDER_PORTAL_ABI,
           functionName: 'getHistoricalRoot',
-          args: [BigInt(i)],
+          args: [i],
         });
         console.log('fetched root:', root);
         roots.push(root);
       } catch (err) {
-        console.warn(`[historicalRoot] index=${i} failed:`, err);
+        console.log(`[historicalRoot] index=${i} failed:`, err);
         // don't break, just skip
       }
     }
