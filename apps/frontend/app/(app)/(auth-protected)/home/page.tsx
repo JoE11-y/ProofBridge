@@ -10,6 +10,8 @@ import { useAccount } from "wagmi"
 import { AdCard } from "@/components/dashboard/AdCard"
 import { Tabs, TabsProps } from "antd"
 import { SkeletonAdCard } from "@/components/dashboard/SkeletonAdCard"
+import AdsEmptyState from "@/components/dashboard/AdsEmptyState"
+import { useGetAllTrades } from "@/hooks/useTrades"
 
 const HomePage = () => {
   const account = useAccount()
@@ -52,6 +54,13 @@ const HomePage = () => {
                 <SkeletonAdCard key={value} />
               ))}
             </>
+          ) : all_ads?.data?.length === 0 ? (
+            <AdsEmptyState
+              title="No ads found"
+              message="You haven't created any ads yet."
+              primaryLabel="Refresh"
+              onPrimaryClick={() => window.location.reload()}
+            />
           ) : (
             <>
               {all_ads?.data?.map((ad) => {
@@ -73,6 +82,13 @@ const HomePage = () => {
                 <SkeletonAdCard key={value} />
               ))}
             </>
+          ) : all_active_ads?.data?.length === 0 ? (
+            <AdsEmptyState
+              title="No active ads"
+              message="You don't have any active ads right now."
+              primaryLabel="Refresh"
+              onPrimaryClick={() => window.location.reload()}
+            />
           ) : (
             <>
               {all_active_ads?.data?.map((ad) => {
@@ -94,6 +110,13 @@ const HomePage = () => {
                 <SkeletonAdCard key={value} />
               ))}
             </>
+          ) : all_inactive_ads?.data?.length === 0 ? (
+            <AdsEmptyState
+              title="No inactive ads"
+              message="You have no paused or inactive ads."
+              primaryLabel="Refresh"
+              onPrimaryClick={() => window.location.reload()}
+            />
           ) : (
             <>
               {all_inactive_ads?.data?.map((ad) => {
@@ -115,6 +138,13 @@ const HomePage = () => {
                 <SkeletonAdCard key={value} />
               ))}
             </>
+          ) : all_exhausted_ads?.data?.length === 0 ? (
+            <AdsEmptyState
+              title="No exhausted ads"
+              message="There are no ads that have been exhausted."
+              primaryLabel="Refresh"
+              onPrimaryClick={() => window.location.reload()}
+            />
           ) : (
             <>
               {all_exhausted_ads?.data?.map((ad) => {
@@ -136,6 +166,13 @@ const HomePage = () => {
                 <SkeletonAdCard key={value} />
               ))}
             </>
+          ) : all_closed_ads?.data?.length === 0 ? (
+            <AdsEmptyState
+              title="No closed ads"
+              message="You have no closed ads."
+              primaryLabel="Refresh"
+              onPrimaryClick={() => window.location.reload()}
+            />
           ) : (
             <>
               {all_closed_ads?.data?.map((ad) => {
@@ -148,6 +185,11 @@ const HomePage = () => {
     },
   ]
 
+  const { data: trades } = useGetAllTrades({
+    adCreatorAddress: account.address,
+    bridgerAddress: account.address,
+  })
+
   return (
     <div className="max-w-[98%] mx-auto space-y-4 md:space-y-8 md:py-2 md:px-0 p-4">
       <div>
@@ -155,22 +197,7 @@ const HomePage = () => {
         <p className="text-sm">Manage your ads and orders here</p>
       </div>
       <div className="grid md:grid-cols-4 grid-cols-2 md:gap-7 gap-4">
-        <div className="border-grey-800 border-1 p-4 rounded-md w-full bg-gradient-to-bl from-grey-600 to-grey-1000">
-          <div className="flex justify-center flex-col gap-2 md:h-[150px] h-[100px] w-full">
-            <div className="space-y-2">
-              <div className="flex w-full justify-between items-center gap-2">
-                <CiBadgeDollar size={24} />
-                <RxDoubleArrowUp className="text-primary" />
-              </div>
-              <div>
-                <h3 className="text-xl md:text-2xl font-semibold">200.0 ETH</h3>
-                <p className="text-sm">Trade Volume</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-grey-700 border-1 p-4 rounded-md w-full bg-gradient-to-tr from-grey-600 to-grey-1000">
+        <div className="border-grey-700 border-1 p-4 rounded-md w-full bg-gradient-to-bl from-grey-600 to-grey-1000">
           <div className="flex justify-center flex-col gap-2 md:h-[150px] h-[100px] w-full">
             <div className="space-y-2">
               <div className="flex w-full justify-between items-center gap-2">
@@ -186,6 +213,22 @@ const HomePage = () => {
             </div>
           </div>
         </div>
+        <div className="border-grey-800 border-1 p-4 rounded-md w-full bg-gradient-to-tr from-grey-600 to-grey-1000">
+          <div className="flex justify-center flex-col gap-2 md:h-[150px] h-[100px] w-full">
+            <div className="space-y-2">
+              <div className="flex w-full justify-between items-center gap-2">
+                <CiBadgeDollar size={24} />
+                <RxDoubleArrowUp className="text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl md:text-2xl font-semibold">
+                  {trades?.data?.length}
+                </h3>
+                <p className="text-sm">Total trades</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="border-grey-800 border-1 p-4 rounded-md w-full bg-gradient-to-bl from-grey-600 to-grey-1000">
           <div className="flex justify-center flex-col gap-2 md:h-[150px] h-[100px] w-full">
@@ -195,7 +238,13 @@ const HomePage = () => {
                 <RxDoubleArrowUp className="text-primary" />
               </div>
               <div>
-                <h3 className="text-xl md:text-2xl font-semibold">15</h3>
+                <h3 className="text-xl md:text-2xl font-semibold">
+                  {" "}
+                  {
+                    trades?.data?.filter((trade) => trade.status === "LOCKED")
+                      ?.length
+                  }
+                </h3>
                 <p className="text-sm">Completed orders</p>
               </div>
             </div>
@@ -210,7 +259,15 @@ const HomePage = () => {
                 <RxDoubleArrowUp className="text-primary" />
               </div>
               <div>
-                <h3 className="text-xl md:text-2xl font-semibold">{89.57}%</h3>
+                <h3 className="text-xl md:text-2xl font-semibold">
+                  {(Number(
+                    trades?.data?.filter((trade) => trade.status === "LOCKED")
+                      ?.length
+                  ) /
+                    Number(trades?.data?.length)) *
+                    100 || 0}
+                  %
+                </h3>
                 <p className="text-sm">Avg. completion</p>
               </div>
             </div>

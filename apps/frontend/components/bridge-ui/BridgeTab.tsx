@@ -23,6 +23,7 @@ import SkeletonTradeAd from "./SkeletonTradeAd"
 import { hederaTestnet, sepolia } from "viem/chains"
 import { chain_icons } from "@/lib/chain-icons"
 import { IoDocumentText } from "react-icons/io5"
+import { Logo } from "../shared/Logo"
 
 export const BridgeTab = () => {
   const { data: chains, isLoading: loadingChains } = useGetAllChains({})
@@ -203,13 +204,38 @@ export const BridgeTab = () => {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6" id="#bridge-trading-section">
         {loadingAds ? (
           <>
             {[1, 2, 3, 4, 5].map((value) => {
               return <SkeletonTradeAd key={value} />
             })}
           </>
+        ) : Ads?.data?.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 space-y-4">
+            <div className="h-24 w-24 rounded-full bg-grey-800 flex items-center justify-center">
+              <div className="opacity-20">
+                <Logo />
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-xl font-semibold">No Active Bridges</h3>
+              <p className="text-grey-400 max-w-md">
+                There are currently no active bridge offers for this route. Try
+                selecting different tokens or chains, or check back later.
+              </p>
+            </div>
+            <Button
+              type="primary"
+              className="mt-4"
+              onClick={() => {
+                setSelectedBaseChainId(`${hederaTestnet.id}`)
+                setSelectedDstChainId(`${sepolia.id}`)
+              }}
+            >
+              Reset Filters
+            </Button>
+          </div>
         ) : (
           <>
             {Ads?.data?.map((ad, index) => (
