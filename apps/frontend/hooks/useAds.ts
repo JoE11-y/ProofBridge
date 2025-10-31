@@ -22,7 +22,7 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useAccount, useSendTransaction, useWriteContract } from "wagmi"
 import { waitForTransactionReceipt } from "wagmi/actions"
-import { getTokens } from "@/services/tokens.service"
+import { getSingleToken, getTokens } from "@/services/tokens.service"
 import { IToken } from "@/types/tokens"
 import { formatUnits, parseEther } from "viem"
 
@@ -145,20 +145,60 @@ export const useFundAd = () => {
     mutationKey: ["fund-ad"],
     mutationFn: async (data: ITopUpAdRequest) => {
       const response = await fundAd(data)
-      const token = await getTokens({ chainId: String(response.chainId!) })
-      const approveHash = await writeContractAsync({
-        address: token.data[0].address,
-        abi: ERC20_ABI,
-        chainId: Number(response.chainId),
-        functionName: "approve",
-        args: [response.contractAddress, data.amountBigInt],
-      })
+      const token = await getSingleToken(data.tokenId)
+      if (token.kind === "ERC20") {
+        const approveHash = await writeContractAsync({
+          address: token.address,
+          abi: ERC20_ABI,
+          chainId: Number(response.chainId),
+          functionName: "approve",
+          args: [response.contractAddress, data.amountBigInt],
+        })
 
-      const approveReceipt = await waitForTransactionReceipt(config, {
-        hash: approveHash,
-      })
+        const approveReceipt = await waitForTransactionReceipt(config, {
+          hash: approveHash,
+        })
 
-      if (approveReceipt.status === "success") {
+        if (approveReceipt.status === "success") {
+          const txHash = await writeContractAsync({
+            address: response.contractAddress,
+            abi: AD_MANAGER_ABI,
+            chainId: Number(response.chainId),
+            functionName: "fundAd",
+            args: [
+              response.signature,
+              response.authToken,
+              BigInt(response.timeToExpire),
+              response.adId,
+              data.amountBigInt,
+            ],
+          })
+          const receipt = await waitForTransactionReceipt(config, {
+            hash: txHash,
+          })
+
+          if (receipt.status === "success") {
+            await confirmAdTx({
+              txHash: receipt.transactionHash,
+              signature: response.signature,
+              adId: response.adId,
+            })
+          }
+
+          if (receipt.status === "reverted") {
+            throw Error("Transaction failed, Retry")
+          }
+        }
+        if (approveReceipt.status === "reverted") {
+          throw Error("Transaction not approved")
+        }
+      }
+
+      if (token.kind === "NATIVE") {
+        const amount = formatUnits(
+          BigInt(data.amountBigInt.toString()),
+          token.decimals
+        )
         const txHash = await writeContractAsync({
           address: response.contractAddress,
           abi: AD_MANAGER_ABI,
@@ -171,6 +211,7 @@ export const useFundAd = () => {
             response.adId,
             data.amountBigInt,
           ],
+          value: parseEther(amount),
         })
         const receipt = await waitForTransactionReceipt(config, {
           hash: txHash,
@@ -187,9 +228,6 @@ export const useFundAd = () => {
         if (receipt.status === "reverted") {
           throw Error("Transaction failed, Retry")
         }
-      }
-      if (approveReceipt.status === "reverted") {
-        throw Error("Transaction not approved")
       }
       return response
     },
