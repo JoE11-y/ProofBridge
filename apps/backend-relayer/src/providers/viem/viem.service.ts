@@ -490,7 +490,7 @@ export class ViemService {
     const max = Number(leafCount);
     console.log('Total roots to fetch:', max);
 
-    for (let i = 0; i < max; i++) {
+    for (let i = 1; i < max; i++) {
       try {
         const root = await client.readContract({
           address: contractAddress,
@@ -524,7 +524,7 @@ export class ViemService {
     const max = Number(leafCount);
     console.log('Total roots to fetch:', max);
 
-    for (let i = 0; i < max; i++) {
+    for (let i = 1; i < max; i++) {
       try {
         const root = await client.readContract({
           address: contractAddress,
