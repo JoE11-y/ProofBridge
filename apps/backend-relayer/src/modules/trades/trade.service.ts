@@ -331,6 +331,12 @@ export class TradesService {
         );
       }
 
+      if (ad.creatorAddress.toLowerCase() == user.walletAddress.toLowerCase()) {
+        throw new BadRequestException(
+          'Ad creator cannot create trade on own ad',
+        );
+      }
+
       const amount = new Prisma.Decimal(dto.amount);
       if (ad.minAmount && amount.lt(ad.minAmount)) {
         throw new BadRequestException('Amount below minAmount');

@@ -283,28 +283,29 @@ export const useUnLockFunds = () => {
         },
       });
       const response = await unlockFunds({ id, signature: signature });
-      const isBridger = account.address === params?.bridger;
+
+      const isAdCreator = account.address === params?.bridger;
 
       const txHash = await writeContractAsync({
         address: response.contractAddress,
         chainId: Number(response.chainId),
-        abi: isBridger ? AD_MANAGER_ABI : ORDER_PORTAL_ABI,
+        abi: isAdCreator ? ORDER_PORTAL_ABI : AD_MANAGER_ABI,
         functionName: "unlock",
         args: [
           response.signature,
           response.authToken,
           BigInt(response.timeToExpire),
-          isBridger
+          isAdCreator
             ? {
                 ...response.orderParams,
                 amount: BigInt(response.orderParams.amount),
-                orderChainId: BigInt(response.orderParams.orderChainId),
+                adChainId: BigInt(response.orderParams.adChainId),
                 salt: BigInt(response.orderParams.salt),
               }
             : {
                 ...response.orderParams,
                 amount: BigInt(response.orderParams.amount),
-                adChainId: BigInt(response.orderParams.adChainId),
+                orderChainId: BigInt(response.orderParams.orderChainId),
                 salt: BigInt(response.orderParams.salt),
               },
           response.nullifierHash,
