@@ -245,6 +245,12 @@ export class TradeResponseDto {
 
   @ApiProperty()
   route!: RouteDto;
+
+  @ApiProperty()
+  adCreatorClaimed: boolean;
+
+  @ApiProperty()
+  bridgerClaimed: boolean;
 }
 
 export class ListTradesResponseDto {

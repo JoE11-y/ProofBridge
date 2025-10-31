@@ -76,6 +76,8 @@ export class TradesService {
               },
             },
           },
+          bridgerClaimed: true,
+          adCreatorClaimed: true,
         },
       });
       if (!row) throw new NotFoundException('Trade not found');
@@ -197,6 +199,8 @@ export class TradesService {
           },
           createdAt: true,
           updatedAt: true,
+          adCreatorClaimed: true,
+          bridgerClaimed: true,
         },
       });
 
@@ -811,9 +815,6 @@ export class TradesService {
         mmrId = trade.route.adToken.chain.mmrId;
       }
 
-      console.log(mmrId, 'mmrId');
-      console.log(trade.orderHash, 'orderHash');
-
       // get merkle proof
       const merkleProof = await this.merkleService.getMerkleProof(
         mmrId,
@@ -926,7 +927,6 @@ export class TradesService {
 
   async confirmChainAction(
     req: Request,
-
     tradeId: string,
     dto: ConfirmTradeActionDto,
   ) {
