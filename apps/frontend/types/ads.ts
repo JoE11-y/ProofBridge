@@ -43,6 +43,7 @@ export interface ITopUpAdRequest {
   adId: string
   poolAmountTopUp: string
   amountBigInt: BigInt
+  tokenId: string
 }
 
 export interface IWithdrawFromAdRequest {

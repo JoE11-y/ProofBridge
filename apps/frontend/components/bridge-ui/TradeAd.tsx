@@ -16,13 +16,6 @@ import { useAccount, useBalance } from "wagmi"
 import { useCreateTrade } from "@/hooks/useTrades"
 import { useChainModal } from "@rainbow-me/rainbowkit"
 
-const _advertiser_terms = `⚠️ Warning: I'm fully active, do not be tempted to click
-                  ''Payment Completed'' box unless you have successfully
-                  completed the payment. Doing so may lead to disputes or
-                  account restrictions." -Leave an active phone number -And
-                  don't forget to leave a positive review please, I'll do same
-                  for you.🙏🙏🙏`
-
 export const TradeAd = ({ ...props }: IAd) => {
   const [openModal, setOpenModal] = useState(false)
   const toggleModal = () => setOpenModal(!openModal)
@@ -45,6 +38,10 @@ export const TradeAd = ({ ...props }: IAd) => {
   const [amount, setAmount] = useState("")
   const txFee = Number(amount) * (txFeePercent / 100)
   const account = useAccount()
+  const nativeBalance = useBalance({
+    chainId: Number(props.orderToken.chainId),
+    address: account.address,
+  })
   const balance = useBalance({
     chainId: Number(props.orderToken.chainId),
     token: props.orderToken.address,
@@ -58,7 +55,15 @@ export const TradeAd = ({ ...props }: IAd) => {
         formatUnits(balance?.data?.value!, balance?.data?.decimals!)
       )
     }
-  }, [balance])
+  }, [balance, props])
+
+  useEffect(() => {
+    if (nativeBalance.data) {
+      setBalance_value(
+        formatUnits(nativeBalance?.data?.value!, nativeBalance?.data?.decimals!)
+      )
+    }
+  }, [nativeBalance, props])
 
   const { mutateAsync, isPending } = useCreateTrade()
   const { openChainModal } = useChainModal()
@@ -69,6 +74,7 @@ export const TradeAd = ({ ...props }: IAd) => {
       routeId: props.routeId,
       amount: parseUnits(amount, props.orderToken.decimals).toString(),
       bridgerDstAddress: account.address!,
+      orderTokenId: props.orderTokenId,
     })
     toggleModal()
   }
@@ -176,12 +182,12 @@ export const TradeAd = ({ ...props }: IAd) => {
             <div className="flex items-center gap-4">
               <p>{chains[props.orderToken.chainId]?.name} balance</p>
               <p className="font-semibold text-primary font-pixter tracking-wide">
-                {balance.isLoading ? (
+                {balance.isLoading || nativeBalance.isLoading ? (
                   <Skeleton.Button active />
                 ) : (
                   <>
-                    {balance.data && Number(balance_value).toLocaleString()}{" "}
-                    {balance?.data?.symbol}
+                    {Number(balance_value).toLocaleString()}{" "}
+                    {balance?.data?.symbol || nativeBalance?.data?.symbol}
                   </>
                 )}
               </p>
@@ -199,10 +205,11 @@ export const TradeAd = ({ ...props }: IAd) => {
                     className="rounded-full"
                   />
                   <input
-                    className="w-full !border-0 outline-0 text-lg font-semibold tracking-wider"
+                    className="w-full !border-0 outline-0 text-lg font-semibold tracking-wider disabled:cursor-not-allowed"
                     type="number"
                     onChange={(e) => setAmount(e.target.value)}
                     value={amount}
+                    disabled={balance.isLoading || nativeBalance.isLoading}
                   />
                   <p className="text-[11px] space-x-2">
                     <span>{tokenSymbol}</span>{" "}
@@ -266,7 +273,8 @@ export const TradeAd = ({ ...props }: IAd) => {
                   disabled={
                     props.status !== "ACTIVE" ||
                     Number(balance_value) < Number(amount) ||
-                    isPending
+                    isPending ||
+                    Number(amount) <= 0
                   }
                   onClick={handleCreateTrade}
                   loading={isPending}

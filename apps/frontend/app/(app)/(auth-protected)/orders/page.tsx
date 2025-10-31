@@ -1,4 +1,5 @@
-import React from "react"
+"use client"
+import React, { useState } from "react"
 import { CiBadgeDollar } from "react-icons/ci"
 import { RxDoubleArrowUp } from "react-icons/rx"
 import { GiTrade } from "react-icons/gi"
@@ -6,21 +7,31 @@ import { TrendingUp } from "lucide-react"
 import { IoReceiptOutline } from "react-icons/io5"
 import { OrdersTable } from "@/components/orders/OrdersTable"
 import { Tabs, TabsProps } from "antd"
+import { useGetAllTrades } from "@/hooks/useTrades"
+import { useAccount } from "wagmi"
 
 const OrdersPage = () => {
+  const [type, setType] = useState<"incoming" | "outgoing">("incoming")
   const items: TabsProps["items"] = [
     {
-      key: "1",
+      key: "incoming",
       label: "Incoming Orders",
       children: <OrdersTable type="incoming" />,
     },
 
     {
-      key: "2",
+      key: "outgoing",
       label: "Outgoing Orders",
       children: <OrdersTable type="outgoing" />,
     },
   ]
+
+  const account = useAccount()
+
+  const { data: trades } = useGetAllTrades({
+    adCreatorAddress: type === "incoming" ? account.address : undefined,
+    bridgerAddress: type === "outgoing" ? account.address : undefined,
+  })
   return (
     <div className="max-w-[98%] mx-auto space-y-4 md:space-y-8 md:py-2 md:px-0 p-4">
       <div>
@@ -36,8 +47,10 @@ const OrdersPage = () => {
                 <RxDoubleArrowUp className="text-primary" />
               </div>
               <div>
-                <h3 className="text-xl md:text-2xl font-semibold">200.0 ETH</h3>
-                <p className="text-sm ">Trade Volume</p>
+                <h3 className="text-xl md:text-2xl font-semibold">
+                  {trades?.data?.length}
+                </h3>
+                <p className="text-sm ">Total trades</p>
               </div>
             </div>
           </div>
@@ -51,7 +64,13 @@ const OrdersPage = () => {
                 <RxDoubleArrowUp className="text-primary" />
               </div>
               <div>
-                <h3 className="text-xl md:text-2xl font-semibold">20</h3>
+                <h3 className="text-xl md:text-2xl font-semibold">
+                  {" "}
+                  {
+                    trades?.data?.filter((trade) => trade.status === "INACTIVE")
+                      ?.length
+                  }
+                </h3>
                 <p className="text-sm ">Pending Orders</p>
               </div>
             </div>
@@ -66,7 +85,13 @@ const OrdersPage = () => {
                 <RxDoubleArrowUp className="text-primary" />
               </div>
               <div>
-                <h3 className="text-xl md:text-2xl font-semibold">15</h3>
+                <h3 className="text-xl md:text-2xl font-semibold">
+                  {" "}
+                  {
+                    trades?.data?.filter((trade) => trade.status === "LOCKED")
+                      ?.length
+                  }
+                </h3>
                 <p className="text-sm ">Completed orders</p>
               </div>
             </div>
@@ -81,7 +106,15 @@ const OrdersPage = () => {
                 <RxDoubleArrowUp className="text-primary" />
               </div>
               <div>
-                <h3 className="text-xl md:text-2xl font-semibold">{89.57}%</h3>
+                <h3 className="text-xl md:text-2xl font-semibold">
+                  {(Number(
+                    trades?.data?.filter((trade) => trade.status === "LOCKED")
+                      ?.length
+                  ) /
+                    Number(trades?.data?.length)) *
+                    100 || 0}
+                  %
+                </h3>
                 <p className="text-sm ">Avg. completion</p>
               </div>
             </div>
@@ -90,7 +123,14 @@ const OrdersPage = () => {
       </div>
 
       <div>
-        <Tabs defaultActiveKey="1" items={items} type="line" />
+        <Tabs
+          defaultActiveKey={"incoming"}
+          items={items}
+          type="line"
+          onChange={(activeKey) =>
+            setType(activeKey as "incoming" | "outgoing")
+          }
+        />
       </div>
     </div>
   )

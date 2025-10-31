@@ -82,7 +82,9 @@ export const AdActionsModal: React.FC<Props> = ({
             ).toString(),
             adId: ad.id,
             amountBigInt: parseUnits(values.amount, ad.adToken.decimals),
+            tokenId: ad.adTokenId,
           })
+          refetchAllAds()
         } else if (actionType === "withdraw") {
           await withdrawFund({
             poolAmountWithdraw: parseUnits(
