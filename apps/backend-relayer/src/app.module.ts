@@ -12,6 +12,7 @@ import { TradesModule } from './modules/trades/trade.module';
 import { MMRModule } from './modules/mmr/mmr.module';
 import { ViemModule } from './providers/viem/viem.module';
 import { UserModule } from './modules/user/user.module';
+import { FaucetModule } from './modules/faucet/faucet.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { UserModule } from './modules/user/user.module';
     MMRModule,
     ViemModule,
     UserModule,
+    FaucetModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

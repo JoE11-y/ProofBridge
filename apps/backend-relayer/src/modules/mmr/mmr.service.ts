@@ -35,7 +35,7 @@ export class MMRService implements OnModuleDestroy {
   }
 
   private async _startup(): Promise<void> {
-    console.log('MMR Service starting...');
+    console.log('Checking MMR...');
     const resolved = LevelDB.resolveLocation(DB_PATH);
     this.db = new LevelDB(resolved);
     await this.db.init();
@@ -48,6 +48,8 @@ export class MMRService implements OnModuleDestroy {
       await this.rebuildAllMmrs();
       await this.setBootSentinel();
       console.log('MMR rebuild complete.');
+    } else {
+      console.log('MMR is healthy, no rebuild needed.');
     }
 
     const shutdown = async () => {

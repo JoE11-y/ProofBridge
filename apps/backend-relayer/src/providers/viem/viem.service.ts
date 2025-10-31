@@ -6,6 +6,7 @@ import {
   createWalletClient,
   http,
   keccak256,
+  parseEther,
   toHex,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -48,6 +49,7 @@ import {
   verifyTypedData,
 } from './ethers/typedData';
 import { ethLocalnet, hederaLocalnet } from '../viem/localnet';
+import { MOCK_ERC20_ABI } from './abis/mockERC20.abi';
 
 @Injectable()
 export class ViemService {
@@ -584,6 +586,50 @@ export class ViemService {
       reqHash: message,
       orderHash: orderHash as `0x${string}`,
     };
+  }
+
+  async mintToken(data: {
+    chainId: string;
+    tokenAddress: `0x${string}`;
+    receiver: `0x${string}`;
+  }): Promise<{ txHash: string }> {
+    const { chainId, tokenAddress, receiver } = data;
+    const { client, wallet } = this.getClient(chainId.toString());
+
+    const txHash = await wallet.writeContract({
+      address: tokenAddress,
+      abi: MOCK_ERC20_ABI,
+      functionName: 'mint',
+      args: [receiver, parseEther('1000000').toString()],
+    });
+
+    const receipt = await client.waitForTransactionReceipt({
+      hash: txHash,
+    });
+
+    if (receipt.status != 'success') {
+      throw new Error('Faucet not working');
+    }
+
+    return { txHash };
+  }
+
+  async checkTokenBalance(data: {
+    chainId: string;
+    tokenAddress: `0x${string}`;
+    account: `0x${string}`;
+  }): Promise<string> {
+    const { chainId, tokenAddress, account } = data;
+    const { client } = this.getClient(chainId.toString());
+
+    const balance = await client.readContract({
+      address: tokenAddress,
+      abi: MOCK_ERC20_ABI,
+      functionName: 'balanceOf',
+      args: [account],
+    });
+
+    return balance.toString();
   }
 
   orderTypeHash(orderParams: T_OrderParams): string {

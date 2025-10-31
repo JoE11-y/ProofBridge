@@ -89,6 +89,8 @@ The system uses a **minimal EIP-712 domain** (`name="Proofbridge"`, `version="1"
 
 ProofBridge is currently live on **Ethereum Sepolia** and **Hedera Testnet** with full cross-chain bridging capabilities.
 
+NATIVE TOKENS are denoted by: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE on the platform
+
 ### Ethereum Sepolia (Chain ID: 11155111)
 
 | Contract            | Address                                      | Explorer                                                                                             |

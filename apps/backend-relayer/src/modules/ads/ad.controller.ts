@@ -11,6 +11,7 @@ import {
   Req,
   UseGuards,
   ParseUUIDPipe,
+  Res,
 } from '@nestjs/common';
 import { AdsService } from './ad.service';
 import {
@@ -30,7 +31,7 @@ import {
   AdUpdateResponseDto,
   CloseAdResponseDto,
 } from '../ads/dto/ad.dto';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { UserJwtGuard } from '../../common/guards/user-jwt.guard';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 @ApiTags('Ads')
@@ -68,11 +69,8 @@ export class AdsController {
       'Creates a new ad and returns the transaction data for blockchain execution',
     type: CreateAdResponseDto,
   })
-  create(
-    @Req() req: Request,
-    @Body() dto: CreateAdDto,
-  ): Promise<CreateAdResponseDto> {
-    return this.ads.create(req, dto);
+  create(@Req() req: Request, @Res() res: Response, @Body() dto: CreateAdDto) {
+    return this.ads.create(req, res, dto);
   }
 
   @ApiBearerAuth()
@@ -87,10 +85,11 @@ export class AdsController {
   })
   fund(
     @Req() req: Request,
+    @Res() res: Response,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: FundAdDto,
-  ): Promise<FundAdResponseDto> {
-    return this.ads.fund(req, id, dto);
+  ) {
+    return this.ads.fund(req, res, id, dto);
   }
 
   @ApiBearerAuth()
@@ -105,10 +104,11 @@ export class AdsController {
   })
   withdraw(
     @Req() req: Request,
+    @Res() res: Response,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: WithdrawalAdDto,
-  ): Promise<WithdrawAdResponseDto> {
-    return this.ads.withdraw(req, id, dto);
+  ) {
+    return this.ads.withdraw(req, res, id, dto);
   }
 
   @ApiBearerAuth()
@@ -122,10 +122,11 @@ export class AdsController {
   })
   confirmUpdate(
     @Req() req: Request,
+    @Res() res: Response,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: ConfirmAdActionDto,
-  ): Promise<ConfirmChainActionADResponseDto> {
-    return this.ads.confirmChainAction(req, id, dto);
+  ) {
+    return this.ads.confirmChainAction(req, res, id, dto);
   }
 
   @ApiBearerAuth()
@@ -139,10 +140,11 @@ export class AdsController {
   })
   update(
     @Req() req: Request,
+    @Res() res: Response,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateAdDto,
-  ): Promise<AdUpdateResponseDto> {
-    return this.ads.update(req, id, dto);
+  ) {
+    return this.ads.update(req, res, id, dto);
   }
 
   @ApiBearerAuth()
@@ -157,9 +159,10 @@ export class AdsController {
   })
   async close(
     @Req() req: Request,
+    @Res() res: Response,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: CloseAdDto,
-  ): Promise<CloseAdResponseDto> {
-    return this.ads.close(req, id, dto);
+  ) {
+    return this.ads.close(req, res, id, dto);
   }
 }
