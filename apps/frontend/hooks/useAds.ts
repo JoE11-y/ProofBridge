@@ -20,19 +20,21 @@ import {
 import { config } from "@/utils/wagmi-config"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { useAccount, useWriteContract } from "wagmi"
+import { useAccount, useSendTransaction, useWriteContract } from "wagmi"
 import { waitForTransactionReceipt } from "wagmi/actions"
 import { getTokens } from "@/services/tokens.service"
 import { IToken } from "@/types/tokens"
+import { formatUnits, parseEther } from "viem"
 
 export const useCreateAd = () => {
   const { writeContractAsync } = useWriteContract()
+  const { sendTransactionAsync } = useSendTransaction()
   return useMutation({
     mutationKey: ["create-ad"],
     mutationFn: async (data: { payload: ICreateAdRequest; token: IToken }) => {
       const response = await createAd(data.payload)
       const token = data.token
-      const performTx = async () => {
+      const performERC20Tx = async () => {
         const txHash = await writeContractAsync({
           address: response.contractAddress,
           abi: AD_MANAGER_ABI,
@@ -65,7 +67,7 @@ export const useCreateAd = () => {
           throw Error("Transaction failed, Retry")
         }
       }
-      if (token.kind === "ERC") {
+      if (token.kind === "ERC20") {
         const approveHash = await writeContractAsync({
           address: token.address,
           abi: ERC20_ABI,
@@ -77,14 +79,47 @@ export const useCreateAd = () => {
           hash: approveHash,
         })
         if (approveReceipt.status === "success") {
-          await performTx()
+          await performERC20Tx()
         }
         if (approveReceipt.status === "reverted") {
           throw Error("Transaction not approved")
         }
       }
       if (token.kind === "NATIVE") {
-        await performTx()
+        const amount = formatUnits(
+          BigInt(data.payload.fundAmount),
+          token.decimals
+        )
+        const txHash = await writeContractAsync({
+          address: response.contractAddress,
+          abi: AD_MANAGER_ABI,
+          chainId: Number(response.chainId),
+          functionName: "createAd",
+          args: [
+            response.signature,
+            response.authToken,
+            BigInt(response.timeToExpire),
+            response.adId,
+            response.adToken,
+            data.payload.fundAmount,
+            BigInt(response.orderChainId),
+            response.adRecipient,
+          ],
+          value: parseEther(amount),
+        })
+        const txReceipt = await waitForTransactionReceipt(config, {
+          hash: txHash,
+        })
+        if (txReceipt.status === "success") {
+          await confirmAdTx({
+            txHash: txReceipt.transactionHash,
+            signature: response.signature,
+            adId: response.adId,
+          })
+        }
+        if (txReceipt.status === "reverted") {
+          throw Error("Transaction failed")
+        }
       }
       return response
     },
