@@ -119,7 +119,16 @@ Topics will include:
 - Extending ProofBridge to new chains
 - Local development and testing
 
+## 🔗 Quick Links
+
+- **Pitch Deck**: [Proof Bridge Pitch Deck](https://drive.google.com/file/d/1-293K4ucIXvWaurejT1FX6ocZJ0RmEVH/view?usp=drivesdk)
+<!-- *   **Demo Video**: [Proof Bridge Demo Video]() -->
+- **Web application**: [beyondservicehedera.framer.website](https://proof-bridge.vercel.app/)
+- **HashScan (Testnet)**: https://hashscan.io/testnet/
+
 ## 👥 Team
+
+![alt text](images/team_picture.jpg)
 
 - **Joseph Edoh** - Blockchain Developer,
 - **Ugonna Dike** - Program manager,
