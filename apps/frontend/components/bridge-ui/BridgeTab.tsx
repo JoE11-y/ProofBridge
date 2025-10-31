@@ -128,26 +128,6 @@ export const BridgeTab = () => {
             )}
           </div>
           <div className="flex items-center gap-2 text-xs">
-            {loadingTokens ? (
-              <Skeleton.Button active={true} />
-            ) : (
-              <>
-                {tokens?.data?.map((token, index) => {
-                  const isActive = selectedTokenId === token.id
-                  return (
-                    <p
-                      key={index}
-                      className={`${
-                        isActive ? "text-primary" : ""
-                      } cursor-pointer`}
-                      onClick={() => setSelectedTokenId(token.id)}
-                    >
-                      {token.name}
-                    </p>
-                  )
-                })}
-              </>
-            )}
             <Divider
               type="vertical"
               className="!h-[25px] !my-0 !py-0 md:!block !hidden"
@@ -161,23 +141,32 @@ export const BridgeTab = () => {
       </div>
 
       <div className="flex md:flex-row flex-col md:items-center md:justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Input
-            placeholder="Enter amount"
-            className="!border-0 h-[40px] !bg-grey-1000/50 !w-[200px]"
-            suffix={
-              <Image
-                src={"/assets/logos/eth.png"}
-                height={20}
-                width={20}
-                alt="ETH Logo"
-              />
-            }
-          />
-          <Input
-            placeholder="Search seller"
-            className="!border-0 h-[40px] !bg-grey-1000/50 !w-[200px]"
-          />
+        <div className="">
+          <p>Select token</p>
+          <div className="flex items-center gap-3 md:gap-3 text-xs p-2 px-3 bg-grey-1000/50 rounded-sm">
+            {loadingTokens ? (
+              <Skeleton.Button active={true} />
+            ) : (
+              <>
+                {tokens?.data?.map((token, index) => {
+                  const isActive = selectedTokenId === token.id
+                  return (
+                    <p
+                      key={index}
+                      className={`${
+                        isActive
+                          ? "text-black bg-primary px-3 py-2 rounded-sm"
+                          : ""
+                      } cursor-pointer`}
+                      onClick={() => setSelectedTokenId(token.id)}
+                    >
+                      {token.name}
+                    </p>
+                  )
+                })}
+              </>
+            )}
+          </div>
         </div>
 
         <Tooltip

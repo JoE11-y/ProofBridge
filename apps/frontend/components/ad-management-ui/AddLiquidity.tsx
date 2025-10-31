@@ -57,25 +57,28 @@ export const AddLiquidity = () => {
   const handleCreateAd = async () => {
     try {
       const response = await createAd({
-        routeId: routes?.data[0]?.id!,
-        creatorDstAddress: account.address!,
-        maxAmount: parseUnits(
-          max,
-          base_chain?.nativeCurrency?.decimals!
-        ).toString(),
-        minAmount: parseUnits(
-          min,
-          base_chain?.nativeCurrency?.decimals!
-        ).toString(),
+        payload: {
+          routeId: routes?.data[0]?.id!,
+          creatorDstAddress: account.address!,
+          maxAmount: parseUnits(
+            max,
+            base_chain?.nativeCurrency?.decimals!
+          ).toString(),
+          minAmount: parseUnits(
+            min,
+            base_chain?.nativeCurrency?.decimals!
+          ).toString(),
 
-        metadata: {
-          title,
-          description,
+          metadata: {
+            title,
+            description,
+          },
+          fundAmount: parseUnits(
+            amount,
+            base_chain?.nativeCurrency?.decimals!
+          ).toString(),
         },
-        fundAmount: parseUnits(
-          amount,
-          base_chain?.nativeCurrency?.decimals!
-        ).toString(),
+        token: tokens?.data?.find((value) => value.id === selectedTokenId)!,
       })
 
       toggleModal()
@@ -111,6 +114,7 @@ export const AddLiquidity = () => {
                 }}
                 onChange={(value: number) => {
                   setBase_chain(supported_chains[value])
+                  setSelectedTokenId("")
                 }}
                 onClear={() => setBase_chain(undefined)}
               />
@@ -161,6 +165,7 @@ export const AddLiquidity = () => {
                   setSelectedTokenId(value)
                 }}
                 onClear={() => setSelectedTokenId("")}
+                value={selectedTokenId}
               />
             </div>
           </div>
@@ -346,7 +351,12 @@ export const AddLiquidity = () => {
                     Quantity
                   </p>
                   <p>
-                    {amount} {"ETH"}
+                    {amount}{" "}
+                    {
+                      tokens?.data?.find(
+                        (value) => value.id === selectedTokenId
+                      )?.symbol
+                    }
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
@@ -354,7 +364,12 @@ export const AddLiquidity = () => {
                     Limits
                   </p>
                   <p>
-                    {min} - {max} {"ETH"}
+                    {min} - {max}{" "}
+                    {
+                      tokens?.data?.find(
+                        (value) => value.id === selectedTokenId
+                      )?.symbol
+                    }
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
