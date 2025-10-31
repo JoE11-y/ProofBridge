@@ -56,10 +56,8 @@ export class MMRService implements OnModuleInit, OnModuleDestroy {
   private async startup(): Promise<void> {
     console.log('[MMRService] Booting MMR service...');
 
-    // 1. Open DB
     await this.ensureDbReady();
 
-    // 2. Decide whether we need to rebuild MMRs into memory
     const mustRebuild =
       process.env.REBUILD_ON_BOOT === '1' || !(await this.hasBootSentinel());
 
