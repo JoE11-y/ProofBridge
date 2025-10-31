@@ -241,6 +241,26 @@ async function configureTokenRoutes(
   );
   await sleep(2000);
 
+  // Route 3: wHBAR ERC20 (Sepolia) -> Native HBAR on Hedera
+  console.log(`  → wHBAR ERC20 (Sepolia) -> Native HBAR (Hedera)`);
+  await withRetry(
+    () =>
+      callContractFunction(
+        sepoliaContracts.adManager!,
+        "setTokenRoute",
+        [
+          tokens.sepolia.wHbarErc20,
+          tokens.hedera.wNativeToken,
+          Number(HEDERA_CHAIN_ID),
+        ],
+        sepoliaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
+  );
+  await sleep(2000);
+
   // --- Sepolia OrderPortal Token Routes ---
   console.log(`\n→ Configuring Sepolia OrderPortal...\n`);
 
@@ -275,6 +295,26 @@ async function configureTokenRoutes(
           tokens.sepolia.proofBridgeToken,
           Number(HEDERA_CHAIN_ID),
           tokens.hedera.proofBridgeToken,
+        ],
+        sepoliaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
+  );
+  await sleep(2000);
+
+  // Route 3: Native ETH (Sepolia) -> wETH ERC20 on Hedera
+  console.log(`  → Native ETH (Sepolia) -> wETH ERC20 (Hedera)`);
+  await withRetry(
+    () =>
+      callContractFunction(
+        sepoliaContracts.orderPortal!,
+        "setTokenRoute",
+        [
+          tokens.sepolia.wNativeToken,
+          Number(HEDERA_CHAIN_ID),
+          tokens.hedera.wEthErc20,
         ],
         sepoliaConfig.rpc,
         privateKey,
@@ -327,6 +367,26 @@ async function configureTokenRoutes(
   );
   await sleep(2000);
 
+  // Route 3: wETH ERC20 (Hedera) -> Native ETH on Sepolia
+  console.log(`  → wETH ERC20 (Hedera) -> Native ETH (Sepolia)`);
+  await withRetry(
+    () =>
+      callContractFunction(
+        hederaContracts.adManager!,
+        "setTokenRoute",
+        [
+          tokens.hedera.wEthErc20,
+          tokens.sepolia.wNativeToken,
+          Number(SEPOLIA_CHAIN_ID),
+        ],
+        hederaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
+  );
+  await sleep(2000);
+
   // --- Hedera OrderPortal Token Routes ---
   console.log(`\n→ Configuring Hedera OrderPortal...\n`);
 
@@ -361,6 +421,26 @@ async function configureTokenRoutes(
           tokens.hedera.proofBridgeToken,
           Number(SEPOLIA_CHAIN_ID),
           tokens.sepolia.proofBridgeToken,
+        ],
+        hederaConfig.rpc,
+        privateKey,
+        dryRun
+      ),
+    { maxRetries: 3, delayMs: 5000 }
+  );
+  await sleep(2000);
+
+  // Route 3: Native HBAR (Hedera) -> wHBAR ERC20 on Sepolia
+  console.log(`  → Native HBAR (Hedera) -> wHBAR ERC20 (Sepolia)`);
+  await withRetry(
+    () =>
+      callContractFunction(
+        hederaContracts.orderPortal!,
+        "setTokenRoute",
+        [
+          tokens.hedera.wNativeToken,
+          Number(SEPOLIA_CHAIN_ID),
+          tokens.sepolia.wHbarErc20,
         ],
         hederaConfig.rpc,
         privateKey,

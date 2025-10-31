@@ -2,6 +2,8 @@
 
 Unified TypeScript deployment system for Proofbridge cross-chain bridge contracts.
 
+> **Note:** This deployment suite is still under development. For the most stable and reliable deployment experience, we recommend using the `sepolia-hedera` scenario, which is currently the best-tested configuration.
+
 ## Overview
 
 This deployment system provides:
@@ -348,3 +350,4 @@ For issues or questions:
 - Check logs for detailed error messages
 - Use `--dry-run` to preview operations
 - Consult contract documentation in `apps/contracts/README.md`
+*
