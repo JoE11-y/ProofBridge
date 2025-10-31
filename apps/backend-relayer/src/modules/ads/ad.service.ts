@@ -97,6 +97,7 @@ export class AdsService {
             symbol: true,
             name: true,
             decimals: true,
+            kind: true,
           },
         },
         orderToken: {
@@ -106,6 +107,7 @@ export class AdsService {
             symbol: true,
             name: true,
             decimals: true,
+            kind: true,
           },
         },
         status: true,
@@ -171,6 +173,7 @@ export class AdsService {
           address: i.adToken.address,
           decimals: i.adToken.decimals,
           chainId: i.adToken.chain.chainId.toString(),
+          kind: i.adToken.kind as string,
         },
         orderToken: {
           name: i.orderToken.name,
@@ -178,6 +181,7 @@ export class AdsService {
           address: i.orderToken.address,
           decimals: i.orderToken.decimals,
           chainId: i.orderToken.chain.chainId.toString(),
+          kind: i.orderToken.kind as string,
         },
       };
     });
@@ -206,6 +210,7 @@ export class AdsService {
             symbol: true,
             name: true,
             decimals: true,
+            kind: true,
           },
         },
         orderToken: {
@@ -215,6 +220,7 @@ export class AdsService {
             symbol: true,
             name: true,
             decimals: true,
+            kind: true,
           },
         },
         createdAt: true,
@@ -256,6 +262,7 @@ export class AdsService {
         address: ad.adToken.address,
         decimals: ad.adToken.decimals,
         chainId: ad.adToken.chain.chainId.toString(),
+        kind: ad.adToken.kind as string,
       },
       orderToken: {
         name: ad.orderToken.name,
@@ -263,6 +270,7 @@ export class AdsService {
         address: ad.orderToken.address,
         decimals: ad.orderToken.decimals,
         chainId: ad.orderToken.chain.chainId.toString(),
+        kind: ad.orderToken.kind as string,
       },
       metadata: ad.metadata ?? null,
       createdAt: ad.createdAt.toISOString(),

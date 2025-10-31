@@ -60,6 +60,8 @@ export class TradesService {
                 id: true,
                 symbol: true,
                 chain: { select: { name: true, chainId: true } },
+                kind: true,
+                address: true,
               },
             },
             orderToken: {
@@ -67,6 +69,8 @@ export class TradesService {
                 id: true,
                 symbol: true,
                 chain: { select: { name: true, chainId: true } },
+                kind: true,
+                address: true,
               },
             },
           },
@@ -91,6 +95,7 @@ export class TradesService {
             ...row.route.adToken.chain,
             chainId: adChainId,
           },
+          kind: row.route.adToken.kind as string,
         },
         orderToken: {
           ...row.route.orderToken,
@@ -98,6 +103,7 @@ export class TradesService {
             ...row.route.orderToken.chain,
             chainId: orderChainId,
           },
+          kind: row.route.orderToken.kind as string,
         },
       },
     };
@@ -153,6 +159,8 @@ export class TradesService {
                 id: true,
                 symbol: true,
                 chain: { select: { name: true, chainId: true } },
+                kind: true,
+                address: true,
               },
             },
             orderToken: {
@@ -160,6 +168,8 @@ export class TradesService {
                 id: true,
                 symbol: true,
                 chain: { select: { name: true, chainId: true } },
+                kind: true,
+                address: true,
               },
             },
           },
@@ -192,6 +202,7 @@ export class TradesService {
               ...row.route.adToken.chain,
               chainId: adChainId,
             },
+            kind: row.route.adToken.kind as string,
           },
           orderToken: {
             ...row.route.orderToken,
@@ -199,6 +210,7 @@ export class TradesService {
               ...row.route.orderToken.chain,
               chainId: orderChainId,
             },
+            kind: row.route.orderToken.kind as string,
           },
         },
       };

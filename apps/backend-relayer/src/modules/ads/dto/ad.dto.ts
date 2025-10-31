@@ -232,6 +232,11 @@ export class TokenDto {
   decimals!: number;
   @ApiProperty({ type: String, description: 'Blockchain chain ID' })
   chainId!: string;
+  @ApiProperty({
+    enum: ['ERC20', 'NATIVE'],
+    description: 'Token kind (e.g., ERC20, NATIVE)',
+  })
+  kind!: string;
 }
 
 export class AdResponseDto {

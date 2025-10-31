@@ -169,6 +169,16 @@ export class TokenDto {
 
   @ApiProperty()
   chain!: ChainDto;
+
+  @ApiProperty({
+    example: 'ERC20',
+    enum: ['ERC20', 'NATIVE'],
+    description: 'Token kind (e.g., ERC20, NATIVE)',
+  })
+  kind!: string;
+
+  @ApiProperty({ example: '0x1234567890abcdef' })
+  address!: string;
 }
 
 export class RouteDto {
