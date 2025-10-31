@@ -201,6 +201,8 @@ export class MMRService implements OnModuleDestroy {
 
   private getMmr(mmrId: MmrId): Mmr {
     const cached = this.mmrCache.get(mmrId);
+    console.log(cached);
+
     if (cached) return cached;
     if (!this.db) throw new Error('db not initialized');
 
