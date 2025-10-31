@@ -38,6 +38,7 @@ export class MMRService implements OnModuleDestroy {
   private async _startup(): Promise<void> {
     console.log('Checking if MMR needs rebuilding...');
     const resolved = MMRService.resolveLocation(DB_PATH);
+    console.log(resolved);
     this.db = new LevelDB(resolved);
     await this.db.init();
 
@@ -184,6 +185,7 @@ export class MMRService implements OnModuleDestroy {
 
     if (!this.db) {
       const resolved = MMRService.resolveLocation(DB_PATH);
+      console.log(resolved);
       this.db = new LevelDB(resolved);
     }
 
