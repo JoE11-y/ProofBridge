@@ -456,7 +456,6 @@ export class ViemService {
   ): Promise<boolean> {
     const onChainRoots = await this.fetchOnChainRoots(isAdCreator, data);
     console.log(onChainRoots, localRoot);
-    // const formattedLocalRoot = localRoot.toLowerCase();
     const formattedOnChainRoots = onChainRoots.map((root) => getAddress(root));
     const formattedLocalRoot = getAddress(localRoot);
     return formattedOnChainRoots.includes(formattedLocalRoot);
@@ -467,9 +466,9 @@ export class ViemService {
     data: T_FetchRoot,
   ): Promise<string[]> {
     if (isAdCreator) {
-      return this.fetchAdChainRoots(data);
-    } else {
       return this.fetchOrderChainRoots(data);
+    } else {
+      return this.fetchAdChainRoots(data);
     }
   }
 
