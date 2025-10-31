@@ -1,6 +1,6 @@
 {
   "name": "proofbridge-mmr",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Merkle Mountain Range implementation compatible with Solidity, using Poseidon2 hashing and LevelDB persistence",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

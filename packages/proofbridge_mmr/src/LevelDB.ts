@@ -1,6 +1,7 @@
 import { RaveLevel } from "rave-level";
 import * as fs from "fs";
 import * as path from "path";
+import { AbstractLevel } from "abstract-level";
 
 type Key = string | Buffer | Uint8Array;
 type Val = string | Buffer | Uint8Array;
@@ -11,7 +12,7 @@ interface OpenRetryOpts {
 }
 
 export default class LevelDB {
-  private db: RaveLevel<Key, Val>;
+  private db: AbstractLevel<Key, Key, Val>;
   private location: string;
   private opening?: Promise<void>;
 
