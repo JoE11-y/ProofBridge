@@ -9,6 +9,7 @@ import useFaucet from "@/hooks/useFaucet"
 import { IToken } from "@/types/tokens"
 import { useConnectModal } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
+import { IChain } from "@/types/chains"
 
 const TokenList: React.FC<{ chainId: string; chainName?: string }> = ({
   chainId,
@@ -129,7 +130,7 @@ const FaucetPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
-            {firstTwo.map((chain: any) => (
+            {firstTwo.map((chain: IChain) => (
               <div
                 key={chain.chainId}
                 className="bg-grey-900 p-4 rounded-md border border-grey-800"
