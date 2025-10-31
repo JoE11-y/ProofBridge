@@ -113,12 +113,18 @@ export class MMRService implements OnModuleDestroy {
       throw new Error(`Order ${orderHash} not recorded in MMR ${mmrId}`);
     }
 
+    console.log(mmrId);
+
     const mmr = this.getMmr(mmrId);
     const x = this.hashToField(orderHash);
 
     const elementIndex = exists.elementIndex;
 
+    console.log(`Generating proof for index ${elementIndex}`);
+
     const proof = await mmr.getMerkleProof(elementIndex);
+
+    console.log(proof);
 
     const ok = mmr.verify(
       proof.root,

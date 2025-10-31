@@ -895,6 +895,7 @@ export class TradesService {
 
       return requestContractDetails;
     } catch (e) {
+      console.log(e);
       if (e instanceof Error) {
         if (e instanceof HttpException) throw e;
         const status = e.message.toLowerCase().includes('forbidden')
