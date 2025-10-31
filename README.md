@@ -123,8 +123,7 @@ Topics will include:
 
 - **Pitch Deck**: [Proof Bridge Pitch Deck](https://drive.google.com/file/d/1-293K4ucIXvWaurejT1FX6ocZJ0RmEVH/view?usp=drivesdk)
 <!-- *   **Demo Video**: [Proof Bridge Demo Video]() -->
-- **Web application**: [beyondservicehedera.framer.website](https://proof-bridge.vercel.app/)
-- **HashScan (Testnet)**: https://hashscan.io/testnet/
+- **Web application**: [https://proof-bridge.vercel.app/](https://proof-bridge.vercel.app/)
 
 ## 👥 Team
 
