@@ -61,11 +61,11 @@ export class AuthService {
     const [access, refresh] = await Promise.all([
       this.jwt.signAsync(
         { sub: user.id, addr: user.walletAddress, typ: 'access' },
-        { secret: env.jwt.secret, expiresIn: '15m', jwtid: randomUUID() },
+        { secret: env.jwt.secret, expiresIn: '24h', jwtid: randomUUID() },
       ),
       this.jwt.signAsync(
         { sub: user.id, addr: user.walletAddress, typ: 'refresh' },
-        { secret: env.jwt.secret, expiresIn: '30d', jwtid: randomUUID() },
+        { secret: env.jwt.secret, expiresIn: '90d', jwtid: randomUUID() },
       ),
     ]);
 
@@ -101,11 +101,11 @@ export class AuthService {
     const [access, newRefresh] = await Promise.all([
       this.jwt.signAsync(
         { sub: user.id, addr: user.walletAddress, typ: 'access' },
-        { secret: env.jwt.secret, expiresIn: '15m', jwtid: randomUUID() },
+        { secret: env.jwt.secret, expiresIn: '24h', jwtid: randomUUID() },
       ),
       this.jwt.signAsync(
         { sub: user.id, addr: user.walletAddress, typ: 'refresh' },
-        { secret: env.jwt.secret, expiresIn: '30d', jwtid: randomUUID() },
+        { secret: env.jwt.secret, expiresIn: '90d', jwtid: randomUUID() },
       ),
     ]);
     return {

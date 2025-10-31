@@ -208,6 +208,14 @@ The circuit ensures:
 └─ Prover.toml              # input values (generated)
 ```
 
+## Performance Notes
+
+**Proof Generation Time**: Currently ~1 minute 30 seconds (up from ~30 seconds previously)
+
+This performance regression is due to a necessary change in our MMR implementation. We were originally using a GNU-licensed MMR library, but the licensing issue was announced on Discord just this week. Without sufficient time to properly optimize a new implementation, we built a working MMR tree implementation from scratch 2 days ago that maintains correctness but needs optimization work.
+
+**Future Improvements**: The MMR implementation is functional and correct but still requires performance optimizations. This will be addressed in future updates to bring proof generation times back down.
+
 ## Integration with ProofBridge
 
 This circuit is designed to work seamlessly with the ProofBridge protocol:

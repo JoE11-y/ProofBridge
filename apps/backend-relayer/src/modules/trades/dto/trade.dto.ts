@@ -179,6 +179,9 @@ export class TokenDto {
 
   @ApiProperty({ example: '0x1234567890abcdef' })
   address!: string;
+
+  @ApiProperty({ example: 18 })
+  decimals!: number;
 }
 
 export class RouteDto {
@@ -242,6 +245,12 @@ export class TradeResponseDto {
 
   @ApiProperty()
   route!: RouteDto;
+
+  @ApiProperty()
+  adCreatorClaimed: boolean;
+
+  @ApiProperty()
+  bridgerClaimed: boolean;
 }
 
 export class ListTradesResponseDto {
