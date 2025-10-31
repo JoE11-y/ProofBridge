@@ -10,9 +10,10 @@ import {MerkleManager, IMerkleManager} from "src/MerkleManager.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {IwNativeToken, wNativeToken} from "src/wNativeToken.sol";
 
 contract MockAdManager is AdManager {
-    constructor(address admin, IVerifier v, IMerkleManager m) AdManager(admin, v, m) {}
+    constructor(address admin, IVerifier v, IMerkleManager m, IwNativeToken t) AdManager(admin, v, m, t) {}
 
     string public lastId;
 
@@ -26,7 +27,7 @@ contract MockAdManager is AdManager {
 }
 
 contract MockOrderPortal is OrderPortal {
-    constructor(address admin, IVerifier v, IMerkleManager m) OrderPortal(admin, v, m) {}
+    constructor(address admin, IVerifier v, IMerkleManager m, IwNativeToken t) OrderPortal(admin, v, m, t) {}
 
     function hashOrderPublic(OrderParams calldata p) external view returns (bytes32) {
         return _hashOrder(p, block.chainid, address(this));
@@ -42,6 +43,9 @@ contract ProofBridge is Test {
     MerkleManager internal orderChainMerkleManager;
     ERC20Mock internal orderToken;
     ERC20Mock internal adToken;
+    IwNativeToken internal adChainWNativeToken;
+    IwNativeToken internal orderChainWNativeToken;
+    address public constant NATIVE_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     address admin;
     uint256 adminPk;
@@ -102,7 +106,8 @@ contract ProofBridge is Test {
         vm.chainId(adChainId);
         adChainVerifier = new HonkVerifier();
         adChainMerkleManager = new MerkleManager(admin);
-        adManager = new MockAdManager(admin, adChainVerifier, adChainMerkleManager);
+        adChainWNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE");
+        adManager = new MockAdManager(admin, adChainVerifier, adChainMerkleManager, adChainWNativeToken);
         adToken = new ERC20Mock();
         // assign manager role
         vm.startPrank(admin);
@@ -113,7 +118,8 @@ contract ProofBridge is Test {
         vm.chainId(orderChainId);
         orderChainVerifier = new HonkVerifier();
         orderChainMerkleManager = new MerkleManager(admin);
-        orderPortal = new MockOrderPortal(admin, orderChainVerifier, orderChainMerkleManager);
+        orderChainWNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE");
+        orderPortal = new MockOrderPortal(admin, orderChainVerifier, orderChainMerkleManager, orderChainWNativeToken);
         orderToken = new ERC20Mock();
         // assign manager role
         vm.startPrank(admin);
@@ -130,13 +136,16 @@ contract ProofBridge is Test {
         adManager.setChain(orderChainId, address(orderPortal), true);
         // Set token route
         adManager.setTokenRoute(address(adToken), address(orderToken), orderChainId);
+        // Set native token route
+        adManager.setTokenRoute(NATIVE_TOKEN_ADDRESS, address(orderToken), orderChainId);
         vm.stopPrank();
+
         // Setup Ads
         vm.startPrank(maker);
         // Create an ad
         string memory adId = "1";
         // Generate request params
-        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId);
+        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId, address(adToken));
         // Approve with initial tokens
         adToken.approve(address(adManager), initAmt);
         // Create the ad
@@ -149,6 +158,15 @@ contract ProofBridge is Test {
         (authToken, timeToLive, signature) = generateFundAdRequestParams(adId, fundAmt);
         // Fund the ad
         adManager.fundAd(signature, authToken, timeToLive, adId, fundAmt);
+
+        // Create native ad
+        adId = "native-ad";
+        (authToken, timeToLive, signature) = generateCreateAdRequestParams(adId, NATIVE_TOKEN_ADDRESS);
+        vm.deal(maker, initAmt);
+        adManager.createAd{
+            value: initAmt
+        }(signature, authToken, timeToLive, adId, NATIVE_TOKEN_ADDRESS, initAmt, orderChainId, adRecipient);
+
         vm.stopPrank();
 
         // Set Order Chain configs
@@ -167,13 +185,13 @@ contract ProofBridge is Test {
     /*//////////////////////////////////////////////////////////////
            HELPERS
     //////////////////////////////////////////////////////////////*/
-    function _defaultAdChainParams(string memory adId, uint256 amount, uint256 salt)
+    function _defaultAdChainParams(string memory adId, address adTokenAddr, uint256 amount, uint256 salt)
         internal
         view
         returns (AdManager.OrderParams memory p)
     {
         p.orderChainToken = address(orderToken);
-        p.adChainToken = address(adToken);
+        p.adChainToken = adTokenAddr;
         p.amount = amount;
         p.bridger = bridger;
         p.orderChainId = orderChainId;
@@ -185,13 +203,13 @@ contract ProofBridge is Test {
         p.salt = salt;
     }
 
-    function _defaultOrderChainParams(string memory adId, uint256 amount, uint256 salt)
+    function _defaultOrderChainParams(string memory adId, address adTokenAddr, uint256 amount, uint256 salt)
         internal
         view
         returns (OrderPortal.OrderParams memory p)
     {
         p.orderChainToken = address(orderToken);
-        p.adChainToken = address(adToken);
+        p.adChainToken = adTokenAddr;
         p.amount = amount;
         p.bridger = bridger;
         p.orderRecipient = orderRecipient;
@@ -216,7 +234,7 @@ contract ProofBridge is Test {
         sig = abi.encodePacked(r, s, v);
     }
 
-    function generateCreateAdRequestParams(string memory adId)
+    function generateCreateAdRequestParams(string memory adId, address adTokenAddr)
         internal
         view
         returns (bytes32 token, uint256 ttl, bytes memory sig)
@@ -224,7 +242,7 @@ contract ProofBridge is Test {
         token = bytes32(vm.randomBytes(32));
         ttl = block.timestamp + 1 hours;
         bytes32 message =
-            adManager.createAdRequestHash(adId, address(adToken), initAmt, orderChainId, adRecipient, token, ttl);
+            adManager.createAdRequestHash(adId, adTokenAddr, initAmt, orderChainId, adRecipient, token, ttl);
 
         sig = ethSign(message, adminPk);
     }
@@ -296,10 +314,11 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // get order chain params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, 100 ether, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), 100 ether, 777);
 
         // get ad chain params
-        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, 100 ether, 777);
+        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, address(adToken), 100 ether, 777);
 
         bytes32 orderChainOrderHash;
         bytes32 adChainOrderHash;
@@ -324,10 +343,11 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // get order chain params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, 90 ether, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), 90 ether, 777);
 
         // get ad chain params
-        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, 100 ether, 777);
+        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, address(adToken), 100 ether, 777);
 
         vm.chainId(orderChainId);
         bytes32 orderChainOrderHash = orderPortal.hashOrderPublic(orderChainParams);
@@ -417,10 +437,11 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // get order chain params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, 100 ether, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), 100 ether, 777);
 
         // get ad chain params
-        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, 100 ether, 777);
+        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, address(adToken), 100 ether, 777);
 
         // order chain params for typed data hash
         Order memory order = Order({
@@ -462,7 +483,8 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // get order chain params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, 100 ether, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), 100 ether, 777);
 
         vm.chainId(orderChainId);
         // since both hashes match, we can just use any chain's
@@ -493,8 +515,9 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // Setup Params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, orderAmt, 777);
-        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, orderAmt, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), orderAmt, 777);
+        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, address(adToken), orderAmt, 777);
 
         // Create order on order chain
         vm.chainId(orderChainId);
@@ -517,7 +540,7 @@ contract ProofBridge is Test {
         // Get Merkle tree state from ad chain
         bytes32[] memory leaves = new bytes32[](1);
         leaves[0] = adChainMerkleManager.fieldMod(orderHash);
-        bytes32 adChainRoot = adChainMerkleManager.getRootHash();
+        bytes32 adChainRoot = adChainMerkleManager.getRoot();
 
         // Generate proof
         vm.chainId(neutral);
@@ -551,8 +574,9 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // Setup Params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, orderAmt, 777);
-        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, orderAmt, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), orderAmt, 777);
+        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, address(adToken), orderAmt, 777);
 
         // Create order on order chain
         vm.chainId(orderChainId);
@@ -568,7 +592,7 @@ contract ProofBridge is Test {
         // Get Merkle tree state from order chain
         bytes32[] memory leaves = new bytes32[](1);
         leaves[0] = orderChainMerkleManager.fieldMod(orderHash);
-        bytes32 orderChainRoot = orderChainMerkleManager.getRootHash();
+        bytes32 orderChainRoot = orderChainMerkleManager.getRoot();
 
         // Lock order on ad chain
         vm.chainId(adChainId);
@@ -605,7 +629,8 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // get order chain params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, 100 ether, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), 100 ether, 777);
 
         vm.chainId(orderChainId);
 
@@ -637,8 +662,9 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // Setup Params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, orderAmt, 777);
-        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, orderAmt, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), orderAmt, 777);
+        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, address(adToken), orderAmt, 777);
 
         // Create order on order chain
         vm.chainId(orderChainId);
@@ -654,7 +680,7 @@ contract ProofBridge is Test {
         // Get Merkle tree state from ad chain
         bytes32[] memory leaves = new bytes32[](1);
         leaves[0] = orderChainMerkleManager.fieldMod(orderHash);
-        bytes32 orderChainRoot = orderChainMerkleManager.getRootHash();
+        bytes32 orderChainRoot = orderChainMerkleManager.getRoot();
 
         // Lock order on ad chain
         vm.chainId(adChainId);
@@ -694,8 +720,9 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // Setup Params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, orderAmt, 777);
-        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, orderAmt, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), orderAmt, 777);
+        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, address(adToken), orderAmt, 777);
 
         // Create order on order chain
         vm.chainId(orderChainId);
@@ -718,7 +745,7 @@ contract ProofBridge is Test {
         // Get Merkle tree state from ad chain
         bytes32[] memory leaves = new bytes32[](1);
         leaves[0] = adChainMerkleManager.fieldMod(orderHash);
-        bytes32 adChainRoot = adChainMerkleManager.getRootHash();
+        bytes32 adChainRoot = adChainMerkleManager.getRoot();
 
         // Generate proof
         vm.chainId(neutral);
@@ -746,8 +773,9 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // Setup Params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, orderAmt, 777);
-        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, orderAmt, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), orderAmt, 777);
+        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, address(adToken), orderAmt, 777);
 
         // Create order on order chain
         vm.chainId(orderChainId);
@@ -770,7 +798,7 @@ contract ProofBridge is Test {
         // Get Merkle tree state from ad chain
         bytes32[] memory leaves = new bytes32[](1);
         leaves[0] = adChainMerkleManager.fieldMod(orderHash);
-        bytes32 adChainRoot = adChainMerkleManager.getRootHash();
+        bytes32 adChainRoot = adChainMerkleManager.getRoot();
 
         // Generate proof
         vm.chainId(neutral);
@@ -804,8 +832,9 @@ contract ProofBridge is Test {
         string memory adId = _adId();
 
         // Setup Params
-        OrderPortal.OrderParams memory orderChainParams = _defaultOrderChainParams(adId, orderAmt, 777);
-        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, orderAmt, 777);
+        OrderPortal.OrderParams memory orderChainParams =
+            _defaultOrderChainParams(adId, address(adToken), orderAmt, 777);
+        AdManager.OrderParams memory adChainParams = _defaultAdChainParams(adId, address(adToken), orderAmt, 777);
 
         // Create order on order chain
         vm.chainId(orderChainId);
@@ -821,7 +850,7 @@ contract ProofBridge is Test {
         // Get Merkle tree state from ad chain
         bytes32[] memory leaves = new bytes32[](1);
         leaves[0] = orderChainMerkleManager.fieldMod(orderHash);
-        bytes32 orderChainRoot = orderChainMerkleManager.getRootHash();
+        bytes32 orderChainRoot = orderChainMerkleManager.getRoot();
 
         // Lock order on ad chain
         vm.chainId(adChainId);

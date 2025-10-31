@@ -10,8 +10,9 @@ import {OrderPortal} from "src/OrderPortal.sol";
 import {IMerkleManager, MerkleManager} from "src/MerkleManager.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+import {IwNativeToken, wNativeToken} from "src/wNativeToken.sol";
 
-contract Proofbridge is Script {
+contract DeployProofbridge is Script {
     function _envOrAddress(string memory key, address fallback_) internal view returns (address out) {
         try vm.envAddress(key) returns (address v) {
             out = v;
@@ -58,12 +59,22 @@ contract Proofbridge is Script {
             console2.log("Reusing MerkleManager    :", address(merkleManager));
         }
 
+        IwNativeToken _wNativeToken;
+        address wNativeTokenMaybe = _envOrAddress("WNATIVE_TOKEN", address(0));
+        if (wNativeTokenMaybe == address(0)) {
+            _wNativeToken = new wNativeToken("Wrapped Native Token", "WNATIVE");
+            console2.log("Deployed WNATIVE Token :", address(_wNativeToken));
+        } else {
+            _wNativeToken = IwNativeToken(wNativeTokenMaybe);
+            console2.log("Reusing WNATIVE Token     :", wNativeTokenMaybe);
+        }
+
         // --- Deploy AdManager & OrderPortal ---
         address adManagerMaybe = _envOrAddress("ADMANAGER", address(0));
         if (adManagerMaybe != address(0)) {
             console2.log("Reusing AdManager     :", adManagerMaybe);
         } else {
-            AdManager adManager = new AdManager(admin, verifier, merkleManager);
+            AdManager adManager = new AdManager(admin, verifier, merkleManager, _wNativeToken);
             console2.log("Deployed AdManager    :", address(adManager));
             adManagerMaybe = address(adManager);
         }
@@ -72,7 +83,7 @@ contract Proofbridge is Script {
         if (orderPortalMaybe != address(0)) {
             console2.log("Reusing OrderPortal     :", orderPortalMaybe);
         } else {
-            OrderPortal orderPortal = new OrderPortal(admin, verifier, merkleManager);
+            OrderPortal orderPortal = new OrderPortal(admin, verifier, merkleManager, _wNativeToken);
             console2.log("Deployed OrderPortal :", address(orderPortal));
             orderPortalMaybe = address(orderPortal);
         }

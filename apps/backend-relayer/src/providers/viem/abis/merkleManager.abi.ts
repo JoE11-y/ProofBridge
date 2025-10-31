@@ -43,23 +43,21 @@ export const MERKLE_MANAGER_ABI = [
   },
   {
     type: 'function',
-    name: 'getElementsCount',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    name: 'getMerkleProof',
+    inputs: [{ name: 'index', type: 'uint256', internalType: 'uint256' }],
+    outputs: [
+      { name: 'root_', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'width_', type: 'uint256', internalType: 'uint256' },
+      { name: 'peakBag', type: 'bytes32[]', internalType: 'bytes32[]' },
+      { name: 'siblings', type: 'bytes32[]', internalType: 'bytes32[]' },
+    ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'getLastPeaks',
-    inputs: [],
-    outputs: [{ name: '', type: 'bytes32[]', internalType: 'bytes32[]' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'getOrderIndex',
-    inputs: [{ name: 'orderHash', type: 'bytes32', internalType: 'bytes32' }],
-    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    name: 'getNode',
+    inputs: [{ name: 'index', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
     stateMutability: 'view',
   },
   {
@@ -71,9 +69,30 @@ export const MERKLE_MANAGER_ABI = [
   },
   {
     type: 'function',
-    name: 'getRootHash',
+    name: 'getRoot',
     inputs: [],
     outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getRootAtIndex',
+    inputs: [{ name: 'leafIndex', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getSize',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getWidth',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -101,11 +120,7 @@ export const MERKLE_MANAGER_ABI = [
     name: 'renounceRole',
     inputs: [
       { name: 'role', type: 'bytes32', internalType: 'bytes32' },
-      {
-        name: 'callerConfirmation',
-        type: 'address',
-        internalType: 'address',
-      },
+      { name: 'callerConfirmation', type: 'address', internalType: 'address' },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
@@ -129,20 +144,16 @@ export const MERKLE_MANAGER_ABI = [
   },
   {
     type: 'function',
-    name: 'verifyProof',
+    name: 'verifyInclusionProof',
     inputs: [
+      { name: 'root_', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'width_', type: 'uint256', internalType: 'uint256' },
       { name: 'index', type: 'uint256', internalType: 'uint256' },
-      { name: 'value', type: 'bytes32', internalType: 'bytes32' },
-      { name: 'proof', type: 'bytes32[]', internalType: 'bytes32[]' },
-      { name: 'peaks', type: 'bytes32[]', internalType: 'bytes32[]' },
-      {
-        name: 'elementsCount',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      { name: 'root', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'valueHash', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'peakBag', type: 'bytes32[]', internalType: 'bytes32[]' },
+      { name: 'siblings', type: 'bytes32[]', internalType: 'bytes32[]' },
     ],
-    outputs: [],
+    outputs: [{ name: '', type: 'bool', internalType: 'bool' }],
     stateMutability: 'pure',
   },
   {
@@ -152,26 +163,32 @@ export const MERKLE_MANAGER_ABI = [
       {
         name: 'index',
         type: 'uint256',
-        indexed: false,
+        indexed: true,
         internalType: 'uint256',
       },
       {
         name: 'orderHash',
         type: 'bytes32',
-        indexed: false,
+        indexed: true,
         internalType: 'bytes32',
+      },
+      {
+        name: 'width',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'size',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
       },
       {
         name: 'rootHash',
         type: 'bytes32',
         indexed: false,
         internalType: 'bytes32',
-      },
-      {
-        name: 'elementsCount',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
       },
     ],
     anonymous: false,
@@ -180,12 +197,7 @@ export const MERKLE_MANAGER_ABI = [
     type: 'event',
     name: 'RoleAdminChanged',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'previousAdminRole',
         type: 'bytes32',
@@ -205,12 +217,7 @@ export const MERKLE_MANAGER_ABI = [
     type: 'event',
     name: 'RoleGranted',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'account',
         type: 'address',
@@ -230,12 +237,7 @@ export const MERKLE_MANAGER_ABI = [
     type: 'event',
     name: 'RoleRevoked',
     inputs: [
-      {
-        name: 'role',
-        type: 'bytes32',
-        indexed: true,
-        internalType: 'bytes32',
-      },
+      { name: 'role', type: 'bytes32', indexed: true, internalType: 'bytes32' },
       {
         name: 'account',
         type: 'address',
@@ -260,10 +262,6 @@ export const MERKLE_MANAGER_ABI = [
       { name: 'neededRole', type: 'bytes32', internalType: 'bytes32' },
     ],
   },
-  { type: 'error', name: 'IndexOutOfBounds', inputs: [] },
-  { type: 'error', name: 'InvalidPeaksArrayLength', inputs: [] },
-  { type: 'error', name: 'InvalidProof', inputs: [] },
-  { type: 'error', name: 'InvalidRoot', inputs: [] },
   { type: 'error', name: 'MerkleManager__ZeroAddress', inputs: [] },
   { type: 'error', name: 'ReentrancyGuardReentrantCall', inputs: [] },
 ];

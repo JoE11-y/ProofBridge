@@ -34,14 +34,14 @@ export class ProofService {
       ad_contract: isAdCreator ? false : true,
       secret,
       target_index: merkleProof.elementIndex.toString(),
-      target_elements_count: merkleProof.elementsCount.toString(),
-      target_sibling_hashes_len: merkleProof.siblingsHashes.length.toString(),
+      tree_width: merkleProof.width.toString(),
+      target_sibling_hashes_len: merkleProof.siblings.length.toString(),
       target_sibling_hashes: this.padArray(
-        merkleProof.siblingsHashes.map((i) => i.toString()),
+        merkleProof.siblings.map((i) => i.toString()),
       ),
-      target_peak_hashes_len: merkleProof.peaksHashes.length.toString(),
+      target_peak_hashes_len: merkleProof.peaks.length.toString(),
       target_peak_hashes: this.padArray(
-        merkleProof.peaksHashes.map((i) => i.toString()),
+        merkleProof.peaks.map((i) => i.toString()),
       ),
     };
     const { witness } = await this.noirService.execute(inputs);

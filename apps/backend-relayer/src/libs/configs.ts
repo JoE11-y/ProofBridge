@@ -20,4 +20,6 @@ export const env = {
   appUri: process.env.SIGN_URI || 'https://proofbridge.xyz',
   admin: process.env.ADMIN_SECRET || '',
   secretKey: process.env.SECRET_KEY || '32_byte_secret_key_for_aes!',
+  evmRpcApiKey: process.env.EVM_RPC_API_KEY || '',
+  rpcUrlHedera: process.env.RPC_URL_HEDERA || '',
 };

@@ -5,10 +5,14 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { env } from '@libs/configs';
+import { MMRService } from './modules/mmr/mmr.service';
 
 async function bootstrap() {
   const PORT = parseInt(String(env.port), 10) || 2005;
   const app = await NestFactory.create(AppModule);
+
+  const mmr = app.get(MMRService);
+  await mmr.startup();
 
   const devOrigins = [
     'http://localhost:3000',

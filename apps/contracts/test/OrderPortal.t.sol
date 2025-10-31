@@ -10,10 +10,11 @@ import {IMerkleManager} from "src/MerkleManager.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {IwNativeToken, wNativeToken} from "src/wNativeToken.sol";
 
 // Expose internal hash for assertions
 contract MockOrderPortal is OrderPortal {
-    constructor(address admin, IVerifier v, IMerkleManager m) OrderPortal(admin, v, m) {}
+    constructor(address admin, IVerifier v, IMerkleManager m, IwNativeToken t) OrderPortal(admin, v, m, t) {}
 
     function hashOrderPublic(OrderParams calldata p) external view returns (bytes32) {
         return _hashOrder(p, getChainID(), address(this));
@@ -25,6 +26,9 @@ contract OrderPortalTest is Test {
     MockVerifier internal verifier;
     MerkleManager internal merkleManager;
     ERC20Mock internal orderToken;
+    wNativeToken internal _wNativeToken;
+
+    address internal constant NATIVE_TOKEN_ADDRESS = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     address admin;
     uint256 adminPk;
@@ -58,7 +62,13 @@ contract OrderPortalTest is Test {
         (admin, adminPk) = makeAddrAndKey("admin");
         verifier = new MockVerifier(true);
         merkleManager = new MerkleManager(admin);
-        portal = new MockOrderPortal(admin, IVerifier(address(verifier)), IMerkleManager(address(merkleManager)));
+        _wNativeToken = new wNativeToken("Wrapped Native Token", "WNT");
+        portal = new MockOrderPortal(
+            admin,
+            IVerifier(address(verifier)),
+            IMerkleManager(address(merkleManager)),
+            IwNativeToken(address(_wNativeToken))
+        );
 
         vm.startPrank(admin);
         merkleManager.grantRole(merkleManager.MANAGER_ROLE(), address(portal));
@@ -194,6 +204,10 @@ contract OrderPortalTest is Test {
         portal.setTokenRoute(address(orderToken), adChainId, adToken);
     }
 
+    /*//////////////////////////////////////////////////////////////
+           setTokenRoute: orderToken path
+    ///////////////////////////////////////////////////////////////*/
+
     function test_setTokenRoute_setsAndEmits_whenSupported() public {
         vm.startPrank(admin);
         portal.setChain(adChainId, adManager, true);
@@ -204,6 +218,23 @@ contract OrderPortalTest is Test {
         vm.stopPrank();
 
         address routed = portal.tokenRoute(address(orderToken), adChainId);
+        assertEq(routed, adToken, "route not set");
+    }
+
+    /*//////////////////////////////////////////////////////////////
+           setTokenRoute: wNativeToken path
+    //////////////////////////////////////////////////////////////*/
+
+    function test_setNativeTokenRoute_setsAndEmits_whenSupported() public {
+        vm.startPrank(admin);
+        portal.setChain(adChainId, adManager, true);
+
+        vm.expectEmit(true, true, true, true);
+        emit OrderPortal.TokenRouteSet(NATIVE_TOKEN_ADDRESS, adChainId, adToken);
+        portal.setTokenRoute(NATIVE_TOKEN_ADDRESS, adChainId, adToken);
+        vm.stopPrank();
+
+        address routed = portal.tokenRoute(NATIVE_TOKEN_ADDRESS, adChainId);
         assertEq(routed, adToken, "route not set");
     }
 
@@ -370,6 +401,57 @@ contract OrderPortalTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
+            createOrder: computes orderHash; stores Status.Open; pulls wNativeToken; emits
+    //////////////////////////////////////////////////////////////*/
+    function test_createOrder_with_NativeToken_success_storesOpen_pullsFunds_emitsEvent() public {
+        test_setNativeTokenRoute_setsAndEmits_whenSupported();
+
+        OrderPortal.OrderParams memory p = _defaultParams();
+        p.orderChainToken = NATIVE_TOKEN_ADDRESS;
+
+        vm.deal(bridger, p.amount);
+
+        // Balances
+        vm.startPrank(bridger);
+        uint256 balSenderBefore = bridger.balance;
+        uint256 balPortalBefore = _wNativeToken.balanceOf(address(portal));
+
+        // Expected hash (uses struct, chainid, and address(this))
+        bytes32 expectedHash = portal.hashOrderPublic(p);
+
+        vm.expectEmit(true, true, true, true);
+        emit OrderPortal.OrderCreated(
+            expectedHash,
+            bridger,
+            NATIVE_TOKEN_ADDRESS,
+            p.amount,
+            p.adChainId,
+            p.adChainToken,
+            p.adManager,
+            p.adId,
+            p.adCreator,
+            p.adRecipient
+        );
+
+        (authToken, timeToLive, signature) = generateCreateOrderRequestParams(p.adId, expectedHash);
+        bytes32 orderHash = portal.createOrder{value: p.amount}(signature, authToken, timeToLive, p);
+        vm.stopPrank();
+
+        // Hash returned matches expected
+        assertEq(orderHash, expectedHash, "orderHash mismatch");
+
+        // Status is Open
+        (OrderPortal.Status status) = portal.orders(orderHash);
+        assertEq(uint256(status), uint256(OrderPortal.Status.Open), "status not Open");
+
+        // Funds moved
+        uint256 balSenderAfter = bridger.balance;
+        uint256 balPortalAfter = _wNativeToken.balanceOf(address(portal));
+        assertEq(balSenderBefore - balSenderAfter, p.amount, "sender not debited");
+        assertEq(balPortalAfter - balPortalBefore, p.amount, "portal not credited");
+    }
+
+    /*//////////////////////////////////////////////////////////////
              createOrder: duplicate (same params) -> OrderExists
     //////////////////////////////////////////////////////////////*/
     function test_createOrder_duplicate_sameParams_revertsOrderExists() public {
@@ -405,6 +487,25 @@ contract OrderPortalTest is Test {
         vm.startPrank(bridger);
         orderToken.approve(address(portal), _amount);
         orderHash = portal.createOrder(signature, authToken, timeToLive, p);
+        vm.stopPrank();
+    }
+
+    // createOrder with Native token
+    function _openOrderWithNativeToken(uint256 _amount, uint256 _salt)
+        internal
+        returns (OrderPortal.OrderParams memory p, bytes32 orderHash)
+    {
+        p = _defaultParams();
+        p.amount = _amount;
+        p.salt = _salt;
+        p.orderChainToken = NATIVE_TOKEN_ADDRESS;
+        vm.deal(bridger, _amount);
+
+        bytes32 exHash = portal.hashOrderPublic(p);
+        (authToken, timeToLive, signature) = generateCreateOrderRequestParams(p.adId, exHash);
+
+        vm.startPrank(bridger);
+        orderHash = portal.createOrder{value: _amount}(signature, authToken, timeToLive, p);
         vm.stopPrank();
     }
 
@@ -532,5 +633,37 @@ contract OrderPortalTest is Test {
 
         vm.expectRevert(abi.encodeWithSelector(OrderPortal.OrderPortal__OrderNotOpen.selector, orderHash));
         portal.unlock(signature, authToken, timeToLive, p, bytes32("two"), t_root, hex"");
+    }
+
+    /*//////////////////////////////////////////////////////////////
+     * unlock: verifier true -> status Filled; transfers native token to adRecipient
+     * unlock: emits OrderUnlocked
+     //////////////////////////////////////////////////////////////*/
+    function test_unlock_with_NativeToken_success_setsFilled_transfers_emits() public {
+        test_setNativeTokenRoute_setsAndEmits_whenSupported();
+        (OrderPortal.OrderParams memory p, bytes32 orderHash) = _openOrderWithNativeToken(55 ether, 456);
+
+        uint256 balPortalBefore = _wNativeToken.balanceOf(address(portal));
+        uint256 balRecipientBefore = p.adRecipient.balance;
+
+        bytes memory proof = hex"ABCD";
+        bytes32 nullifier = bytes32("NATIVE");
+
+        bytes32 t_root = bytes32(uint256(0));
+
+        (authToken, timeToLive, signature) = generateUnlockOrderRequestHash(p.adId, orderHash, t_root);
+
+        vm.expectEmit(true, true, true, true);
+        emit OrderPortal.OrderUnlocked(orderHash, p.adRecipient, nullifier);
+
+        portal.unlock(signature, authToken, timeToLive, p, nullifier, t_root, proof);
+
+        // Status moved to Filled
+        (OrderPortal.Status status) = portal.orders(orderHash);
+        assertEq(uint256(status), uint256(OrderPortal.Status.Filled), "status not Filled");
+
+        // Funds transferred from portal to dstRecipient
+        assertEq(_wNativeToken.balanceOf(address(portal)), balPortalBefore - p.amount, "portal not debited");
+        assertEq(p.adRecipient.balance, balRecipientBefore + p.amount, "recipient not credited");
     }
 }

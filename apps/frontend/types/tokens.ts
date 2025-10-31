@@ -13,7 +13,7 @@ export interface IToken {
   name: string
   address: Address
   decimals: number
-  kind: string
+  kind: "NATIVE" | "ERC"
   createdAt: string
   updatedAt: string
   chain: {

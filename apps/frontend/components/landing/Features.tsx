@@ -68,7 +68,7 @@ export const Features = () => {
                           <p className="md:text-3xl text-lg md:my-3 my-2 font-perfectly-nineties">
                             {feature.title}
                           </p>
-                          <p className="2xl:max-w-[65%] opacity-75">
+                          <p className="2xl:max-w-[85%] opacity-75">
                             {feature.desc}
                           </p>
                         </div>
@@ -78,9 +78,7 @@ export const Features = () => {
                             <p className="text-sm text-primary uppercase">
                               explore:
                             </p>
-                            <p className="font-medium">
-                              First P2P bridge on Hedera
-                            </p>
+                            <p className="font-medium">{feature.explore}</p>
                           </div>
                           <Link href={"/bridge"}>
                             <ArrowUpRight className="md:text-4xl text-2xl text-primary" />
@@ -98,7 +96,7 @@ export const Features = () => {
                           <p className="md:text-3xl text-lg md:my-3 my-2 font-perfectly-nineties">
                             {feature.title}
                           </p>
-                          <p className="2xl:max-w-[65%] opacity-75">
+                          <p className="2xl:max-w-[95%] opacity-75">
                             {feature.desc}
                           </p>
                         </div>
@@ -108,9 +106,7 @@ export const Features = () => {
                             <p className="text-sm text-primary uppercase">
                               explore:
                             </p>
-                            <p className="font-medium">
-                              First P2P bridge on Hedera
-                            </p>
+                            <p className="font-medium">{feature.explore}</p>
                           </div>
                           <Link href={"/bridge"}>
                             <ArrowUpRight className="md:text-4xl text-2xl text-primary" />

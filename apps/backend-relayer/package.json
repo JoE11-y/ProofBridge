@@ -4,7 +4,7 @@
   "description": "",
   "author": "",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -22,11 +22,6 @@
     "prisma:migrate": "prisma migrate deploy"
   },
   "dependencies": {
-    "@accumulators/core": "^4.2.3",
-    "@accumulators/hashers": "^4.2.3",
-    "@accumulators/memory": "^4.2.3",
-    "@accumulators/merkle-mountain-range": "^4.2.3",
-    "@accumulators/rocksdb": "^4.2.3",
     "@aztec/bb.js": "^0.87.0",
     "@biconomy/account": "^4.5.7",
     "@nestjs/cache-manager": "^3.0.1",
@@ -53,6 +48,8 @@
     "level": "^10.0.0",
     "morgan": "^1.10.1",
     "nest-winston": "^1.10.2",
+    "proofbridge-mmr": "1.0.6",
+    "rave-level": "^1.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "unique-names-generator": "^4.7.1",

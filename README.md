@@ -10,7 +10,7 @@ ProofBridge introduces a decentralized bridge infrastructure where **users form 
 
 Key primitives include:
 
-* **Zero-Knowledge Proofs (ZKPs)**: Used to validate off-chain computation without revealing sensitive data.
+* **Zero-Knowledge Proofs (ZKPs)**: Used to validate off-chain computation and generate proofs.
 * **BLS Signatures** (in progress): Used to aggregate authentication proofs from both parties.
 * **Consensus by Counterparties**: Trade participants themselves serve as lightweight validators.
 * **Multi-chain Compatibility**: Designed for EVM chains and extensible to non-EVM networks.
@@ -30,6 +30,8 @@ This design enables **secure peer-to-peer asset transfers and data verification*
 ## 🛠 Architecture
 
 The ProofBridge system is composed of four main layers, each working together to enable secure, peer-to-peer cross-chain transfers.
+
+**For detailed architecture diagrams, component descriptions, and data flow, see [architecture.md](./architecture.md)**
 
 ### Contracts
 
@@ -60,6 +62,18 @@ The ProofBridge system is composed of four main layers, each working together to
 * **Automation:** By handling routine checks and repetitive tasks, the AI layer frees up makers to focus on strategy while ensuring a faster, smoother experience for bridgers.
 
 * **Future potential:** The AI layer will later expand to adaptive fee setting, predictive liquidity provisioning, and even operating as **co-pilot relayers** in a permissionless environment.
+
+## 📖 Component Documentation
+
+For detailed information about each component of the ProofBridge system, refer to the following documentation:
+
+* **[Contracts](./apps/contracts/README.md)** - Smart contract architecture, deployed addresses with explorer links, deployment guides, and cross-chain route configuration
+* **[Proof Circuits](./apps/proof_circuits/)** - Zero-knowledge proof circuits for cross-chain verification
+  * [Auth Circuits](./apps/proof_circuits/auth/README.md) - Authentication proof circuits using BLS signatures
+  * [Deposit Circuits](./apps/proof_circuits/deposits/README.md) - Deposit validation and Merkle proof circuits
+* **[Backend Relayer](./apps/backend-relayer/README.md)** - Relayer setup, configuration, and operation instructions
+* **[Frontend](./apps/frontend/README.md)** - User interface setup and development guide
+* **[MMR Package](./packages/proofbridge_mmr/README.md)** - Merkle Mountain Range implementation and usage
 
 ## 📍 Roadmap
 

@@ -35,6 +35,22 @@ export class QueryAdsDto {
   orderChainId?: number;
 
   @ApiPropertyOptional({
+    description: 'Ad token ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsString()
+  adTokenId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Order token ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsString()
+  orderTokenId?: string;
+
+  @ApiPropertyOptional({
     enum: ['ACTIVE', 'PAUSED', 'EXHAUSTED', 'CLOSED'],
     description: 'Current status of the ad',
     example: 'ACTIVE',

@@ -1,4 +1,4 @@
-import { TypedDataEncoder, AbiCoder, isAddress } from "ethers";
+import { TypedDataEncoder, AbiCoder } from "ethers";
 import { OrderTypedData, domain, orderTypes } from "./utils";
 
 async function hashTypedData(): Promise<string> {

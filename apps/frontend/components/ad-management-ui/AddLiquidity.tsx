@@ -57,25 +57,28 @@ export const AddLiquidity = () => {
   const handleCreateAd = async () => {
     try {
       const response = await createAd({
-        routeId: routes?.data[0]?.id!,
-        creatorDstAddress: account.address!,
-        maxAmount: parseUnits(
-          max,
-          base_chain?.nativeCurrency?.decimals!
-        ).toString(),
-        minAmount: parseUnits(
-          min,
-          base_chain?.nativeCurrency?.decimals!
-        ).toString(),
+        payload: {
+          routeId: routes?.data[0]?.id!,
+          creatorDstAddress: account.address!,
+          maxAmount: parseUnits(
+            max,
+            base_chain?.nativeCurrency?.decimals!
+          ).toString(),
+          minAmount: parseUnits(
+            min,
+            base_chain?.nativeCurrency?.decimals!
+          ).toString(),
 
-        metadata: {
-          title,
-          description,
+          metadata: {
+            title,
+            description,
+          },
+          fundAmount: parseUnits(
+            amount,
+            base_chain?.nativeCurrency?.decimals!
+          ).toString(),
         },
-        fundAmount: parseUnits(
-          amount,
-          base_chain?.nativeCurrency?.decimals!
-        ).toString(),
+        token: tokens?.data?.find((value) => value.id === selectedTokenId)!,
       })
 
       toggleModal()
@@ -352,7 +355,7 @@ export const AddLiquidity = () => {
                     {
                       tokens?.data?.find(
                         (value) => value.id === selectedTokenId
-                      )?.name
+                      )?.symbol
                     }
                   </p>
                 </div>
@@ -365,7 +368,7 @@ export const AddLiquidity = () => {
                     {
                       tokens?.data?.find(
                         (value) => value.id === selectedTokenId
-                      )?.name
+                      )?.symbol
                     }
                   </p>
                 </div>

@@ -12,7 +12,12 @@ import { privateKeyToAccount } from 'viem/accounts';
 import BigNumber from 'bignumber.js';
 import { randomUUID } from 'crypto';
 import { getTime } from 'date-fns';
-import { sepolia, hederaTestnet } from 'viem/chains';
+import {
+  sepolia,
+  hederaTestnet,
+  polygonAmoy,
+  optimismSepolia,
+} from 'viem/chains';
 import {
   T_AdManagerOrderParams,
   T_CloseAdRequest,
@@ -54,17 +59,34 @@ export class ViemService {
   constructor() {}
   getClient(chainId: string): { wallet: any; client: any } {
     let chain: Chain;
+    let rpc_url: string = '';
 
     const id = Number(chainId);
 
     if (id === sepolia.id) {
       chain = sepolia;
+      if (env.evmRpcApiKey != '') {
+        rpc_url = `https://eth-sepolia.g.alchemy.com/v2/${env.evmRpcApiKey}`;
+      }
     } else if (id === hederaTestnet.id) {
       chain = hederaTestnet;
+      if (env.rpcUrlHedera) {
+        rpc_url = env.rpcUrlHedera;
+      }
     } else if (id === ethLocalnet.id) {
       chain = ethLocalnet;
     } else if (id === hederaLocalnet.id) {
       chain = hederaLocalnet;
+    } else if (id === polygonAmoy.id) {
+      chain = polygonAmoy;
+      if (env.evmRpcApiKey != '') {
+        rpc_url = `https://polygon-mumbai.g.alchemy.com/v2/${env.evmRpcApiKey}`;
+      }
+    } else if (id === optimismSepolia.id) {
+      chain = optimismSepolia;
+      if (env.evmRpcApiKey != '') {
+        rpc_url = `https://opt-sepolia.g.alchemy.com/v2/${env.evmRpcApiKey}`;
+      }
     } else {
       throw new Error(`Unsupported chainId: ${chainId}`);
     }
@@ -85,7 +107,7 @@ export class ViemService {
 
     const client = createPublicClient({
       chain,
-      transport: http(),
+      transport: rpc_url ? http(rpc_url) : http(),
     });
 
     return {
@@ -110,9 +132,9 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.ONE_HOUR;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -158,9 +180,9 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.FIVE_MINUTES;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -194,9 +216,9 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.FIVE_MINUTES;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -231,9 +253,9 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.FIVE_MINUTES;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
 
     const message = await client.readContract({
       address: adContractAddress,
@@ -267,9 +289,10 @@ export class ViemService {
 
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.TEN_MINUTES;
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
 
     const orderHash = getTypedHash(data.orderParams);
 
@@ -311,9 +334,9 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.TEN_MINUTES;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
 
     const orderHash = getTypedHash(data.orderParams);
 
@@ -382,18 +405,18 @@ export class ViemService {
     }
   }
 
-  async fetchOnChainRoot(
+  async fetchOnChainLatestRoot(
     isAdCreator: boolean,
     data: T_FetchRoot,
   ): Promise<string> {
     if (isAdCreator) {
-      return this.fetchAdChainRoot(data);
+      return this.fetchAdChainLatestRoot(data);
     } else {
-      return this.fetchOrderChainRoot(data);
+      return this.fetchOrderChainLatestRoot(data);
     }
   }
 
-  async fetchAdChainRoot(data: T_FetchRoot): Promise<string> {
+  async fetchAdChainLatestRoot(data: T_FetchRoot): Promise<string> {
     const { chainId, contractAddress } = data;
 
     const { client } = this.getClient(chainId.toString());
@@ -408,7 +431,7 @@ export class ViemService {
     return root;
   }
 
-  async fetchOrderChainRoot(data: T_FetchRoot): Promise<string> {
+  async fetchOrderChainLatestRoot(data: T_FetchRoot): Promise<string> {
     const { chainId, contractAddress } = data;
 
     const { client } = this.getClient(chainId.toString());
@@ -421,6 +444,93 @@ export class ViemService {
     });
 
     return root;
+  }
+
+  async checkLocalRootExist(
+    localRoot: string,
+    isAdCreator: boolean,
+    data: T_FetchRoot,
+  ): Promise<boolean> {
+    const onChainRoots = await this.fetchOnChainRoots(isAdCreator, data);
+    return onChainRoots.includes(localRoot);
+  }
+
+  async fetchOnChainRoots(
+    isAdCreator: boolean,
+    data: T_FetchRoot,
+  ): Promise<string[]> {
+    if (isAdCreator) {
+      return this.fetchAdChainRoots(data);
+    } else {
+      return this.fetchOrderChainRoots(data);
+    }
+  }
+
+  async fetchAdChainRoots(data: T_FetchRoot): Promise<string[]> {
+    const { chainId, contractAddress } = data;
+
+    const { client } = this.getClient(chainId.toString());
+
+    const leafCount = await client.readContract({
+      address: contractAddress,
+      abi: AD_MANAGER_ABI,
+      functionName: 'getMerkleLeafCount',
+      args: [],
+    });
+
+    const roots: string[] = [];
+
+    let failureCount = 0;
+    for (let i = 0; i < Number(leafCount) && failureCount < 2; i++) {
+      try {
+        const root = await client.readContract({
+          address: contractAddress,
+          abi: AD_MANAGER_ABI,
+          functionName: 'getHistoricalRoot',
+          args: [BigInt(i)],
+        });
+        roots.push(root);
+      } catch (error) {
+        console.error(`Failed to fetch historical root at index ${i}:`, error);
+        failureCount++;
+        continue;
+      }
+    }
+
+    return roots;
+  }
+
+  async fetchOrderChainRoots(data: T_FetchRoot): Promise<string[]> {
+    const { chainId, contractAddress } = data;
+
+    const { client } = this.getClient(chainId.toString());
+    const leafCount = await client.readContract({
+      address: contractAddress,
+      abi: ORDER_PORTAL_ABI,
+      functionName: 'getMerkleLeafCount',
+      args: [],
+    });
+
+    const roots: string[] = [];
+
+    let failureCount = 0;
+    for (let i = 0; i < Number(leafCount) && failureCount < 2; i++) {
+      try {
+        const root = await client.readContract({
+          address: contractAddress,
+          abi: ORDER_PORTAL_ABI,
+          functionName: 'getHistoricalRoot',
+          args: [BigInt(i)],
+        });
+        roots.push(root);
+      } catch (error) {
+        console.error(`Failed to fetch historical root at index ${i}:`, error);
+        failureCount++;
+        continue;
+      }
+    }
+
+    return roots;
   }
 
   async getUnlockOrderContractDetails(
@@ -442,9 +552,9 @@ export class ViemService {
     const timeToMilliseconds: number =
       getTime(new Date()) + ViemService.TEN_MINUTES;
 
-    const timeToExpire: bigint = BigInt(
-      BigNumber(timeToMilliseconds).div(this.MILLISECOND).toFixed(0),
-    );
+    const timeToExpire: string = BigNumber(timeToMilliseconds)
+      .div(this.MILLISECOND)
+      .toFixed(0);
 
     const orderHash = getTypedHash(data.orderParams);
 

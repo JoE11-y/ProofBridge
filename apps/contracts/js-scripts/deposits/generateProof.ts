@@ -45,15 +45,13 @@ export default async function generateProof(): Promise<string> {
       ad_contract: isAdContract == "true" ? true : false,
       secret: secret,
       target_index: elementIndex,
-      target_elements_count: merkleProof.elementsCount.toString(),
-      target_sibling_hashes_len: merkleProof.siblingsHashes.length.toString(),
+      tree_width: merkleProof.width.toString(),
+      target_sibling_hashes_len: merkleProof.siblings.length.toString(),
       target_sibling_hashes: padArray(
-        merkleProof.siblingsHashes.map((i) => i.toString())
+        merkleProof.siblings.map((i) => i.toString())
       ),
-      target_peak_hashes_len: merkleProof.peaksHashes.length.toString(),
-      target_peak_hashes: padArray(
-        merkleProof.peaksHashes.map((i) => i.toString())
-      ),
+      target_peak_hashes_len: merkleProof.peaks.length.toString(),
+      target_peak_hashes: padArray(merkleProof.peaks.map((i) => i.toString())),
     };
 
     const { witness } = await noir.execute(input);

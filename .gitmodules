@@ -12,4 +12,4 @@
 	url = https://github.com/vectorized/solady
 [submodule "apps/contracts/lib/solidity-mmr"]
 	path = apps/contracts/lib/solidity-mmr
-	url = https://github.com/Explore-Beyond-Innovations/solidity-mmr
+	url = https://github.com/JoE11-y/solidity-mmr

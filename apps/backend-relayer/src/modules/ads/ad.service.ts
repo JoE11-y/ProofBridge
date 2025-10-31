@@ -18,6 +18,7 @@ import { getAddress } from 'viem';
 import { AdStatus, Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { ViemService } from '../../providers/viem/viem.service';
+import { randomUUID } from 'crypto';
 
 type AdQueryInput = {
   routeId?: string;
@@ -25,6 +26,8 @@ type AdQueryInput = {
   status?: AdStatus;
   adChainId?: bigint;
   orderChainId?: bigint;
+  adTokenId?: string;
+  orderTokenId?: string;
 };
 
 type AdUpdateInput = {
@@ -56,6 +59,8 @@ export class AdsService {
     if (query.routeId) where.routeId = query.routeId;
     if (query.creatorAddress) where.creatorAddress = query.creatorAddress;
     if (query.status) where.status = query.status;
+    if (query.adTokenId) where.adTokenId = query.adTokenId;
+    if (query.orderTokenId) where.orderTokenId = query.orderTokenId;
 
     const items = await this.prisma.ad.findMany({
       where: {
@@ -148,10 +153,10 @@ export class AdsService {
         routeId: i.routeId,
         adTokenId: i.adTokenId,
         orderTokenId: i.orderTokenId,
-        poolAmount: i.poolAmount.toString(),
-        availableAmount: available.toString(),
-        minAmount: i.minAmount ? i.minAmount.toString() : null,
-        maxAmount: i.maxAmount ? i.maxAmount.toString() : null,
+        poolAmount: i.poolAmount.toFixed(0),
+        availableAmount: available.toFixed(0),
+        minAmount: i.minAmount ? i.minAmount.toFixed(0) : null,
+        maxAmount: i.maxAmount ? i.maxAmount.toFixed(0) : null,
         status: i.status != 'INACTIVE' ? effectiveStatus : i.status,
         metadata: i.metadata ?? null,
         createdAt: i.createdAt.toISOString(),
@@ -236,10 +241,10 @@ export class AdsService {
       routeId: ad.routeId,
       adTokenId: ad.adTokenId,
       orderTokenId: ad.orderTokenId,
-      poolAmount: ad.poolAmount.toString(),
-      availableAmount: available.toString(),
-      minAmount: ad.minAmount ? ad.minAmount.toString() : null,
-      maxAmount: ad.maxAmount ? ad.maxAmount.toString() : null,
+      poolAmount: ad.poolAmount.toFixed(0),
+      availableAmount: available.toFixed(0),
+      minAmount: ad.minAmount ? ad.minAmount.toFixed(0) : null,
+      maxAmount: ad.maxAmount ? ad.maxAmount.toFixed(0) : null,
       status: ad.status != 'INACTIVE' ? effectiveStatus : ad.status,
       adToken: {
         name: ad.adToken.name,
@@ -333,9 +338,24 @@ export class AdsService {
       );
     }
 
+    const adId = randomUUID();
+
+    const reqContractDetails =
+      await this.viemService.getCreateAdRequestContractDetails({
+        adChainId: route.adToken.chain.chainId,
+        adContractAddress: route.adToken.chain
+          .adManagerAddress as `0x${string}`,
+        adId: adId,
+        orderChainId: route.orderToken.chain.chainId,
+        adToken: route.adToken.address as `0x${string}`,
+        initialAmount: fundAmount.toFixed(0),
+        adRecipient: dto.creatorDstAddress as `0x${string}`,
+      });
+
     const requestDetails = await this.prisma.$transaction(async (prisma) => {
       const ad = await prisma.ad.create({
         data: {
+          id: adId,
           creatorAddress: getAddress(user.walletAddress),
           creatorDstAddress: getAddress(dto.creatorDstAddress),
           routeId: route.id,
@@ -354,18 +374,6 @@ export class AdsService {
         },
       });
 
-      const reqContractDetails =
-        await this.viemService.getCreateAdRequestContractDetails({
-          adChainId: route.adToken.chain.chainId,
-          adContractAddress: route.adToken.chain
-            .adManagerAddress as `0x${string}`,
-          adId: ad.id,
-          orderChainId: route.orderToken.chain.chainId,
-          adToken: route.adToken.address as `0x${string}`,
-          initialAmount: fundAmount.toString(),
-          adRecipient: ad.creatorDstAddress as `0x${string}`,
-        });
-
       await prisma.adUpdateLog.create({
         data: {
           adId: ad.id,
@@ -381,7 +389,7 @@ export class AdsService {
               {
                 field: 'PoolAmount',
                 oldValue: '0',
-                newValue: fundAmount.toString(),
+                newValue: fundAmount.toFixed(0),
               },
             ],
           },
@@ -446,7 +454,7 @@ export class AdsService {
           .adManagerAddress as `0x${string}`,
         adChainId: ad.route.adToken.chain.chainId,
         adId: ad.id,
-        amount: poolTopUp.toString(),
+        amount: poolTopUp.toFixed(0),
       });
 
     const finalValue = ad.poolAmount.add(poolTopUp);
@@ -461,8 +469,8 @@ export class AdsService {
             create: [
               {
                 field: 'PoolAmount',
-                oldValue: ad.poolAmount.toString(),
-                newValue: finalValue.toString(),
+                oldValue: ad.poolAmount.toFixed(0),
+                newValue: finalValue.toFixed(0),
               },
               {
                 field: 'Status',
@@ -556,7 +564,7 @@ export class AdsService {
           .adManagerAddress as `0x${string}`,
         adChainId: ad.route.adToken.chain.chainId,
         adId: ad.id,
-        amount: withdrawAmt.toString(),
+        amount: withdrawAmt.toFixed(0),
         to: dto.to as `0x${string}`,
       });
 
@@ -572,8 +580,8 @@ export class AdsService {
             create: [
               {
                 field: 'PoolAmount',
-                oldValue: ad.poolAmount.toString(),
-                newValue: finalValue.toString(),
+                oldValue: ad.poolAmount.toFixed(0),
+                newValue: finalValue.toFixed(0),
               },
               {
                 field: 'Status',
@@ -648,8 +656,8 @@ export class AdsService {
       id: updated.id,
       status: updated.status,
       creatorAddress: updated.creatorAddress,
-      minAmount: updated.minAmount ? updated.minAmount.toString() : null,
-      maxAmount: updated.maxAmount ? updated.maxAmount.toString() : null,
+      minAmount: updated.minAmount ? updated.minAmount.toFixed(0) : null,
+      maxAmount: updated.maxAmount ? updated.maxAmount.toFixed(0) : null,
       metadata: updated.metadata ?? null,
     };
   }
@@ -726,7 +734,7 @@ export class AdsService {
             create: [
               {
                 field: 'PoolAmount',
-                oldValue: ad.poolAmount.toString(),
+                oldValue: ad.poolAmount.toFixed(0),
                 newValue: (0).toString(),
               },
               {

@@ -10,7 +10,7 @@ fn main(
     ad_contract: pub bool,
     secret: Field,
     target_index: Field,
-    target_elements_count: Field,
+    tree_width: Field,
     target_sibling_hashes_len: Field,
     target_sibling_hashes: [Field; 20],
     target_peak_hashes_len: Field,
@@ -35,7 +35,7 @@ fn main(
         target_sibling_hashes,
         target_peak_hashes_len,
         target_peak_hashes,
-        target_elements_count,
+        tree_width,
         target_root,
     );
 

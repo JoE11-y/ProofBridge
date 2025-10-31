@@ -1,11 +1,11 @@
 {
-  "adManagerAddress": "0x39422ddee041debe2c772335b3232e582693861e",
-  "orderPortalAddress": "0x1204d3de87114b8218701a6db23de5fcd1b7e2de",
+  "adManagerAddress": "0x366D90CB2A8606A82164C717cF1889c3ed5aE1f4",
+  "orderPortalAddress": "0xF1C313faAD40ccAeDb4Fd3e7C838993569E2572C",
   "chainId": "11155111",
   "name": "ETH SEPOLIA",
-  "tokenName": "ERC20Mock",
-  "tokenSymbol": "E20M",
-  "tokenAddress": "0xf897da8bd4298e06957b04f6b3e05375b7c1b042",
-  "merkleManagerAddress": "0x45a282b5077b19644f886b016fd2b43d1ebfdf0d",
-  "verifierAddress": "0xd267fe6e94c06341280b894faeea145dd6186487"
+  "tokenName": "ProofBridge",
+  "tokenSymbol": "PBT",
+  "tokenAddress": "0x1B62aDdB315CC98ab4625ffA170c1BC5C75F9da7",
+  "merkleManagerAddress": "0x397E7356aF447B2754D8Ea0838d285FB78F2482d",
+  "verifierAddress": "0xDc930A3b5CC073092750aE7f4FF45409B2428592"
 }

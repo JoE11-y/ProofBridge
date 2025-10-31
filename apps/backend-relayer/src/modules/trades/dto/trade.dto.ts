@@ -155,6 +155,9 @@ export class ConfirmTradeActionDto {
 export class ChainDto {
   @ApiProperty({ example: 'Ethereum' })
   name!: string;
+
+  @ApiProperty({ example: '1' })
+  chainId!: string;
 }
 
 export class TokenDto {
@@ -202,6 +205,12 @@ export class TradeResponseDto {
 
   @ApiProperty({ example: '0x1234567890abcdef' })
   adCreatorAddress!: string;
+
+  @ApiProperty({ example: '1' })
+  adChainId!: string;
+
+  @ApiProperty({ example: '294' })
+  orderChainId!: string;
 
   @ApiProperty({ example: '0x1234567890abcdef' })
   bridgerAddress!: string;
@@ -274,7 +283,7 @@ export class AdManagerOrderParamsDto {
     description: 'Order portal address',
   })
   @IsString()
-  orderPortal!: string;
+  srcOrderPortal!: string;
 
   @ApiProperty({
     example: '0x1234567890abcdef',

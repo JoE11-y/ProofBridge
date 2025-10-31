@@ -1,25 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {StatelessMmrPoseidon, Field} from "@soliditymmr/lib/StatelessMmrPoseidon.sol";
-import {StatelessMmrHelpers} from "@soliditymmr/lib/StatelessMmrHelpers.sol";
+import {MMRPoseidon2} from "@solidity-mmr/MMRPoseidon2.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 interface IMerkleManager {
-    function getRootHash() external view returns (bytes32);
+    function getRoot() external view returns (bytes32);
+    function getRootAtIndex(uint256 leafIndex) external view returns (bytes32);
+    function getWidth() external view returns (uint256);
     function appendOrderHash(bytes32 orderHash) external returns (bool);
-    function getElementsCount() external view returns (uint256);
-    function getOrderIndex(bytes32 orderHash) external view returns (uint256);
-    function getLastPeaks() external view returns (bytes32[] memory);
-    function verifyProof(
+    function getSize() external view returns (uint256);
+    function getNode(uint256 index) external view returns (bytes32);
+    function getMerkleProof(uint256 index)
+        external
+        view
+        returns (bytes32 root_, uint256 width_, bytes32[] memory peakBag, bytes32[] memory siblings);
+    function verifyInclusionProof(
+        bytes32 root_,
+        uint256 width_,
         uint256 index,
-        bytes32 value,
-        bytes32[] memory proof,
-        bytes32[] memory peaks,
-        uint256 elementsCount,
-        bytes32 root
-    ) external pure;
+        bytes32 valueHash,
+        bytes32[] calldata peakBag,
+        bytes32[] calldata siblings
+    ) external pure returns (bool);
     function fieldMod(bytes32 orderHash) external pure returns (bytes32 orderHashMod);
 }
 
@@ -28,26 +32,11 @@ interface IMerkleManager {
  * @dev Manages all order hashes for ProofBridge protocol per chain
  */
 contract MerkleManager is IMerkleManager, AccessControl, ReentrancyGuard {
-    // Mapping of node index to relative root hash
-    mapping(uint256 => bytes32) internal nodeIndexToRoot;
+    using MMRPoseidon2 for MMRPoseidon2.Tree;
+    MMRPoseidon2.Tree _tree;
 
-    // Mapping of node index to peaks. Peaks can be calculated and/or stored off-chain
-    mapping(uint256 => bytes32[]) internal nodeIndexToPeaks;
-
-    // Mapping of order hash to its index in the tree
-    mapping(bytes32 => uint256) internal orderHashToIndex;
-
-    // Peaks of the last tree can be calculated and/or stored off-chain
-    bytes32[] internal lastPeaks;
-
-    // Latest elements count
-    uint256 internal lastElementsCount;
-
-    // Latest root hash
-    bytes32 internal lastRoot;
-
-    // Number of leaves in the tree
-    uint256 internal leavesCount;
+    // Mapping of width count to roothistory
+    mapping(uint256 => bytes32) internal rootHistory;
 
     /// @notice Roles
     bytes32 public constant ADMIN_ROLE = DEFAULT_ADMIN_ROLE;
@@ -57,11 +46,9 @@ contract MerkleManager is IMerkleManager, AccessControl, ReentrancyGuard {
     error MerkleManager__ZeroAddress();
 
     // Emitted event after each successful `append` operation
-    // Index of the appended deposit
-    // The deposit order hash
-    // The new root hash after append
-    // The new number of elements in the tree
-    event DepositHashAppended(uint256 index, bytes32 orderHash, bytes32 rootHash, uint256 elementsCount);
+    event DepositHashAppended(
+        uint256 indexed index, bytes32 indexed orderHash, uint256 width, uint256 size, bytes32 rootHash
+    );
 
     // Role definition for admin
     constructor(address admin) {
@@ -78,103 +65,78 @@ contract MerkleManager is IMerkleManager, AccessControl, ReentrancyGuard {
      * @param orderHash The hash of the order to append.
      */
     function appendOrderHash(bytes32 orderHash) external nonReentrant onlyRole(MANAGER_ROLE) returns (bool) {
-        bytes32 orderHashMod = fieldMod(orderHash);
-        // Append element to the tree and retrieve updated peaks and root
-        (uint256 nextElementsCount, bytes32 nextRootHash, bytes32[] memory nextPeaks) =
-            StatelessMmrPoseidon.appendWithPeaksRetrieval(orderHashMod, lastPeaks, lastElementsCount, lastRoot);
+        uint256 leafIndex = _tree.append(orderHash);
+        bytes32 newRoot = _tree.getRoot();
+        uint256 width = _tree.getWidth();
 
-        // Update contract state with new peaks, root, and element count
-        lastPeaks = nextPeaks;
-        lastElementsCount = nextElementsCount;
-        lastRoot = nextRootHash;
-        nodeIndexToRoot[nextElementsCount] = lastRoot;
-        nodeIndexToPeaks[nextElementsCount] = lastPeaks;
+        rootHistory[width] = newRoot;
 
-        // Map order hash to its correct MMR leaf index
-        uint256 mmrLeafIndex = leafCountToMmrIndex(leavesCount);
-        orderHashToIndex[orderHash] = mmrLeafIndex;
-        leavesCount += 1;
-
-        emit DepositHashAppended(mmrLeafIndex, orderHash, lastRoot, lastElementsCount);
+        emit DepositHashAppended(leafIndex, orderHash, width, _tree.getSize(), newRoot);
         return true;
     }
 
+    // ========== READERS (VIEW) ==========
     /**
      * @dev Returns the root hash of the tree.
      * @return The latest root hash.
      */
-    function getRootHash() external view returns (bytes32) {
-        return lastRoot;
+    function getRoot() external view returns (bytes32) {
+        return _tree.getRoot();
     }
 
     /**
-     * @dev Returns the number of nodes in the tree.
-     * @return The latest elements count.
+     * @dev Return the root at a specific leaf index.
+     * @param leafIndex The leaf index to retrieve the root for.
+     * @return The root hash at the specified leaf index.
      */
-    function getElementsCount() external view returns (uint256) {
-        return lastElementsCount;
+    function getRootAtIndex(uint256 leafIndex) external view returns (bytes32) {
+        return rootHistory[leafIndex];
     }
 
     /**
-     * @dev Returns the number of nodes in the tree.
-     * @param orderHash order hash to check for.
-     * @return The index of the order hash in the tree.
+     * @dev Returns the number of leaves in the tree.
+     * @return The latest leaves count.
      */
-    function getOrderIndex(bytes32 orderHash) external view returns (uint256) {
-        // Return the index of the order hash in the tree
-        return orderHashToIndex[orderHash];
+    function getWidth() external view returns (uint256) {
+        return _tree.getWidth();
+    }
+
+    function getSize() external view returns (uint256) {
+        return _tree.getSize();
+    }
+
+    function getNode(uint256 index) external view returns (bytes32) {
+        return _tree.getNodeHash(index);
     }
 
     /**
-     * @dev Returns the peaks of the last tree.
-     * @return Array of peak hashes.
+     * @notice Returns peak bag + sibling path for a leaf index.
+     * Used by off-chain relayers and by destination chain to claim.
      */
-    function getLastPeaks() external view returns (bytes32[] memory) {
-        return lastPeaks;
+    function getMerkleProof(uint256 index)
+        external
+        view
+        returns (bytes32 root_, uint256 width_, bytes32[] memory peakBag, bytes32[] memory siblings)
+    {
+        return _tree.getMerkleProof(index);
     }
 
     /**
-     * @dev Verifies a Merkle proof for a deposit.
-     * @param index The index of the leaf in the tree.
-     * @param value The value of the leaf.
-     * @param proof The Merkle proof array.
-     * @param peaks The peaks of the tree.
-     * @param elementsCount The total number of elements in the tree.
-     * @param root The expected root hash.
+     * @notice Stateless verification helper
+     * This mirrors inclusionProof/verifyInclusion.
      */
-    function verifyProof(
+    function verifyInclusionProof(
+        bytes32 root_,
+        uint256 width_,
         uint256 index,
-        bytes32 value,
-        bytes32[] memory proof,
-        bytes32[] memory peaks,
-        uint256 elementsCount,
-        bytes32 root
-    ) external pure {
-        // Verify the proof using StatelessMmr
-        StatelessMmrPoseidon.verifyProof(index, value, proof, peaks, elementsCount, root);
+        bytes32 valueHash,
+        bytes32[] calldata peakBag,
+        bytes32[] calldata siblings
+    ) external pure returns (bool) {
+        return MMRPoseidon2.verifyInclusion(root_, width_, index, valueHash, peakBag, siblings);
     }
 
-    function fieldMod(bytes32 orderHash) public pure returns (bytes32 orderHashMod) {
-        orderHashMod = bytes32(uint256(orderHash) % Field.PRIME);
-    }
-
-    /**
-     * @dev Converts a leaf count (0-based) to the actual MMR leaf index
-     * @param leafCount The sequential leaf number (0, 1, 2, 3...)
-     * @return The actual MMR index where this leaf is positioned
-     */
-    function leafCountToMmrIndex(uint256 leafCount) internal pure returns (uint256) {
-        if (leafCount == 0) return 0;
-
-        // Calculate the number of internal nodes before this leaf
-        uint256 internalNodes = 0;
-        uint256 temp = leafCount;
-
-        while (temp > 0) {
-            temp >>= 1;
-            internalNodes += temp;
-        }
-
-        return leafCount + internalNodes + 1;
+    function fieldMod(bytes32 orderHash) external pure returns (bytes32 orderHashMod) {
+        return MMRPoseidon2._fieldMod(orderHash);
     }
 }

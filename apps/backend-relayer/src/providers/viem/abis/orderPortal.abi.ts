@@ -13,9 +13,16 @@ export const ORDER_PORTAL_ABI = [
         type: 'address',
         internalType: 'contract IMerkleManager',
       },
+      {
+        name: '_wNativeToken',
+        type: 'address',
+        internalType: 'contract IwNativeToken',
+      },
     ],
     stateMutability: 'nonpayable',
   },
+  { type: 'fallback', stateMutability: 'payable' },
+  { type: 'receive', stateMutability: 'payable' },
   {
     type: 'function',
     name: 'ADMIN_ROLE',
@@ -35,6 +42,13 @@ export const ORDER_PORTAL_ABI = [
     name: 'DOMAIN_TYPEHASH_MIN',
     inputs: [],
     outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'NATIVE_TOKEN_ADDRESS',
+    inputs: [],
+    outputs: [{ name: '', type: 'address', internalType: 'address' }],
     stateMutability: 'view',
   },
   {
@@ -88,7 +102,7 @@ export const ORDER_PORTAL_ABI = [
       },
     ],
     outputs: [{ name: 'orderHash', type: 'bytes32', internalType: 'bytes32' }],
-    stateMutability: 'nonpayable',
+    stateMutability: 'payable',
   },
   {
     type: 'function',
@@ -138,9 +152,23 @@ export const ORDER_PORTAL_ABI = [
   },
   {
     type: 'function',
-    name: 'getMerkleRoot',
+    name: 'getHistoricalRoot',
+    inputs: [{ name: 'index', type: 'uint256', internalType: 'uint256' }],
+    outputs: [{ name: 'root', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getLatestMerkleRoot',
     inputs: [],
     outputs: [{ name: 'root', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getMerkleLeafCount',
+    inputs: [],
+    outputs: [{ name: 'count', type: 'uint256', internalType: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -363,7 +391,7 @@ export const ORDER_PORTAL_ABI = [
       { name: 'proof', type: 'bytes', internalType: 'bytes' },
     ],
     outputs: [],
-    stateMutability: 'nonpayable',
+    stateMutability: 'payable',
   },
   {
     type: 'function',
@@ -376,6 +404,15 @@ export const ORDER_PORTAL_ABI = [
       { name: 'timeToExpire', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [{ name: 'message', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'wNativeToken',
+    inputs: [],
+    outputs: [
+      { name: '', type: 'address', internalType: 'contract IwNativeToken' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -637,6 +674,7 @@ export const ORDER_PORTAL_ABI = [
   },
   { type: 'error', name: 'OrderPortal__AdTokenMismatch', inputs: [] },
   { type: 'error', name: 'OrderPortal__BridgerMustBeSender', inputs: [] },
+  { type: 'error', name: 'OrderPortal__InsufficientLiquidity', inputs: [] },
   { type: 'error', name: 'OrderPortal__InvalidAdRecipient', inputs: [] },
   { type: 'error', name: 'OrderPortal__InvalidMessage', inputs: [] },
   { type: 'error', name: 'OrderPortal__InvalidProof', inputs: [] },

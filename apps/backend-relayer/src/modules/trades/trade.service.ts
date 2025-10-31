@@ -55,14 +55,14 @@ export class TradesService {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
             orderToken: {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
           },
@@ -71,9 +71,31 @@ export class TradesService {
     });
     if (!row) throw new NotFoundException('Trade not found');
 
+    const orderChainId = row.route.orderToken.chain.chainId.toString();
+    const adChainId = row.route.adToken.chain.chainId.toString();
+
     return {
       ...row,
-      amount: row.amount.toString(),
+      amount: row.amount.toFixed(0),
+      adChainId: adChainId,
+      orderChainId: orderChainId,
+      route: {
+        ...row.route,
+        adToken: {
+          ...row.route.adToken,
+          chain: {
+            ...row.route.adToken.chain,
+            chainId: adChainId,
+          },
+        },
+        orderToken: {
+          ...row.route.orderToken,
+          chain: {
+            ...row.route.orderToken.chain,
+            chainId: orderChainId,
+          },
+        },
+      },
     };
   }
 
@@ -126,14 +148,14 @@ export class TradesService {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
             orderToken: {
               select: {
                 id: true,
                 symbol: true,
-                chain: { select: { name: true } },
+                chain: { select: { name: true, chainId: true } },
               },
             },
           },
@@ -149,11 +171,34 @@ export class TradesService {
       nextCursor = next.id;
     }
 
-    const cleanedRows = rows.map((row) => ({
-      ...row,
-      status: row.status as string,
-      amount: row.amount.toString(),
-    }));
+    const cleanedRows = rows.map((row) => {
+      const orderChainId = row.route.orderToken.chain.chainId.toString();
+      const adChainId = row.route.adToken.chain.chainId.toString();
+      return {
+        ...row,
+        status: row.status as string,
+        amount: row.amount.toFixed(0),
+        adChainId: adChainId,
+        orderChainId: orderChainId,
+        route: {
+          ...row.route,
+          adToken: {
+            ...row.route.adToken,
+            chain: {
+              ...row.route.adToken.chain,
+              chainId: adChainId,
+            },
+          },
+          orderToken: {
+            ...row.route.orderToken,
+            chain: {
+              ...row.route.orderToken.chain,
+              chainId: orderChainId,
+            },
+          },
+        },
+      };
+    });
 
     return { data: cleanedRows, nextCursor };
   }
@@ -262,7 +307,7 @@ export class TradesService {
         orderParams: {
           orderChainToken: ad.route.orderToken.address,
           adChainToken: ad.route.adToken.address,
-          amount: amount.toString(),
+          amount: amount.toFixed(0),
           bridger: getAddress(user.walletAddress),
           orderChainId: ad.route.orderToken.chain.chainId.toString(),
           orderPortal: ad.route.orderToken.chain.orderPortalAddress,
@@ -283,7 +328,7 @@ export class TradesService {
           id: tradeId,
           adId: ad.id,
           routeId: ad.route.id,
-          amount: amount.toString(),
+          amount: amount.toFixed(0),
           adCreatorAddress: getAddress(ad.creatorAddress),
           adCreatorDstAddress: getAddress(ad.creatorDstAddress),
           bridgerAddress: getAddress(user.walletAddress),
@@ -400,7 +445,7 @@ export class TradesService {
     return {
       orderChainToken: getAddress(trade.route.orderToken.address),
       adChainToken: getAddress(trade.route.adToken.address),
-      amount: trade.amount.toString(),
+      amount: trade.amount.toFixed(0),
       bridger: getAddress(trade.bridgerAddress),
       orderChainId: trade.route.orderToken.chain.chainId.toString(),
       orderPortal: getAddress(trade.route.orderToken.chain.orderPortalAddress),
@@ -494,7 +539,7 @@ export class TradesService {
         orderParams: {
           orderChainToken: getAddress(trade.route.orderToken.address),
           adChainToken: getAddress(trade.route.adToken.address),
-          amount: trade.amount.toString(),
+          amount: trade.amount.toFixed(0),
           bridger: getAddress(trade.bridgerAddress),
           orderChainId: trade.route.orderToken.chain.chainId.toString(),
           orderPortal: getAddress(
@@ -646,6 +691,9 @@ export class TradesService {
       mmrId = trade.route.adToken.chain.mmrId;
     }
 
+    console.log(mmrId, 'mmrId');
+    console.log(trade.orderHash, 'orderHash');
+
     // get merkle proof
     const merkleProof = await this.merkleService.getMerkleProof(
       mmrId,
@@ -653,18 +701,21 @@ export class TradesService {
     );
 
     const localRoot = await this.merkleService.getRoot(mmrId);
-    console.log(localRoot);
 
-    const onChainRoot = await this.viemService.fetchOnChainRoot(isAdCreator, {
-      chainId: isAdCreator
-        ? trade.route.orderToken.chain.chainId
-        : trade.route.adToken.chain.chainId,
-      contractAddress: isAdCreator
-        ? (trade.route.orderToken.chain.orderPortalAddress as `0x${string}`)
-        : (trade.route.adToken.chain.adManagerAddress as `0x${string}`),
-    });
+    const rootExists = await this.viemService.checkLocalRootExist(
+      localRoot,
+      isAdCreator,
+      {
+        chainId: isAdCreator
+          ? trade.route.orderToken.chain.chainId
+          : trade.route.adToken.chain.chainId,
+        contractAddress: isAdCreator
+          ? (trade.route.orderToken.chain.orderPortalAddress as `0x${string}`)
+          : (trade.route.adToken.chain.adManagerAddress as `0x${string}`),
+      },
+    );
 
-    if (onChainRoot.toLowerCase() !== localRoot.toLowerCase()) {
+    if (!rootExists) {
       throw new BadRequestException(
         'MMR root mismatch - chain is not up to date',
       );
@@ -681,7 +732,7 @@ export class TradesService {
       orderHash: trade.orderHash,
       secret: secret,
       isAdCreator,
-      targetRoot: onChainRoot,
+      targetRoot: localRoot,
     });
 
     const nullifierHash = await this.proofService.generateNullifierHash(
@@ -702,7 +753,7 @@ export class TradesService {
         orderParams: {
           orderChainToken: trade.route.orderToken.address as `0x${string}`,
           adChainToken: trade.route.adToken.address as `0x${string}`,
-          amount: trade.amount.toString(),
+          amount: trade.amount.toFixed(0),
           bridger: getAddress(trade.bridgerAddress),
           orderChainId: trade.route.orderToken.chain.chainId.toString(),
           orderPortal: trade.route.orderToken.chain
@@ -717,7 +768,7 @@ export class TradesService {
           salt: trade.id,
         },
         nullifierHash: nullifierHash,
-        targetRoot: onChainRoot,
+        targetRoot: localRoot,
         proof,
       });
 
