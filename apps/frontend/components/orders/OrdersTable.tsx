@@ -18,6 +18,7 @@ import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { chains } from "@/lib/chains"
 import { useChainModal, useConnectModal } from "@rainbow-me/rainbowkit"
+import { parseToBigInt } from "@/lib/parse-to-bigint"
 
 type DataIndex = keyof ITrade
 
@@ -51,19 +52,19 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
     },
     type === "incoming"
       ? {
-          title: "Bridger",
-          dataIndex: "bridgerAddress",
-          render: (value, rowData) => {
-            return <p>{truncateString(value, 3, 3)}</p>
-          },
-        }
-      : {
-          title: "Ad Creator",
-          dataIndex: "adCreatorAddress",
-          render: (value, rowData) => {
-            return <p>{truncateString(value, 3, 3)}</p>
-          },
+        title: "Bridger",
+        dataIndex: "bridgerAddress",
+        render: (value, rowData) => {
+          return <p>{truncateString(value, 3, 3)}</p>
         },
+      }
+      : {
+        title: "Ad Creator",
+        dataIndex: "adCreatorAddress",
+        render: (value, rowData) => {
+          return <p>{truncateString(value, 3, 3)}</p>
+        },
+      },
     {
       title: "Amount",
       dataIndex: "amount",
@@ -71,7 +72,7 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
       render: (value, rowData) => {
         return (
           <p>
-            {formatUnits(BigInt(value), rowData.route.orderToken.decimals)}{" "}
+            {formatUnits(parseToBigInt(value), rowData.route.orderToken.decimals)}{" "}
             <span className="text-sm">{rowData.route.orderToken.symbol}</span>
           </p>
         )
@@ -210,8 +211,8 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
               {bridgerIsNotConnected
                 ? `Connect to ${adTokenChain?.name}`
                 : adCreatorIsNotConnected
-                ? `Connect to ${orderTokenChain?.name}`
-                : "Claim"}
+                  ? `Connect to ${orderTokenChain?.name}`
+                  : "Claim"}
             </>
           )
         }
@@ -268,7 +269,7 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
                 <span className="text-grey-300">Amount</span>
                 <span className="font-medium">
                   {formatUnits(
-                    BigInt(tradeInfo.amount),
+                    parseToBigInt(tradeInfo.amount),
                     tradeInfo.route.orderToken.decimals
                   )}{" "}
                   {tradeInfo.route.orderToken.symbol}

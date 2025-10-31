@@ -99,9 +99,7 @@ export const useCreateTrade = () => {
         if (approveReceipt.status !== "success") {
           throw Error("Transaction failed, Retry");
         }
-      }
-
-      if (token.kind === "NATIVE") {
+      } else if (token.kind === "NATIVE") {
         const amount = formatUnits(BigInt(data.amount), token.decimals);
         const txHash = await writeContractAsync({
           address: response.reqContractDetails.contractAddress,
@@ -284,7 +282,7 @@ export const useUnLockFunds = () => {
       });
       const response = await unlockFunds({ id, signature: signature });
 
-      const isAdCreator = account.address === params?.bridger;
+      const isAdCreator = account.address === params?.adCreator;
 
       const txHash = await writeContractAsync({
         address: response.contractAddress,
