@@ -52,19 +52,19 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
     },
     type === "incoming"
       ? {
-        title: "Bridger",
-        dataIndex: "bridgerAddress",
-        render: (value, rowData) => {
-          return <p>{truncateString(value, 3, 3)}</p>
-        },
-      }
+          title: "Bridger",
+          dataIndex: "bridgerAddress",
+          render: (value, rowData) => {
+            return <p>{truncateString(value, 3, 3)}</p>
+          },
+        }
       : {
-        title: "Ad Creator",
-        dataIndex: "adCreatorAddress",
-        render: (value, rowData) => {
-          return <p>{truncateString(value, 3, 3)}</p>
+          title: "Ad Creator",
+          dataIndex: "adCreatorAddress",
+          render: (value, rowData) => {
+            return <p>{truncateString(value, 3, 3)}</p>
+          },
         },
-      },
     {
       title: "Amount",
       dataIndex: "amount",
@@ -72,7 +72,10 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
       render: (value, rowData) => {
         return (
           <p>
-            {formatUnits(parseToBigInt(value), rowData.route.orderToken.decimals)}{" "}
+            {formatUnits(
+              parseToBigInt(value),
+              rowData.route.orderToken.decimals
+            )}{" "}
             <span className="text-sm">{rowData.route.orderToken.symbol}</span>
           </p>
         )
@@ -211,8 +214,8 @@ export const OrdersTable: React.FC<{ type?: "incoming" | "outgoing" }> = ({
               {bridgerIsNotConnected
                 ? `Connect to ${adTokenChain?.name}`
                 : adCreatorIsNotConnected
-                  ? `Connect to ${orderTokenChain?.name}`
-                  : "Claim"}
+                ? `Connect to ${orderTokenChain?.name}`
+                : "Claim"}
             </>
           )
         }
@@ -351,10 +354,10 @@ const Action = ({
   const isCreator = address === rowData.adCreatorAddress
 
   if (isBridger && rowData.bridgerClaimed) {
-    return <p>-</p>
+    return <p className="text-center">-</p>
   }
   if (isCreator && rowData.adCreatorClaimed) {
-    return <p>-</p>
+    return <p className="text-center">-</p>
   }
   return (
     <>
